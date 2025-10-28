@@ -107,7 +107,7 @@ export function TestimonialsSection() {
   }
 
   return (
-    <section className="py-12 px-4 bg-gradient-to-b from-white to-gray-50">
+    <section id="testimonials" className="py-12 px-4 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto">
         {/* Header */}
         <motion.div
@@ -127,7 +127,7 @@ export function TestimonialsSection() {
         </motion.div>
 
         {/* Carousel - Single Card with Navigation */}
-        <div className="relative max-w-3xl mx-auto mb-8 overflow-hidden">
+        <div className="relative max-w-3xl mx-auto mb-8">
           {/* Left Arrow */}
           <Button
             variant="outline"
@@ -135,9 +135,9 @@ export function TestimonialsSection() {
             onClick={prevSlide}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 lg:-translate-x-12 z-10 rounded-full bg-white shadow-lg hover:bg-blue-50 hover:border-blue-300"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 lg:-translate-x-16 z-20 h-12 w-12 rounded-full bg-red-600 border-2 border-red-600 shadow-xl hover:bg-red-700 hover:border-red-700 hover:scale-110 transition-all duration-300"
           >
-            <ChevronLeft className="h-5 w-5 text-blue-600" />
+            <ChevronLeft className="h-6 w-6 text-white" />
           </Button>
 
           {/* Right Arrow */}
@@ -147,36 +147,37 @@ export function TestimonialsSection() {
             onClick={nextSlide}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 lg:translate-x-12 z-10 rounded-full bg-white shadow-lg hover:bg-blue-50 hover:border-blue-300"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 lg:translate-x-16 z-20 h-12 w-12 rounded-full bg-red-600 border-2 border-red-600 shadow-xl hover:bg-red-700 hover:border-red-700 hover:scale-110 transition-all duration-300"
           >
-            <ChevronRight className="h-5 w-5 text-blue-600" />
+            <ChevronRight className="h-6 w-6 text-white" />
           </Button>
 
           {/* Sliding Cards Container */}
-          <motion.div
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={handleDragEnd}
-            className="cursor-grab active:cursor-grabbing"
-          >
-            <div 
-              className="flex transition-transform duration-[3000ms] ease-in-out"
-              style={{ transform: `translateX(-${activeIndex * 100}%)` }}
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
+          <div className="overflow-hidden">
+            <motion.div
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.2}
+              onDragEnd={handleDragEnd}
+              className="cursor-grab active:cursor-grabbing"
             >
+              <div 
+                className="flex transition-transform duration-[3000ms] ease-in-out"
+                style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+              >
             {testimonials.map((testimonial, index) => (
               <div key={index} className="w-full flex-shrink-0">
-                <Card className="hover:shadow-2xl transition-all duration-300 border-2">
-                  <CardContent className="pt-6">
+                <Card className="hover:shadow-2xl transition-all duration-300 border-2 rounded-full overflow-hidden">
+                  <CardContent className="pt-8 pb-8 px-12 text-center">
                     {/* Quote Icon */}
-                    <div className="mb-4">
+                    <div className="mb-4 flex justify-center">
                       <Quote className="h-10 w-10 text-blue-600 opacity-20" />
                     </div>
 
                     {/* Rating */}
-                    <div className="flex gap-1 mb-4">
+                    <div className="flex gap-1 mb-4 justify-center">
                       {[...Array(testimonial.rating)].map((_, i) => (
                         <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                       ))}
@@ -188,7 +189,7 @@ export function TestimonialsSection() {
                     </p>
 
                     {/* Author Info */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 justify-center">
                       <Avatar className="h-14 w-14">
                         <AvatarImage src={testimonial.image} />
                         <AvatarFallback className={`bg-gradient-to-br ${testimonial.color} text-white font-semibold`}>
@@ -206,7 +207,8 @@ export function TestimonialsSection() {
               </div>
             ))}
           </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
 
         {/* Progress Indicators */}

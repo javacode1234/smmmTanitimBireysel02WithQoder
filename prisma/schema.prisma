@@ -222,3 +222,27 @@ enum ApplicationStatus {
   ACCEPTED    // Kabul Edildi
   REJECTED    // Reddedildi
 }
+
+// QuoteRequest model for pricing quote requests
+model QuoteRequest {
+  id          String           @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String
+  phone       String
+  companyName String?
+  packageType String           // Basic, Standard, Premium
+  message     String?          @db.Text
+  status      QuoteStatus      @default(PENDING)
+  notes       String?          @db.Text // Admin notları
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+enum QuoteStatus {
+  PENDING     // Beklemede
+  CONTACTED   // İletişime Geçildi
+  SENT        // Teklif Gönderildi
+  ACCEPTED    // Kabul Edildi
+  REJECTED    // Reddedildi
+}

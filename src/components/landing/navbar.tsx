@@ -29,32 +29,45 @@ export function Navbar() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-6">
-            <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
-              Anasayfa
+            <Link href="/" className="text-sm font-medium hover:text-primary transition-all duration-300 relative group">
+              <span>Anasayfa</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
-            <Link href="#clients" className="text-sm font-medium hover:text-primary transition-colors">
-              Kurumlar
+            <Link href="#clients" className="text-sm font-medium hover:text-primary transition-all duration-300 relative group">
+              <span>Kurumlar</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
-            <Link href="#about" className="text-sm font-medium hover:text-primary transition-colors">
-              Hakkımızda
+            <Link href="#about" className="text-sm font-medium hover:text-primary transition-all duration-300 relative group">
+              <span>Hakkımızda</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
-            <Link href="#services" className="text-sm font-medium hover:text-primary transition-colors">
-              Hizmetler
+            <Link href="#services" className="text-sm font-medium hover:text-primary transition-all duration-300 relative group">
+              <span>Hizmetler</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
-            <Link href="#workflow" className="text-sm font-medium hover:text-primary transition-colors">
-              Süreç
+            <Link href="#workflow" className="text-sm font-medium hover:text-primary transition-all duration-300 relative group">
+              <span>Süreç</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
-            <Link href="#pricing" className="text-sm font-medium hover:text-primary transition-colors">
-              Fiyatlandırma
+            <Link href="#pricing" className="text-sm font-medium hover:text-primary transition-all duration-300 relative group">
+              <span>Fiyatlandırma</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
-            <Link href="#team" className="text-sm font-medium hover:text-primary transition-colors">
-              Ekibimiz
+            <Link href="#testimonials" className="text-sm font-medium hover:text-primary transition-all duration-300 relative group">
+              <span>Referanslarımız</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
-            <Link href="#faq" className="text-sm font-medium hover:text-primary transition-colors">
-              SSS
+            <Link href="#team" className="text-sm font-medium hover:text-primary transition-all duration-300 relative group">
+              <span>Ekibimiz</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
-            <Link href="#contact" className="text-sm font-medium hover:text-primary transition-colors">
-              İletişim
+            <Link href="#faq" className="text-sm font-medium hover:text-primary transition-all duration-300 relative group">
+              <span>SSS</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
+            </Link>
+            <Link href="#contact" className="text-sm font-medium hover:text-primary transition-all duration-300 relative group">
+              <span>İletişim</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
             <Link href="/auth/signin">
               <Button>Giriş Yap</Button>
@@ -90,6 +103,9 @@ export function Navbar() {
             </Link>
             <Link href="#pricing" className="block text-sm font-medium hover:text-primary transition-colors">
               Fiyatlandırma
+            </Link>
+            <Link href="#testimonials" className="block text-sm font-medium hover:text-primary transition-colors">
+              Referanslarımız
             </Link>
             <Link href="#team" className="block text-sm font-medium hover:text-primary transition-colors">
               Ekibimiz

@@ -1,9 +1,13 @@
 "use client"
 
+"use client"
+
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Check, Star, Zap, Crown } from "lucide-react"
+import { useState } from "react"
+import { QuoteRequestModal } from "@/components/modals/quote-request-modal"
 
 const plans = [
   {
@@ -69,6 +73,14 @@ const additionalServices = [
 ]
 
 export function PricingSection() {
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false)
+  const [selectedPackage, setSelectedPackage] = useState("")
+
+  const handleQuoteRequest = (packageName: string) => {
+    setSelectedPackage(packageName)
+    setQuoteModalOpen(true)
+  }
+
   return (
     <section id="pricing" className="py-12 px-4 bg-gradient-to-b from-gray-50 to-white">
       <div className="container mx-auto">
@@ -141,8 +153,9 @@ export function PricingSection() {
                   <Button 
                     className={`w-full ${plan.popular ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800' : ''}`}
                     size="lg"
+                    onClick={() => handleQuoteRequest(plan.name)}
                   >
-                    {plan.price === "Özel Fiyat" ? "Teklif Al" : "Hemen Başla"}
+                    Teklif Al
                   </Button>
                 </CardContent>
               </Card>
@@ -187,12 +200,24 @@ export function PricingSection() {
             İlk ay ücretsiz danışmanlık hizmeti ile başlayabilirsiniz.
           </p>
           <div className="mt-6">
-            <Button size="lg" variant="outline" className="border-2">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-2"
+              onClick={() => handleQuoteRequest("Genel")}
+            >
               Detaylı Fiyat Bilgisi Al
             </Button>
           </div>
         </motion.div>
       </div>
+
+      {/* Quote Request Modal */}
+      <QuoteRequestModal 
+        open={quoteModalOpen} 
+        onOpenChange={setQuoteModalOpen}
+        packageType={selectedPackage}
+      />
     </section>
   )
 }
