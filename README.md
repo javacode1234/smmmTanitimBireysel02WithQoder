@@ -1,36 +1,155 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SMMM Yönetim Sistemi
 
-## Getting Started
+Serbest Muhasebeci Mali Müşavir (SMMM) tanıtım, müşteri yönetim ve takip sistemi. Next.js 14 (App Router) ve MySQL kullanılarak geliştirilmiştir.
 
-First, run the development server:
+## 🚀 Teknolojiler
+
+- **Frontend:** Next.js 14, React 18, TailwindCSS, shadcn/ui, Framer Motion
+- **Backend:** Next.js API Routes
+- **Database:** MySQL
+- **ORM:** Prisma
+- **Auth:** NextAuth.js (JWT + Role-based)
+- **UI Components:** shadcn/ui
+- **Charts:** Recharts (yakında eklenecek)
+- **PDF:** jsPDF
+- **Icons:** Lucide-react
+- **Email:** Nodemailer
+
+## 📁 Proje Yapısı
+
+```
+smmm-system/
+├── src/
+│   ├── app/
+│   │   ├── (public)/          # Landing page
+│   │   ├── admin/             # Admin dashboard
+│   │   ├── client/            # Müşteri dashboard
+│   │   ├── auth/              # Authentication pages
+│   │   └── api/               # API routes
+│   ├── components/
+│   │   ├── ui/                # shadcn/ui components
+│   │   ├── landing/           # Landing page components
+│   │   ├── admin/             # Admin components
+│   │   └── client/            # Client components
+│   ├── lib/                   # Utilities
+│   └── prisma/                # Prisma schema
+├── .env                       # Environment variables
+└── package.json
+```
+
+## 🛠️ Kurulum
+
+### 1. Bağımlılıkları Yükleyin
+
+```bash
+npm install
+```
+
+### 2. MySQL Veritabanı Ayarları
+
+`.env` dosyasını düzenleyin ve MySQL bağlantı bilgilerinizi girin:
+
+```env
+DATABASE_URL="mysql://kullanici:sifre@localhost:3306/smmm_system"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key-here"
+```
+
+### 3. Prisma Migrations
+
+```bash
+npx prisma migrate dev --name init
+npx prisma generate
+```
+
+### 4. Veritabanını Seed Edin (Opsiyonel)
+
+İlk admin kullanıcısı oluşturmak için bir seed script'i ekleyebilirsiniz.
+
+### 5. Uygulamayı Çalıştırın
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Uygulama `http://localhost:3000` adresinde çalışacaktır.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📋 Özellikler
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Landing Page (Tanıtım Sayfası)
+- ✅ Navbar with logo and menu
+- ✅ Hero section with CTA
+- ✅ Services section
+- ✅ Contact form
+- ✅ Footer
+- ⏳ Clients carousel (yakında)
+- ⏳ About us section (yakında)
+- ⏳ Workflow section (yakında)
+- ⏳ Pricing section (yakında)
+- ⏳ Testimonials (yakında)
+- ⏳ Team section (yakında)
 
-## Learn More
+### Authentication
+- ✅ Sign in page
+- ⏳ Role-based authentication (ADMIN/CLIENT)
+- ⏳ Password reset
+- ⏳ Email verification
 
-To learn more about Next.js, take a look at the following resources:
+### Admin Dashboard
+- ✅ Dashboard overview
+- ✅ Layout with sidebar navigation
+- ⏳ Content Management (CMS for landing page)
+- ⏳ Customer Management
+- ⏳ Declaration Management
+- ⏳ Announcements/Reminders
+- ⏳ Collections & Account Tracking
+- ⏳ Settings
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Client Dashboard
+- ✅ Dashboard overview
+- ✅ Layout with sidebar navigation
+- ⏳ Profile management
+- ⏳ View declarations (PDF)
+- ⏳ Announcements
+- ⏳ Account summary
+- ⏳ Contact admin
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🗃️ Database Schema
 
-## Deploy on Vercel
+Prisma schema'da tanımlı modeller:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **User:** Kullanıcı bilgileri ve authentication
+- **Client:** Müşteri detayları
+- **Declaration:** Beyanname belgелері
+- **Announcement:** Duyurular
+- **Reminder:** Hatırlatmalar
+- **Collection:** Tahsilat kayıtları
+- **ContentSection:** Landing page içerik yönetimi
+- **Message:** Müşteri-admin mesajlaşma
+- **Settings:** Sistem ayarları
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🔐 Roller
+
+- **ADMIN:** Tüm sistem yönetimi
+- **CLIENT:** Sadece kendi verilerini görüntüleme
+
+## 📝 Sonraki Adımlar
+
+1. ✅ Proje yapısı ve temel sayfa lerarını oluştur
+2. ✅ Landing page component'lerini tamamla
+3. ✅ Admin ve Client dashboard layout'ları
+4. ⏳ API route'ları geliştir
+5. ⏳ CRUD işlemlerini ekle
+6. ⏳ File upload sistemi (PDF)
+7. ⏳ Email gönderimi
+8. ⏳ Chart'ları ekle
+9. ⏳ PDF export fonksiyonları
+10. ⏳ Dark mode toggle
+
+## 🤝 Katkıda Bulunma
+
+Bu proje aktif geliştirme aşamasındadır. Önerilerinizi ve katkılarınızı bekliyoruz!
+
+## 📄 Lisans
+
+MIT License
