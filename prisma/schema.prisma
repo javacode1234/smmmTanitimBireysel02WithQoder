@@ -198,3 +198,27 @@ model Settings {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// JobApplication model for career applications
+model JobApplication {
+  id          String            @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String
+  phone       String
+  position    String?           // Başvurulan pozisyon
+  cvUrl       String            // CV dosyasının URL'i
+  coverLetter String?           @db.Text
+  status      ApplicationStatus @default(PENDING)
+  notes       String?           @db.Text // Admin notları
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+enum ApplicationStatus {
+  PENDING     // Beklemede
+  REVIEWED    // İncelendi
+  INTERVIEW   // Mülakata Çağrıldı
+  ACCEPTED    // Kabul Edildi
+  REJECTED    // Reddedildi
+}

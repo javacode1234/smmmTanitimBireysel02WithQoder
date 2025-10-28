@@ -7,8 +7,11 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SMMM Yönetim Sistemi",
-  description: "Serbest Muhasebeci Mali Müşavir Yönetim ve Takip Sistemi",
+  title: "SMMM - Profesyonel Mali Müşavirlik Hizmetleri",
+  description: "Serbest Muhasebeci Mali Müşavir - Güvenilir mali danışmanlık ve muhasebe hizmetleri",
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
