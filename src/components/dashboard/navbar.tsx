@@ -29,6 +29,40 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
   const [newQuoteRequestsCount, setNewQuoteRequestsCount] = useState(0)
   const [newContactMessagesCount, setNewContactMessagesCount] = useState(0)
   const [newJobApplicationsCount, setNewJobApplicationsCount] = useState(0)
+  
+  // User data state
+  const [userData, setUserData] = useState({
+    name: userType === "admin" ? "Admin Kullanıcı" : "Mükellef Kullanıcı",
+    email: userType === "admin" ? "admin@smmm.com" : "mukellef@example.com",
+    role: userType === "admin" ? "SMMM Yöneticisi" : "Mükellef",
+    avatar: "",
+    initials: userType === "admin" ? "AK" : "MK"
+  })
+
+  // Fetch user profile
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch('/api/profile')
+        if (response.ok) {
+          const data = await response.json()
+          setUserData({
+            name: data.name || (userType === "admin" ? "Admin Kullanıcı" : "Mükellef Kullanıcı"),
+            email: data.email || (userType === "admin" ? "admin@smmm.com" : "mukellef@example.com"),
+            role: userType === "admin" ? "SMMM Yöneticisi" : "Mükellef",
+            avatar: data.image || "",
+            initials: data.name 
+              ? data.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+              : (userType === "admin" ? "AK" : "MK")
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error)
+      }
+    }
+
+    fetchProfile()
+  }, [userType])
 
   // Fetch counts for admin
   useEffect(() => {
@@ -69,23 +103,6 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
       return () => clearInterval(interval)
     }
   }, [userType])
-
-  // Mock user data - will be replaced with actual session data
-  const userData = userType === "admin" 
-    ? {
-        name: "Admin Kullanıcı",
-        email: "admin@smmm.com",
-        role: "SMMM Yöneticisi",
-        avatar: "",
-        initials: "AK"
-      }
-    : {
-        name: "Mükellef Kullanıcı",
-        email: "mukellef@example.com",
-        role: "Mükellef",
-        avatar: "",
-        initials: "MK"
-      }
 
   const handleLogout = () => {
     // TODO: Implement actual logout logic

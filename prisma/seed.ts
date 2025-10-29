@@ -1,9 +1,74 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Starting database seed...')
+
+  // Seed Users
+  console.log('👥 Seeding users...')
+  
+  // Hash password
+  const hashedPassword = await bcrypt.hash('password123', 10)
+
+  // Create Admin User
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@smmm.com' },
+    update: {},
+    create: {
+      email: 'admin@smmm.com',
+      name: 'Admin Kullanıcı',
+      password: hashedPassword,
+      role: 'ADMIN',
+      image: '',
+    },
+  })
+  console.log('✅ Admin user created:', adminUser.email)
+
+  // Create Client User with Client data
+  const clientUser = await prisma.user.upsert({
+    where: { email: 'mukellef@example.com' },
+    update: {},
+    create: {
+      email: 'mukellef@example.com',
+      name: 'Mükellef Kullanıcı',
+      password: hashedPassword,
+      role: 'CLIENT',
+      image: '',
+      client: {
+        create: {
+          companyName: 'ABC Ticaret Ltd. Şti.',
+          taxNumber: '1234567890',
+          phone: '0533 987 6543',
+          address: 'Atatürk Cad. No: 123 Merkez/İstanbul',
+        },
+      },
+    },
+  })
+  console.log('✅ Client user created:', clientUser.email)
+
+  // Create another Client User
+  const clientUser2 = await prisma.user.upsert({
+    where: { email: 'firma@example.com' },
+    update: {},
+    create: {
+      email: 'firma@example.com',
+      name: 'Ahmet Yılmaz',
+      password: hashedPassword,
+      role: 'CLIENT',
+      image: '',
+      client: {
+        create: {
+          companyName: 'XYZ Danışmanlık A.Ş.',
+          taxNumber: '9876543210',
+          phone: '0532 123 4567',
+          address: 'İnönü Mah. Cumhuriyet Cad. No: 45 Kadıköy/İstanbul',
+        },
+      },
+    },
+  })
+  console.log('✅ Client user 2 created:', clientUser2.email)
 
   // Seed Job Applications
   console.log('📝 Seeding job applications...')
@@ -139,6 +204,11 @@ async function main() {
   })
 
   console.log('✅ Database seeding completed successfully!')
+  console.log('')
+  console.log('🔑 Login Credentials:')
+  console.log('Admin: admin@smmm.com / password123')
+  console.log('Client 1: mukellef@example.com / password123')
+  console.log('Client 2: firma@example.com / password123')
 }
 
 main()

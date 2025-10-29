@@ -18,7 +18,7 @@ model User {
   emailVerified DateTime?
   password      String
   role          Role      @default(CLIENT)
-  image         String?
+  image         String?   @db.LongText
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   

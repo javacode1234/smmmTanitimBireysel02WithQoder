@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { Eye, Download, Search, RefreshCw, Edit, Trash2 } from "lucide-react"
 import { JobApplicationModal } from "@/components/admin/job-application-modal"
 import { EditJobApplicationModal } from "@/components/admin/edit-job-application-modal"
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { toast } from "sonner"
 import { exportJobApplicationToPDF } from "@/lib/pdf-export"
 
@@ -106,6 +107,9 @@ export default function JobApplicationsPage() {
   const [selectedApplication, setSelectedApplication] = useState<any>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [applicationToDelete, setApplicationToDelete] = useState<any>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [itemsPerPage, setItemsPerPage] = useState(5)
   const [applications, setApplications] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -197,23 +201,31 @@ export default function JobApplicationsPage() {
   }
 
   const handleDelete = async (applicationId: string) => {
-    if (confirm('İş müracaatını silmek istediğinizden emin misiniz?')) {
-      try {
-        const response = await fetch(`/api/job-applications?id=${applicationId}`, {
-          method: 'DELETE',
-        })
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/job-applications?id=${applicationId}`, {
+        method: 'DELETE',
+      })
 
-        if (response.ok) {
-          setApplications(prev => prev.filter(app => app.id !== applicationId))
-          toast.success('Başvuru başarıyla silindi!')
-        } else {
-          toast.error('Başvuru silinirken bir hata oluştu')
-        }
-      } catch (error) {
-        console.error('Error deleting application:', error)
+      if (response.ok) {
+        setApplications(prev => prev.filter(app => app.id !== applicationId))
+        setIsDeleteDialogOpen(false)
+        setApplicationToDelete(null)
+        toast.success('Başvuru başarıyla silindi!')
+      } else {
         toast.error('Başvuru silinirken bir hata oluştu')
       }
+    } catch (error) {
+      console.error('Error deleting application:', error)
+      toast.error('Başvuru silinirken bir hata oluştu')
+    } finally {
+      setIsDeleting(false)
     }
+  }
+
+  const confirmDelete = (application: any) => {
+    setApplicationToDelete(application)
+    setIsDeleteDialogOpen(true)
   }
 
   const handleExportPDF = (application: any) => {
@@ -397,7 +409,7 @@ export default function JobApplicationsPage() {
                           <Button
                             variant="outline"
                             size="icon"
-                            onClick={() => handleDelete(application.id)}
+                            onClick={() => confirmDelete(application)}
                             title="Sil"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
@@ -469,6 +481,19 @@ export default function JobApplicationsPage() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onStatusUpdate={handleStatusUpdate}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false)
+          setApplicationToDelete(null)
+        }}
+        onConfirm={() => applicationToDelete && handleDelete(applicationToDelete.id)}
+        title="Başvuruyu Sil"
+        description={applicationToDelete ? `"${applicationToDelete.name}" adlı adayın "${applicationToDelete.position}" pozisyonu için yaptığı başvuruyu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.` : undefined}
+        isDeleting={isDeleting}
       />
     </div>
   )

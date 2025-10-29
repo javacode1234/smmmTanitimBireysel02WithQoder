@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { Eye, Download, Search, Filter, RefreshCw, Edit, Trash2 } from "lucide-react"
 import { QuoteRequestModal } from "@/components/admin/quote-request-modal"
 import { EditQuoteRequestModal } from "@/components/admin/edit-quote-request-modal"
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { toast } from "sonner"
 import { exportQuoteRequestToPDF } from "@/lib/pdf-export"
 
@@ -109,6 +110,9 @@ export default function QuoteRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [requestToDelete, setRequestToDelete] = useState<any>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [itemsPerPage, setItemsPerPage] = useState(5)
   const [requests, setRequests] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -200,23 +204,31 @@ export default function QuoteRequestsPage() {
   }
 
   const handleDelete = async (requestId: string) => {
-    if (confirm('Teklif talebini silmek istediğinizden emin misiniz?')) {
-      try {
-        const response = await fetch(`/api/quote-requests?id=${requestId}`, {
-          method: 'DELETE',
-        })
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/quote-requests?id=${requestId}`, {
+        method: 'DELETE',
+      })
 
-        if (response.ok) {
-          setRequests(prev => prev.filter(req => req.id !== requestId))
-          toast.success('Teklif talebi başarıyla silindi!')
-        } else {
-          toast.error('Teklif talebi silinirken bir hata oluştu')
-        }
-      } catch (error) {
-        console.error('Error deleting request:', error)
+      if (response.ok) {
+        setRequests(prev => prev.filter(req => req.id !== requestId))
+        setIsDeleteDialogOpen(false)
+        setRequestToDelete(null)
+        toast.success('Teklif talebi başarıyla silindi!')
+      } else {
         toast.error('Teklif talebi silinirken bir hata oluştu')
       }
+    } catch (error) {
+      console.error('Error deleting request:', error)
+      toast.error('Teklif talebi silinirken bir hata oluştu')
+    } finally {
+      setIsDeleting(false)
     }
+  }
+
+  const confirmDelete = (request: any) => {
+    setRequestToDelete(request)
+    setIsDeleteDialogOpen(true)
   }
 
   const handleExportPDF = (request: any) => {
@@ -400,7 +412,7 @@ export default function QuoteRequestsPage() {
                           <Button
                             variant="outline"
                             size="icon"
-                            onClick={() => handleDelete(request.id)}
+                            onClick={() => confirmDelete(request)}
                             title="Sil"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
@@ -472,6 +484,19 @@ export default function QuoteRequestsPage() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onStatusUpdate={handleStatusUpdate}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false)
+          setRequestToDelete(null)
+        }}
+        onConfirm={() => requestToDelete && handleDelete(requestToDelete.id)}
+        title="Teklif Talebini Sil"
+        description={requestToDelete ? `"${requestToDelete.company}" firmasının "${requestToDelete.serviceType}" hizmeti için yaptığı teklif talebini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.` : undefined}
+        isDeleting={isDeleting}
       />
     </div>
   )

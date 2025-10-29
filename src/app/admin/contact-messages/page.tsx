@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { Eye, Download, Search, RefreshCw, Edit, Trash2 } from "lucide-react"
 import { ContactMessageModal } from "@/components/admin/contact-message-modal"
 import { EditContactMessageModal } from "@/components/admin/edit-contact-message-modal"
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { toast } from "sonner"
 import { exportContactMessageToPDF } from "@/lib/pdf-export"
 
@@ -91,6 +92,9 @@ export default function ContactMessagesPage() {
   const [selectedMessage, setSelectedMessage] = useState<any>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [messageToDelete, setMessageToDelete] = useState<any>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [itemsPerPage, setItemsPerPage] = useState(5)
   const [messages, setMessages] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -181,23 +185,31 @@ export default function ContactMessagesPage() {
   }
 
   const handleDelete = async (messageId: string) => {
-    if (confirm('Mesajı silmek istediğinizden emin misiniz?')) {
-      try {
-        const response = await fetch(`/api/contact-messages?id=${messageId}`, {
-          method: 'DELETE',
-        })
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/contact-messages?id=${messageId}`, {
+        method: 'DELETE',
+      })
 
-        if (response.ok) {
-          setMessages(prev => prev.filter(msg => msg.id !== messageId))
-          toast.success('Mesaj başarıyla silindi!')
-        } else {
-          toast.error('Mesaj silinirken bir hata oluştu')
-        }
-      } catch (error) {
-        console.error('Error deleting message:', error)
+      if (response.ok) {
+        setMessages(prev => prev.filter(msg => msg.id !== messageId))
+        setIsDeleteDialogOpen(false)
+        setMessageToDelete(null)
+        toast.success('Mesaj başarıyla silindi!')
+      } else {
         toast.error('Mesaj silinirken bir hata oluştu')
       }
+    } catch (error) {
+      console.error('Error deleting message:', error)
+      toast.error('Mesaj silinirken bir hata oluştu')
+    } finally {
+      setIsDeleting(false)
     }
+  }
+
+  const confirmDelete = (message: any) => {
+    setMessageToDelete(message)
+    setIsDeleteDialogOpen(true)
   }
 
   const handleExportPDF = (message: any) => {
@@ -362,7 +374,7 @@ export default function ContactMessagesPage() {
                           <Button
                             variant="outline"
                             size="icon"
-                            onClick={() => handleDelete(message.id)}
+                            onClick={() => confirmDelete(message)}
                             title="Sil"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
@@ -434,6 +446,19 @@ export default function ContactMessagesPage() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onStatusUpdate={handleStatusUpdate}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false)
+          setMessageToDelete(null)
+        }}
+        onConfirm={() => messageToDelete && handleDelete(messageToDelete.id)}
+        title="Mesajı Sil"
+        description={messageToDelete ? `"${messageToDelete.subject}" konulu mesajı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.` : undefined}
+        isDeleting={isDeleting}
       />
     </div>
   )
