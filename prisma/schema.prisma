@@ -202,23 +202,25 @@ model Settings {
 // JobApplication model for career applications
 model JobApplication {
   id          String            @id @default(cuid())
-  firstName   String
-  lastName    String
+  name        String
   email       String
   phone       String
-  position    String?           // Başvurulan pozisyon
-  cvUrl       String            // CV dosyasının URL'i
+  position    String
+  experience  String
+  education   String
   coverLetter String?           @db.Text
-  status      ApplicationStatus @default(PENDING)
-  notes       String?           @db.Text // Admin notları
+  cvFileName  String?
+  cvFileData  String?           @db.LongText  // Base64 encoded CV file
+  cvMimeType  String?           // MIME type of the file (e.g., "application/pdf")
+  status      JobApplicationStatus @default(NEW)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 }
 
-enum ApplicationStatus {
-  PENDING     // Beklemede
-  REVIEWED    // İncelendi
-  INTERVIEW   // Mülakata Çağrıldı
+enum JobApplicationStatus {
+  NEW         // Yeni
+  REVIEWING   // İnceleniyor
+  INTERVIEWED // Görüşme Yapıldı
   ACCEPTED    // Kabul Edildi
   REJECTED    // Reddedildi
 }
@@ -226,23 +228,41 @@ enum ApplicationStatus {
 // QuoteRequest model for pricing quote requests
 model QuoteRequest {
   id          String           @id @default(cuid())
-  firstName   String
-  lastName    String
+  name        String
   email       String
   phone       String
-  companyName String?
-  packageType String           // Basic, Standard, Premium
+  company     String
+  serviceType String
   message     String?          @db.Text
-  status      QuoteStatus      @default(PENDING)
-  notes       String?          @db.Text // Admin notları
+  status      QuoteStatus      @default(NEW)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 }
 
 enum QuoteStatus {
+  NEW         // Yeni
   PENDING     // Beklemede
+  REVIEWED    // İncelendi
   CONTACTED   // İletişime Geçildi
-  SENT        // Teklif Gönderildi
-  ACCEPTED    // Kabul Edildi
-  REJECTED    // Reddedildi
+  COMPLETED   // Tamamlandı
+}
+
+// ContactMessage model for contact form submissions
+model ContactMessage {
+  id        String              @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  subject   String
+  message   String              @db.Text
+  status    ContactMessageStatus @default(NEW)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+enum ContactMessageStatus {
+  NEW       // Yeni
+  PENDING   // Beklemede
+  REPLIED   // Yanıtlandı
+  RESOLVED  // Çözüldü
 }

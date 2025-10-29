@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, FileText } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { KVKKModal } from "./kvkk-modal"
 
 interface CareerModalProps {
   open: boolean
@@ -18,6 +19,7 @@ interface CareerModalProps {
 export function CareerModal({ open, onOpenChange }: CareerModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [cvFile, setCvFile] = useState<File | null>(null)
+  const [kvkkModalOpen, setKvkkModalOpen] = useState(false)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -150,19 +152,48 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
           {/* Position */}
           <div>
             <Label htmlFor="position" className="text-sm font-medium">
-              Başvurmak İstediğiniz Pozisyon
+              Başvurmak İstediğiniz Pozisyon <span className="text-red-500">*</span>
             </Label>
-            <Select name="position">
+            <Select name="position" required>
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Pozisyon seçin" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="muhasebeci">Muhasebeci</SelectItem>
-                <SelectItem value="stajyer">Stajyer Mali Müşavir</SelectItem>
-                <SelectItem value="smmm">SMMM</SelectItem>
-                <SelectItem value="diger">Diğer</SelectItem>
+                <SelectItem value="Mali Müşavir Yardımcısı">Mali Müşavir Yardımcısı</SelectItem>
+                <SelectItem value="Muhasebe Elemanı">Muhasebe Elemanı</SelectItem>
+                <SelectItem value="Stajyer">Stajyer</SelectItem>
+                <SelectItem value="Mali Müşavir">Mali Müşavir</SelectItem>
+                <SelectItem value="Diğer">Diğer</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Experience and Education */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="experience" className="text-sm font-medium">
+                Deneyim <span className="text-red-500">*</span>
+              </Label>
+              <Input 
+                id="experience" 
+                name="experience" 
+                required 
+                className="mt-1"
+                placeholder="Örn: 3 yıl, Yeni Mezun"
+              />
+            </div>
+            <div>
+              <Label htmlFor="education" className="text-sm font-medium">
+                Eğitim <span className="text-red-500">*</span>
+              </Label>
+              <Input 
+                id="education" 
+                name="education" 
+                required 
+                className="mt-1"
+                placeholder="Örn: İktisat Fakültesi"
+              />
+            </div>
           </div>
 
           {/* CV Upload */}
@@ -232,8 +263,15 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
             />
             <label htmlFor="kvkkConsent" className="text-xs text-gray-700 leading-relaxed">
               Kişisel verilerimin, başvuru sürecinin yürütülmesi amacıyla işlenmesine ve 
-              saklanmasına <a href="#" className="text-blue-600 hover:underline">KVKK Aydınlatma Metni</a> kapsamında 
-              onay veriyorum.
+              saklanmasına{" "}
+              <button
+                type="button"
+                onClick={() => setKvkkModalOpen(true)}
+                className="text-blue-600 hover:underline font-medium"
+              >
+                KVKK Aydınlatma Metni
+              </button>{" "}
+              kapsamında onay veriyorum.
             </label>
           </div>
 
@@ -258,6 +296,9 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
           </div>
         </form>
       </DialogContent>
+
+      {/* KVKK Modal */}
+      <KVKKModal open={kvkkModalOpen} onOpenChange={setKvkkModalOpen} />
     </Dialog>
   )
 }

@@ -16,16 +16,35 @@ export function ContactSection() {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    toast.success("Mesajınız başarıyla gönderildi!")
-    setIsSubmitting(false)
-    
-    // Safely reset the form
     const form = e.currentTarget
-    if (form) {
-      form.reset()
+    const formData = new FormData(form)
+    const data = {
+      name: formData.get('name') as string,
+      email: formData.get('email') as string,
+      phone: formData.get('phone') as string,
+      subject: formData.get('subject') as string || 'Genel İletişim',
+      message: formData.get('message') as string,
+    }
+
+    try {
+      const response = await fetch('/api/contact-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+
+      if (response.ok) {
+        toast.success('Mesajınız başarıyla gönderildi!')
+        form.reset()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Mesaj gönderilemedi')
+      }
+    } catch (error) {
+      console.error('Error sending message:', error)
+      toast.error('Bir hata oluştu, lütfen tekrar deneyin')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -60,6 +79,10 @@ export function ContactSection() {
                 <div>
                   <Label htmlFor="phone">Telefon</Label>
                   <Input id="phone" name="phone" type="tel" />
+                </div>
+                <div>
+                  <Label htmlFor="subject">Konu</Label>
+                  <Input id="subject" name="subject" placeholder="Örn: Muhasebe Hizmeti" />
                 </div>
                 <div>
                   <Label htmlFor="message">Mesajınız</Label>

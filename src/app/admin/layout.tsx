@@ -2,7 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { DashboardNavbar } from "@/components/dashboard/navbar"
+import { Breadcrumb } from "@/components/dashboard/breadcrumb"
+import Image from "next/image"
 import { 
   LayoutDashboard, 
   Users, 
@@ -30,14 +34,38 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const [sidebarState, setSidebarState] = useState<"open" | "collapsed" | "hidden">("open")
+
+  const handleToggleSidebar = () => {
+    if (sidebarState === "open") {
+      setSidebarState("collapsed")
+    } else if (sidebarState === "collapsed") {
+      setSidebarState("hidden")
+    } else {
+      setSidebarState("open")
+    }
+  }
+
+  const sidebarWidth = sidebarState === "open" ? "w-64" : sidebarState === "collapsed" ? "w-20" : "w-0"
+  const sidebarWidthPx = sidebarState === "open" ? "256px" : sidebarState === "collapsed" ? "80px" : "0px"
+  const mainMargin = sidebarState === "open" ? "pl-64" : sidebarState === "collapsed" ? "pl-20" : "pl-0"
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" suppressHydrationWarning>
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r">
+      <aside className={`fixed left-0 top-0 z-40 h-screen ${sidebarWidth} bg-white border-r transition-all duration-300 overflow-hidden`}>
         <div className="flex h-full flex-col">
-          <div className="flex h-16 items-center border-b px-6">
-            <h1 className="text-xl font-bold text-primary">SMMM Admin</h1>
+          <div className="flex h-16 items-center border-b px-6 gap-3">
+            <Image
+              src="/smmm-icon.png"
+              alt="SMMM"
+              width={32}
+              height={32}
+              className="object-contain flex-shrink-0"
+            />
+            {sidebarState === "open" && (
+              <h1 className="text-xl font-bold text-primary whitespace-nowrap">SMMM Admin</h1>
+            )}
           </div>
           <nav className="flex-1 space-y-1 px-3 py-4">
             {navigation.map((item) => {
@@ -51,27 +79,38 @@ export default function AdminLayout({
                       ? "bg-primary text-white"
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
+                  title={sidebarState !== "open" ? item.name : ""}
                 >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  {sidebarState === "open" && <span className="whitespace-nowrap">{item.name}</span>}
                 </Link>
               )
             })}
           </nav>
           <div className="border-t p-4">
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/auth/signin">
-                <LogOut className="mr-2 h-4 w-4" />
-                Çıkış Yap
-              </Link>
-            </Button>
+            {sidebarState === "open" ? (
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/auth/signin">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Çıkış Yap
+                </Link>
+              </Button>
+            ) : (
+              <Button variant="outline" size="icon" className="w-full" asChild>
+                <Link href="/auth/signin" title="Çıkış Yap">
+                  <LogOut className="h-4 w-4" />
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="pl-64">
-        <div className="p-8">
+      <main className={`${mainMargin} transition-all duration-300`}>
+        <DashboardNavbar userType="admin" sidebarState={sidebarState} onToggleSidebar={handleToggleSidebar} sidebarWidth={sidebarWidthPx} />
+        <div className="p-8 mt-16">
+          <Breadcrumb userType="admin" />
           {children}
         </div>
       </main>

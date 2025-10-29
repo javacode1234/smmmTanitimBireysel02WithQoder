@@ -1,82 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db'
+import { QuoteStatus } from '@prisma/client'
+
+export async function GET() {
+  try {
+    const requests = await prisma.quoteRequest.findMany({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+    return NextResponse.json(requests)
+  } catch (error) {
+    console.error('Error fetching quote requests:', error)
+    return NextResponse.json({ error: 'Failed to fetch requests' }, { status: 500 })
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    
-    const { firstName, lastName, email, phone, companyName, packageType, message } = body
+    const { name, email, phone, company, serviceType, message } = await request.json()
 
-    console.log('Received data:', { firstName, lastName, email, phone, packageType })
-
-    if (!firstName || !lastName || !email || !phone || !packageType) {
+    if (!name || !email || !phone || !company || !serviceType) {
       return NextResponse.json(
-        { error: 'Gerekli alanlar eksik' },
+        { error: 'Tüm zorunlu alanları doldurun' },
         { status: 400 }
       )
     }
 
-    // Check if prisma.quoteRequest exists
-    if (!prisma.quoteRequest) {
-      console.error('Prisma QuoteRequest model not found!')
-      return NextResponse.json(
-        { error: 'Database model not available. Please restart the server.' },
-        { status: 500 }
-      )
-    }
-
-    // Save to database
     const quoteRequest = await prisma.quoteRequest.create({
       data: {
-        firstName,
-        lastName,
+        name,
         email,
         phone,
-        companyName: companyName || null,
-        packageType,
-        message: message || null,
-        status: 'PENDING',
+        company,
+        serviceType,
+        message,
+        status: 'NEW' as QuoteStatus,
       },
     })
 
-    console.log('Quote request created:', quoteRequest.id)
-
-    return NextResponse.json({ 
-      success: true, 
-      quoteRequest 
-    })
-  } catch (error) {
-    console.error('Quote request error:', error)
-    console.error('Error details:', JSON.stringify(error, null, 2))
     return NextResponse.json(
-      { 
-        error: 'Teklif isteği kaydedilemedi',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { message: 'Teklif talebiniz başarıyla gönderildi', quoteRequest },
+      { status: 201 }
+    )
+  } catch (error) {
+    console.error('Error creating quote request:', error)
+    return NextResponse.json(
+      { error: 'Teklif talebi gönderilirken hata oluştu' },
       { status: 500 }
     )
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function PATCH(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
-    
-    const where = status ? { status: status as any } : {}
-    
-    const quoteRequests = await prisma.quoteRequest.findMany({
-      where,
-      orderBy: {
-        createdAt: 'desc',
-      },
+    const { id, status } = await request.json()
+
+    const quoteRequest = await prisma.quoteRequest.update({
+      where: { id },
+      data: { status },
     })
 
-    return NextResponse.json({ quoteRequests })
+    return NextResponse.json(quoteRequest)
   } catch (error) {
-    console.error('Get quote requests error:', error)
+    console.error('Error updating quote request:', error)
     return NextResponse.json(
-      { error: 'Teklif istekleri yüklenemedi' },
+      { error: 'Failed to update request' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID gereklidir' },
+        { status: 400 }
+      )
+    }
+
+    await prisma.quoteRequest.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({ message: 'Teklif talebi başarıyla silindi' })
+  } catch (error) {
+    console.error('Error deleting quote request:', error)
+    return NextResponse.json(
+      { error: 'Teklif talebi silinirken hata oluştu' },
       { status: 500 }
     )
   }

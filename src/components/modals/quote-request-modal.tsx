@@ -22,16 +22,17 @@ export function QuoteRequestModal({ open, onOpenChange, packageType }: QuoteRequ
     e.preventDefault()
     setIsSubmitting(true)
 
+    const form = e.currentTarget
+
     try {
-      const formData = new FormData(e.currentTarget)
+      const formData = new FormData(form)
       const data = {
-        firstName: formData.get('firstName'),
-        lastName: formData.get('lastName'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
-        companyName: formData.get('companyName'),
-        packageType: packageType,
-        message: formData.get('message'),
+        name: `${formData.get('firstName')} ${formData.get('lastName')}`,
+        email: formData.get('email') as string,
+        phone: formData.get('phone') as string,
+        company: formData.get('companyName') as string || 'Belirtilmemiş',
+        serviceType: packageType,
+        message: formData.get('message') as string,
       }
 
       const response = await fetch('/api/quote-requests', {
@@ -42,20 +43,19 @@ export function QuoteRequestModal({ open, onOpenChange, packageType }: QuoteRequ
         body: JSON.stringify(data),
       })
 
-      if (!response.ok) {
-        throw new Error('Teklif isteği gönderilemedi')
-      }
-
-      toast.success("Teklif isteğiniz başarıyla gönderildi! En kısa sürede size dönüş yapacağız.")
-      onOpenChange(false)
-      
-      // Reset form
-      const form = e.currentTarget
-      if (form) {
-        form.reset()
+      if (response.ok) {
+        toast.success('Teklif isteğiniz başarıyla gönderildi! En kısa sürede size dönüş yapacağız.')
+        onOpenChange(false)
+        if (form) {
+          form.reset()
+        }
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Teklif isteği gönderilemedi')
       }
     } catch (error) {
-      toast.error("Bir hata oluştu. Lütfen tekrar deneyin.")
+      console.error('Error sending quote request:', error)
+      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.')
     } finally {
       setIsSubmitting(false)
     }
