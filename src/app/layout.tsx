@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { DynamicFavicon } from "@/components/dynamic-favicon";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,7 +22,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" suppressHydrationWarning>
+      <head suppressHydrationWarning />
       <body className={`${inter.className} antialiased`}>
+        <DynamicFavicon />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

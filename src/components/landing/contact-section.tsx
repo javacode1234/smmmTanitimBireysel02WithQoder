@@ -6,11 +6,37 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Mail, MapPin, Phone } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
+
+interface SiteSettings {
+  phone?: string
+  email?: string
+  address?: string
+  mapLatitude?: string
+  mapLongitude?: string
+  mapEmbedUrl?: string
+}
 
 export function ContactSection() {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({})
+
+  useEffect(() => {
+    fetchSiteSettings()
+  }, [])
+
+  const fetchSiteSettings = async () => {
+    try {
+      const response = await fetch('/api/content/site-settings')
+      if (response.ok) {
+        const data = await response.json()
+        setSiteSettings(data || {})
+      }
+    } catch (error) {
+      console.error('Error fetching site settings:', error)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -103,8 +129,7 @@ export function ContactSection() {
                   <div>
                     <h3 className="font-semibold mb-1">Adres</h3>
                     <p className="text-muted-foreground">
-                      Örnek Mahallesi, Örnek Sokak No:1<br />
-                      Kadıköy / İstanbul
+                      {siteSettings.address || 'Örnek Mahallesi, Örnek Sokak No:1, Kadıköy / İstanbul'}
                     </p>
                   </div>
                 </div>
@@ -118,7 +143,7 @@ export function ContactSection() {
                   <div>
                     <h3 className="font-semibold mb-1">Telefon</h3>
                     <p className="text-muted-foreground">
-                      +90 (216) 555 0000
+                      {siteSettings.phone || '+90 (216) 555 0000'}
                     </p>
                   </div>
                 </div>
@@ -132,7 +157,7 @@ export function ContactSection() {
                   <div>
                     <h3 className="font-semibold mb-1">E-posta</h3>
                     <p className="text-muted-foreground">
-                      info@smmm.com.tr
+                      {siteSettings.email || 'info@smmm.com.tr'}
                     </p>
                   </div>
                 </div>
@@ -147,7 +172,9 @@ export function ContactSection() {
             <CardContent className="p-0">
               <div className="relative w-full h-[400px] bg-gray-100">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3011.1573703944705!2d29.02587631571651!3d40.98935297930192!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14cab7650656bd63%3A0x8e0d57c0c3c7a3a3!2zS2FkxLFrw7Z5LCDEsHN0YW5idWw!5e0!3m2!1str!2str!4v1234567890123!5m2!1str!2str"
+                  src={siteSettings.mapEmbedUrl ||
+                    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3011.1573703944705!2d29.02587631571651!3d40.98935297930192!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14cab7650656bd63%3A0x8e0d57c0c3c7a3a3!2zS2FkxLFrw7Z5LCDEsHN0YW5idWw!5e0!3m2!1str!2str!4v1234567890123!5m2!1str!2str"
+                  }
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}

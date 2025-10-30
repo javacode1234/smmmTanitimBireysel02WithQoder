@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 // Government institutions data
@@ -69,7 +69,95 @@ export function ClientsSection() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isAutoPlay, setIsAutoPlay] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
+  const [institutions, setInstitutions] = useState([
+    {
+      name: "GİB",
+      fullName: "Gelir İdaresi Başkanlığı",
+      logo: "🏛️",
+      url: "https://www.gib.gov.tr",
+      bgColor: "from-blue-500 to-blue-600"
+    },
+    {
+      name: "SGK",
+      fullName: "Sosyal Güvenlik Kurumu",
+      logo: "🛡️",
+      url: "https://www.sgk.gov.tr",
+      bgColor: "from-green-500 to-green-600"
+    },
+    {
+      name: "e-Devlet",
+      fullName: "Türkiye Cumhuriyeti e-Devlet Kapısı",
+      logo: "🇹🇷",
+      url: "https://www.turkiye.gov.tr",
+      bgColor: "from-red-500 to-red-600"
+    },
+    {
+      name: "TÜRMOB",
+      fullName: "Türkiye Serbest Muhasebeci Mali Müşavirler ve YMM Odaları Birliği",
+      logo: "📊",
+      url: "https://www.turmob.org.tr",
+      bgColor: "from-purple-500 to-purple-600"
+    },
+    {
+      name: "Ticaret Bakanlığı",
+      fullName: "T.C. Ticaret Bakanlığı",
+      logo: "🏢",
+      url: "https://www.ticaret.gov.tr",
+      bgColor: "from-orange-500 to-orange-600"
+    },
+    {
+      name: "Merkez Bankası",
+      fullName: "Türkiye Cumhuriyet Merkez Bankası",
+      logo: "🏦",
+      url: "https://www.tcmb.gov.tr",
+      bgColor: "from-indigo-500 to-indigo-600"
+    },
+    {
+      name: "Maliye Bakanlığı",
+      fullName: "T.C. Hazine ve Maliye Bakanlığı",
+      logo: "💼",
+      url: "https://www.hmb.gov.tr",
+      bgColor: "from-teal-500 to-teal-600"
+    },
+    {
+      name: "Ticaret Sicili",
+      fullName: "Ticaret Sicil Müdürlüğü",
+      logo: "📋",
+      url: "https://www.ticaretsicil.gov.tr",
+      bgColor: "from-cyan-500 to-cyan-600"
+    }
+  ])
   const itemsPerView = 4
+
+  // Fetch institutions from database
+  useEffect(() => {
+    const fetchInstitutions = async () => {
+      try {
+        const response = await fetch('/api/content/clients')
+        if (response.ok) {
+          const data = await response.json()
+          // Only use database data if there are active items
+          const activeItems = data.filter((item: any) => item.isActive)
+          if (activeItems.length > 0) {
+            const dbInstitutions = activeItems.map((item: any) => ({
+              name: item.name,
+              fullName: item.description || item.name,
+              logo: item.logo, // Base64 image
+              url: item.url || "#",
+              bgColor: "from-gray-100 to-gray-200", // Neutral for custom logos
+              isCustom: true // Flag for rendering
+            }))
+            setInstitutions(dbInstitutions)
+          }
+          // If no data or no active items, keep default institutions
+        }
+      } catch (error) {
+        console.error('Error fetching institutions:', error)
+        // On error, keep default institutions
+      }
+    }
+    fetchInstitutions()
+  }, [])
 
   const nextSlide = () => {
     setCurrentIndex((prev) => (prev + 1) % institutions.length)
@@ -158,19 +246,20 @@ export function ClientsSection() {
             className="cursor-grab active:cursor-grabbing"
           >
             <div className="flex gap-6 justify-center px-16 transition-transform duration-[3000ms] ease-in-out" style={{ transform: `translateX(-${(currentIndex * 100) / institutions.length}%)` }}>
-            {[...institutions, ...institutions].map((institution, index) => (
-              <motion.a
+            {institutions.map((institution, index) => (
+              <motion.div
                 key={`${institution.name}-${index}`}
-                href={institution.url}
-                target="_blank"
-                rel="noopener noreferrer"
                 initial={{ opacity: 1 }}
                 animate={{ opacity: 1 }}
-                className="group flex-shrink-0 w-[250px]"
+                className="group flex-shrink-0 w-[250px] relative"
               >
                 <div className="bg-white rounded-xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 h-full flex flex-col items-center justify-center transform group-hover:-translate-y-2">
-                  <div className={`h-16 w-16 rounded-full bg-gradient-to-br ${institution.bgColor} flex items-center justify-center mb-4 text-3xl shadow-lg`}>
-                    {institution.logo}
+                  <div className={`h-16 w-16 rounded-full bg-gradient-to-br ${institution.bgColor} flex items-center justify-center mb-4 shadow-lg overflow-hidden`}>
+                    {(institution as any).isCustom && institution.logo.startsWith('data:') ? (
+                      <img src={institution.logo} alt={institution.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-3xl">{institution.logo}</span>
+                    )}
                   </div>
                   <h3 className="font-bold text-lg mb-2 text-center group-hover:text-blue-600 transition-colors">
                     {institution.name}
@@ -178,8 +267,21 @@ export function ClientsSection() {
                   <p className="text-sm text-muted-foreground text-center line-clamp-2">
                     {institution.fullName}
                   </p>
+                  
+                  {/* Link Icon */}
+                  {institution.url && institution.url !== "#" && (
+                    <a
+                      href={institution.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute bottom-4 right-4 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-lg transition-all opacity-0 group-hover:opacity-100"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  )}
                 </div>
-              </motion.a>
+              </motion.div>
             ))}
           </div>
           </motion.div>
@@ -202,20 +304,21 @@ export function ClientsSection() {
         {/* Mobile Grid */}
         <div className="md:hidden grid grid-cols-2 gap-4">
           {institutions.map((institution, index) => (
-            <motion.a
+            <motion.div
               key={institution.name}
-              href={institution.url}
-              target="_blank"
-              rel="noopener noreferrer"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="group"
+              className="group relative"
             >
               <div className="bg-white rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 h-full flex flex-col items-center justify-center">
-                <div className={`h-12 w-12 rounded-full bg-gradient-to-br ${institution.bgColor} flex items-center justify-center mb-3 text-2xl shadow-lg`}>
-                  {institution.logo}
+                <div className={`h-12 w-12 rounded-full bg-gradient-to-br ${institution.bgColor} flex items-center justify-center mb-3 shadow-lg overflow-hidden`}>
+                  {(institution as any).isCustom && institution.logo.startsWith('data:') ? (
+                    <img src={institution.logo} alt={institution.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl">{institution.logo}</span>
+                  )}
                 </div>
                 <h3 className="font-bold text-sm mb-1 text-center group-hover:text-blue-600 transition-colors">
                   {institution.name}
@@ -223,8 +326,21 @@ export function ClientsSection() {
                 <p className="text-xs text-muted-foreground text-center line-clamp-2">
                   {institution.fullName}
                 </p>
+                
+                {/* Link Icon */}
+                {institution.url && institution.url !== "#" && (
+                  <a
+                    href={institution.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute bottom-2 right-2 w-6 h-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-lg transition-all opacity-0 group-hover:opacity-100"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
               </div>
-            </motion.a>
+            </motion.div>
           ))}
         </div>
 

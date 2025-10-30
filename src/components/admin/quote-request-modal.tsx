@@ -63,7 +63,7 @@ export function QuoteRequestModal({ request, isOpen, onClose, onExportPDF }: Quo
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl">Teklif Talebi Detayları</DialogTitle>
           <DialogDescription>
@@ -71,111 +71,111 @@ export function QuoteRequestModal({ request, isOpen, onClose, onExportPDF }: Quo
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
-          {/* Status */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {formatDate(request.createdAt)}
-              </span>
+        <div className="flex-1 overflow-y-auto py-4">
+          <div className="space-y-6">
+            {/* Status */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {formatDate(request.createdAt)}
+                </span>
+              </div>
+              <Badge className={statusColors[request.status as keyof typeof statusColors]}>
+                {statusLabels[request.status as keyof typeof statusLabels]}
+              </Badge>
             </div>
-            <Badge className={statusColors[request.status as keyof typeof statusColors]}>
-              {statusLabels[request.status as keyof typeof statusLabels]}
-            </Badge>
-          </div>
 
-          <Separator />
+            <Separator />
 
-          {/* Contact Information */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">İletişim Bilgileri</h3>
-            
-            <div className="grid gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <FileText className="h-5 w-5 text-primary" />
+            {/* Contact Information */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">İletişim Bilgileri</h3>
+              
+              <div className="grid gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Ad Soyad</div>
+                    <div className="text-base font-semibold">{request.name}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Ad Soyad</div>
-                  <div className="text-base font-semibold">{request.name}</div>
-                </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Building2 className="h-5 w-5 text-primary" />
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Building2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Şirket</div>
+                    <div className="text-base font-semibold">{request.company}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Şirket</div>
-                  <div className="text-base font-semibold">{request.company}</div>
-                </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Mail className="h-5 w-5 text-primary" />
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Mail className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">E-posta</div>
+                    <div className="text-base font-semibold">
+                      <a href={`mailto:${request.email}`} className="text-primary hover:underline">
+                        {request.email}
+                      </a>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">E-posta</div>
-                  <div className="text-base font-semibold">
-                    <a href={`mailto:${request.email}`} className="text-primary hover:underline">
-                      {request.email}
-                    </a>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Phone className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Telefon</div>
+                    <div className="text-base font-semibold">
+                      <a href={`tel:${request.phone}`} className="text-primary hover:underline">
+                        {request.phone}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Briefcase className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Hizmet Türü</div>
+                    <div className="text-base font-semibold">{request.serviceType}</div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Phone className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Telefon</div>
-                  <div className="text-base font-semibold">
-                    <a href={`tel:${request.phone}`} className="text-primary hover:underline">
-                      {request.phone}
-                    </a>
-                  </div>
-                </div>
-              </div>
+            <Separator />
 
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Briefcase className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Hizmet Türü</div>
-                  <div className="text-base font-semibold">{request.serviceType}</div>
-                </div>
+            {/* Message */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg">Talep Mesajı</h3>
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {request.message}
+                </p>
               </div>
             </div>
           </div>
+        </div>
 
-          <Separator />
-
-          {/* Message */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-lg">Talep Mesajı</h3>
-            <div className="bg-muted/50 rounded-lg p-4">
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                {request.message}
-              </p>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Actions */}
-          <div className="flex gap-3 justify-end">
-            <Button variant="outline" onClick={onClose}>
-              Kapat
-            </Button>
-            <Button onClick={() => onExportPDF(request)}>
-              <Download className="h-4 w-4 mr-2" />
-              PDF İndir
-            </Button>
-          </div>
+        {/* Actions - Footer */}
+        <div className="flex gap-3 justify-end pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Kapat
+          </Button>
+          <Button onClick={() => onExportPDF(request)}>
+            <Download className="h-4 w-4 mr-2" />
+            PDF İndir
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

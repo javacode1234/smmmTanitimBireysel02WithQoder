@@ -60,15 +60,15 @@ export function EditJobApplicationModal({ application, isOpen, onClose, onStatus
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-xl">Başvuru Durumunu Düzenle</DialogTitle>
+          <DialogTitle>İş Başvurusu Durumunu Güncelle</DialogTitle>
           <DialogDescription>
-            {application.name} - Başvuru ID: #{application.id}
+            Başvuru ID: #{application.id}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
+        <div className="flex-1 overflow-y-auto py-4">
           {/* Current Status */}
           <div>
             <Label className="text-sm font-medium text-muted-foreground mb-2">
@@ -82,7 +82,7 @@ export function EditJobApplicationModal({ application, isOpen, onClose, onStatus
           </div>
 
           {/* Application Info */}
-          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2 mt-4">
             <div className="flex justify-between">
               <span className="text-sm font-medium">Pozisyon:</span>
               <span className="text-sm text-muted-foreground">{application.position}</span>
@@ -98,7 +98,7 @@ export function EditJobApplicationModal({ application, isOpen, onClose, onStatus
           </div>
 
           {/* Status Selector */}
-          <div>
+          <div className="mt-4">
             <Label htmlFor="status" className="text-sm font-medium">
               Yeni Durum Seçin
             </Label>
@@ -140,24 +140,24 @@ export function EditJobApplicationModal({ application, isOpen, onClose, onStatus
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <Button 
-              variant="outline" 
-              onClick={onClose}
-              className="flex-1"
-            >
-              İptal
-            </Button>
-            <Button 
-              onClick={handleSave}
-              className="flex-1"
-              disabled={selectedStatus === application.status}
-            >
-              Kaydet
-            </Button>
-          </div>
+        {/* Actions - Footer */}
+        <div className="flex gap-3 pt-4 border-t">
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            className="flex-1"
+          >
+            İptal
+          </Button>
+          <Button 
+            onClick={handleSave}
+            className="flex-1"
+            disabled={selectedStatus === application.status}
+          >
+            Kaydet
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

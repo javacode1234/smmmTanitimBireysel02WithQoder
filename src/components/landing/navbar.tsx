@@ -4,10 +4,32 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Menu } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+
+interface SiteSettings {
+  siteName?: string
+  brandIcon?: string
+}
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({})
+
+  useEffect(() => {
+    fetchSiteSettings()
+  }, [])
+
+  const fetchSiteSettings = async () => {
+    try {
+      const response = await fetch('/api/content/site-settings')
+      if (response.ok) {
+        const data = await response.json()
+        setSiteSettings(data || {})
+      }
+    } catch (error) {
+      console.error('Error fetching site settings:', error)
+    }
+  }
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b">
@@ -16,15 +38,23 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="h-10 w-10 rounded-lg overflow-hidden transform group-hover:scale-105 transition-transform">
-              <Image
-                src="/smmm-icon.png"
-                alt="SMMM"
-                width={40}
-                height={40}
-                className="object-cover"
-              />
+              {siteSettings.brandIcon ? (
+                <img
+                  src={siteSettings.brandIcon}
+                  alt={siteSettings.siteName || "SMMM"}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Image
+                  src="/smmm-icon.png"
+                  alt="SMMM"
+                  width={40}
+                  height={40}
+                  className="object-cover"
+                />
+              )}
             </div>
-            <div className="font-bold text-xl text-primary">SMMM</div>
+            <div className="font-bold text-xl text-primary">{siteSettings.siteName || "SMMM"}</div>
           </Link>
 
           {/* Desktop Menu */}

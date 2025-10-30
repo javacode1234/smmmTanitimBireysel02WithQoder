@@ -1,11 +1,52 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { ArrowRight, TrendingUp } from "lucide-react"
 import Image from "next/image"
 
+interface HeroData {
+  id: string
+  title: string
+  subtitle: string
+  description?: string
+  buttonText?: string
+  buttonUrl?: string
+  image?: string
+}
+
 export function HeroSection() {
+  const [heroData, setHeroData] = useState<HeroData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    fetchHeroData()
+  }, [])
+
+  const fetchHeroData = async () => {
+    try {
+      const response = await fetch('/api/content/hero')
+      if (response.ok) {
+        const data = await response.json()
+        if (data && data.length > 0 && data[0].isActive) {
+          setHeroData(data[0])
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching hero data:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Default values
+  const title = heroData?.title || "Profesyonel Mali Müşavirlik Hizmetleri"
+  const subtitle = heroData?.subtitle || "İşletmenizin mali danışmanlık ihtiyaçları için güvenilir çözüm ortağınız. Modern teknoloji ile geleneksel uzmanlığı bir araya getiriyoruz."
+  const buttonText = heroData?.buttonText || "Hemen Başlayın"
+  const buttonUrl = heroData?.buttonUrl || "#services"
+  const imageUrl = heroData?.image || "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1200&auto=format&fit=crop"
+
   return (
     <section className="pt-24 pb-12 px-4 bg-gradient-to-br from-blue-50 via-white to-cyan-50">
       <div className="container mx-auto">
@@ -22,16 +63,15 @@ export function HeroSection() {
               Güvenilir Mali Danışmanlık
             </div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent leading-tight">
-              Profesyonel Mali Müşavirlik Hizmetleri
+              {title}
             </h1>
             <p className="text-base text-muted-foreground mb-5 leading-relaxed">
-              İşletmenizin mali danışmanlık ihtiyaçları için güvenilir çözüm ortağınız. 
-              Modern teknoloji ile geleneksel uzmanlığı bir araya getiriyoruz.
+              {subtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-2.5">
-              <a href="#workflow">
+              <a href={buttonUrl}>
                 <Button size="sm" className="text-sm shadow-lg hover:shadow-xl transition-shadow w-full sm:w-auto">
-                  Hemen Başlayın <ArrowRight className="ml-2 h-3.5 w-3.5" />
+                  {buttonText} <ArrowRight className="ml-2 h-3.5 w-3.5" />
                 </Button>
               </a>
               <a href="#contact">
@@ -78,13 +118,22 @@ export function HeroSection() {
             className="relative h-[350px] lg:h-[420px]"
           >
             <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-2xl">
-              <Image
-                src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1200&auto=format&fit=crop"
-                alt="Muhasebe ve Mali Müşavirlik Ofisi"
-                fill
-                className="object-cover"
-                priority
-              />
+              {heroData?.image ? (
+                <img 
+                  src={heroData.image} 
+                  alt={title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <Image
+                  src={imageUrl}
+                  alt="Muhasebe ve Mali Müşavirlik Ofisi"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+                  className="object-cover"
+                  priority
+                />
+              )}
               {/* Overlay gradient */}
               <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent" />
             </div>

@@ -161,13 +161,178 @@ enum CollectionType {
   EXPENSE
 }
 
-// Content Section model for Landing Page CMS
-model ContentSection {
+// Content Management System for Landing Page
+// Site Settings (Global)
+model SiteSettings {
+  id              String   @id @default(cuid())
+  siteName        String   @default("SMMM Ofisi")
+  siteDescription String?  @db.Text
+  favicon         String?  @db.LongText // Base64
+  brandIcon       String?  @db.LongText // Base64
+  phone           String?
+  email           String?
+  address         String?  @db.Text
+  mapLatitude     String?
+  mapLongitude    String?
+  mapEmbedUrl     String?  @db.Text // Google Maps embed URL
+  facebookUrl     String?
+  twitterUrl      String?
+  linkedinUrl     String?
+  instagramUrl    String?
+  youtubeUrl      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Hero Section
+model HeroSection {
   id          String   @id @default(cuid())
-  sectionName String   @unique
-  content     String   @db.LongText
+  title       String
+  subtitle    String   @db.Text
+  description String?  @db.Text
+  buttonText  String?
+  buttonUrl   String?
+  image       String?  @db.LongText // Base64
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Clients Section (Logos)
+model ClientLogo {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  url         String?
+  logo        String   @db.LongText // Base64
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// About Section
+model AboutSection {
+  id          String          @id @default(cuid())
+  title       String
+  subtitle    String?         @db.Text
+  description String          @db.Text
+  image       String?         @db.LongText // Base64
+  features    AboutFeature[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model AboutFeature {
+  id          String       @id @default(cuid())
+  sectionId   String
+  icon        String? // Lucide icon name
+  title       String
+  description String       @db.Text
+  order       Int          @default(0)
+  section     AboutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+}
+
+// Services Section
+model Service {
+  id          String   @id @default(cuid())
+  icon        String? // Lucide icon name
+  title       String
+  description String   @db.Text
+  features    String?  @db.Text // JSON array of features
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Workflow Section
+model WorkflowStep {
+  id          String   @id @default(cuid())
+  icon        String? // Lucide icon name
+  title       String
+  description String   @db.Text
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Pricing Section
+model PricingPlan {
+  id          String          @id @default(cuid())
+  name        String
+  price       String
+  period      String          @default("ay")
+  description String?         @db.Text
+  features    PricingFeature[]
+  isPopular   Boolean         @default(false)
+  isActive    Boolean         @default(true)
+  order       Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model PricingFeature {
+  id        String      @id @default(cuid())
+  planId    String
+  text      String
+  isIncluded Boolean    @default(true)
+  order     Int         @default(0)
+  plan      PricingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+}
+
+// Testimonials Section
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  position  String
+  company   String?
+  content   String   @db.Text
+  avatar    String?  @db.LongText // Base64
+  rating    Int      @default(5)
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Team Section
+model TeamMember {
+  id          String   @id @default(cuid())
+  name        String
+  position    String
+  bio         String?  @db.Text
+  avatar      String?  @db.LongText // Base64
+  email       String?
+  phone       String?
+  linkedinUrl String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// FAQ Section
+model FAQCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  order     Int      @default(0)
+  faqs      FAQ[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FAQ {
+  id         String      @id @default(cuid())
+  categoryId String
+  question   String
+  answer     String      @db.Text
+  order      Int         @default(0)
+  category   FAQCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 // Message model for client-admin communication

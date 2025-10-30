@@ -80,7 +80,7 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             Kariyer Fırsatları
@@ -90,7 +90,7 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5 mt-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto py-4">
           {/* Name Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -120,7 +120,7 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
           </div>
 
           {/* Contact Fields */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
               <Label htmlFor="email" className="text-sm font-medium">
                 E-posta <span className="text-red-500">*</span>
@@ -150,7 +150,7 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
           </div>
 
           {/* Position */}
-          <div>
+          <div className="mt-4">
             <Label htmlFor="position" className="text-sm font-medium">
               Başvurmak İstediğiniz Pozisyon <span className="text-red-500">*</span>
             </Label>
@@ -169,7 +169,7 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
           </div>
 
           {/* Experience and Education */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
               <Label htmlFor="experience" className="text-sm font-medium">
                 Deneyim <span className="text-red-500">*</span>
@@ -197,7 +197,7 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
           </div>
 
           {/* CV Upload */}
-          <div>
+          <div className="mt-4">
             <Label htmlFor="cv" className="text-sm font-medium">
               CV Yükle <span className="text-red-500">*</span>
             </Label>
@@ -240,7 +240,7 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
           </div>
 
           {/* Cover Letter */}
-          <div>
+          <div className="mt-4">
             <Label htmlFor="coverLetter" className="text-sm font-medium">
               Ön Yazı (Opsiyonel)
             </Label>
@@ -254,7 +254,7 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
           </div>
 
           {/* KVKK Consent */}
-          <div className="flex items-start space-x-2 bg-blue-50 p-4 rounded-lg">
+          <div className="flex items-start space-x-2 bg-blue-50 p-4 rounded-lg mt-4">
             <input
               id="kvkkConsent"
               type="checkbox"
@@ -274,28 +274,29 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
               kapsamında onay veriyorum.
             </label>
           </div>
-
-          {/* Submit Button */}
-          <div className="flex gap-3 pt-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-              disabled={isSubmitting}
-            >
-              İptal
-            </Button>
-            <Button 
-              type="submit" 
-              className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Gönderiliyor..." : "Başvuruyu Gönder"}
-            </Button>
-          </div>
         </form>
-      </DialogContent>
+
+        {/* Submit Button - Footer */}
+        <div className="flex gap-3 pt-4 border-t">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="flex-1"
+            disabled={isSubmitting}
+          >
+            İptal
+          </Button>
+          <Button 
+            type="submit" 
+            className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600"
+            disabled={isSubmitting}
+            form="career-form"
+          >
+            {isSubmitting ? "Gönderiliyor..." : "Başvuruyu Gönder"}
+        </Button>
+      </div>
+    </DialogContent>
 
       {/* KVKK Modal */}
       <KVKKModal open={kvkkModalOpen} onOpenChange={setKvkkModalOpen} />

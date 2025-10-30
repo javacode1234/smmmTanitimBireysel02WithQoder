@@ -58,15 +58,15 @@ export function EditContactMessageModal({ message, isOpen, onClose, onStatusUpda
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-xl">Mesaj Durumunu Düzenle</DialogTitle>
+          <DialogTitle>İletişim Mesajı Durumunu Güncelle</DialogTitle>
           <DialogDescription>
-            {message.name} - Mesaj ID: #{message.id}
+            Mesaj ID: #{message.id}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
+        <div className="flex-1 overflow-y-auto py-4">
           {/* Current Status */}
           <div>
             <Label className="text-sm font-medium text-muted-foreground mb-2">
@@ -80,7 +80,7 @@ export function EditContactMessageModal({ message, isOpen, onClose, onStatusUpda
           </div>
 
           {/* Message Info */}
-          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2 mt-4">
             <div className="flex justify-between">
               <span className="text-sm font-medium">Konu:</span>
               <span className="text-sm text-muted-foreground">{message.subject}</span>
@@ -96,7 +96,7 @@ export function EditContactMessageModal({ message, isOpen, onClose, onStatusUpda
           </div>
 
           {/* Status Selector */}
-          <div>
+          <div className="mt-4">
             <Label htmlFor="status" className="text-sm font-medium">
               Yeni Durum Seçin
             </Label>
@@ -132,24 +132,24 @@ export function EditContactMessageModal({ message, isOpen, onClose, onStatusUpda
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <Button 
-              variant="outline" 
-              onClick={onClose}
-              className="flex-1"
-            >
-              İptal
-            </Button>
-            <Button 
-              onClick={handleSave}
-              className="flex-1"
-              disabled={selectedStatus === message.status}
-            >
-              Kaydet
-            </Button>
-          </div>
+        {/* Actions - Footer */}
+        <div className="flex gap-3 pt-4 border-t">
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            className="flex-1"
+          >
+            İptal
+          </Button>
+          <Button 
+            onClick={handleSave}
+            className="flex-1"
+            disabled={selectedStatus === message.status}
+          >
+            Kaydet
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -59,7 +59,7 @@ export function ContactMessageModal({ message, isOpen, onClose, onExportPDF }: C
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl">İletişim Mesajı Detayları</DialogTitle>
           <DialogDescription>
@@ -67,101 +67,101 @@ export function ContactMessageModal({ message, isOpen, onClose, onExportPDF }: C
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
-          {/* Status */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {formatDate(message.createdAt)}
-              </span>
-            </div>
-            <Badge className={statusColors[message.status as keyof typeof statusColors]}>
-              {statusLabels[message.status as keyof typeof statusLabels]}
-            </Badge>
-          </div>
-
-          <Separator />
-
-          {/* Contact Information */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">İletişim Bilgileri</h3>
-            
-            <div className="grid gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <FileText className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Ad Soyad</div>
-                  <div className="text-base font-semibold">{message.name}</div>
-                </div>
+        <div className="flex-1 overflow-y-auto py-4">
+          <div className="space-y-6">
+            {/* Status */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {formatDate(message.createdAt)}
+                </span>
               </div>
+              <Badge className={statusColors[message.status as keyof typeof statusColors]}>
+                {statusLabels[message.status as keyof typeof statusLabels]}
+              </Badge>
+            </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Mail className="h-5 w-5 text-primary" />
+            <Separator />
+
+            {/* Contact Information */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">İletişim Bilgileri</h3>
+              
+              <div className="grid gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Ad Soyad</div>
+                    <div className="text-base font-semibold">{message.name}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">E-posta</div>
-                  <div className="text-base font-semibold">
-                    <a href={`mailto:${message.email}`} className="text-primary hover:underline">
-                      {message.email}
-                    </a>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Mail className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">E-posta</div>
+                    <div className="text-base font-semibold">
+                      <a href={`mailto:${message.email}`} className="text-primary hover:underline">
+                        {message.email}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Phone className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Telefon</div>
+                    <div className="text-base font-semibold">
+                      <a href={`tel:${message.phone}`} className="text-primary hover:underline">
+                        {message.phone}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <MessageSquare className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Konu</div>
+                    <div className="text-base font-semibold">{message.subject}</div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Phone className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Telefon</div>
-                  <div className="text-base font-semibold">
-                    <a href={`tel:${message.phone}`} className="text-primary hover:underline">
-                      {message.phone}
-                    </a>
-                  </div>
-                </div>
-              </div>
+            <Separator />
 
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <MessageSquare className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Konu</div>
-                  <div className="text-base font-semibold">{message.subject}</div>
-                </div>
+            {/* Message */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg">Mesaj İçeriği</h3>
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {message.message}
+                </p>
               </div>
             </div>
           </div>
+        </div>
 
-          <Separator />
-
-          {/* Message */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-lg">Mesaj İçeriği</h3>
-            <div className="bg-muted/50 rounded-lg p-4">
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                {message.message}
-              </p>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Actions */}
-          <div className="flex gap-3 justify-end">
-            <Button variant="outline" onClick={onClose}>
-              Kapat
-            </Button>
-            <Button onClick={() => onExportPDF(message)}>
-              <Download className="h-4 w-4 mr-2" />
-              PDF İndir
-            </Button>
-          </div>
+        {/* Actions - Footer */}
+        <div className="flex gap-3 justify-end pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Kapat
+          </Button>
+          <Button onClick={() => onExportPDF(message)}>
+            <Download className="h-4 w-4 mr-2" />
+            PDF İndir
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

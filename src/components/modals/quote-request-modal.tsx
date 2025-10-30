@@ -63,7 +63,7 @@ export function QuoteRequestModal({ open, onOpenChange, packageType }: QuoteRequ
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             Teklif Talebi - {packageType} Paket
@@ -73,7 +73,7 @@ export function QuoteRequestModal({ open, onOpenChange, packageType }: QuoteRequ
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5 mt-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto py-4">
           {/* Name Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -103,7 +103,7 @@ export function QuoteRequestModal({ open, onOpenChange, packageType }: QuoteRequ
           </div>
 
           {/* Contact Fields */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
               <Label htmlFor="email" className="text-sm font-medium">
                 E-posta <span className="text-red-500">*</span>
@@ -133,7 +133,7 @@ export function QuoteRequestModal({ open, onOpenChange, packageType }: QuoteRequ
           </div>
 
           {/* Company Name */}
-          <div>
+          <div className="mt-4">
             <Label htmlFor="companyName" className="text-sm font-medium">
               Şirket Adı
             </Label>
@@ -146,7 +146,7 @@ export function QuoteRequestModal({ open, onOpenChange, packageType }: QuoteRequ
           </div>
 
           {/* Message */}
-          <div>
+          <div className="mt-4">
             <Label htmlFor="message" className="text-sm font-medium">
               Mesajınız
             </Label>
@@ -160,7 +160,7 @@ export function QuoteRequestModal({ open, onOpenChange, packageType }: QuoteRequ
           </div>
 
           {/* Package Info */}
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4">
             <div className="flex items-center gap-2 mb-2">
               <Building2 className="h-5 w-5 text-blue-600" />
               <span className="font-semibold text-blue-900">Seçilen Paket: {packageType}</span>
@@ -169,27 +169,28 @@ export function QuoteRequestModal({ open, onOpenChange, packageType }: QuoteRequ
               Size özel fiyatlandırma ve detaylı bilgi için en kısa sürede iletişime geçeceğiz.
             </p>
           </div>
-
-          {/* Submit Button */}
-          <div className="flex gap-3 pt-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-              disabled={isSubmitting}
-            >
-              İptal
-            </Button>
-            <Button 
-              type="submit" 
-              className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Gönderiliyor..." : "Teklif Talebi Gönder"}
-            </Button>
-          </div>
         </form>
+
+        {/* Submit Button - Footer */}
+        <div className="flex gap-3 pt-4 border-t">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="flex-1"
+            disabled={isSubmitting}
+          >
+            İptal
+          </Button>
+          <Button 
+            type="submit" 
+            className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600"
+            disabled={isSubmitting}
+            form="quote-request-form"
+          >
+            {isSubmitting ? "Gönderiliyor..." : "Teklif Talebi Gönder"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   )

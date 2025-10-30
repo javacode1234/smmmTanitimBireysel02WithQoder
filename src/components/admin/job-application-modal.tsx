@@ -78,7 +78,7 @@ export function JobApplicationModal({ application, isOpen, onClose, onExportPDF 
       link.download = application.cvFileName || 'cv.pdf'
       document.body.appendChild(link)
       link.click()
-      document.body.removeChild(link)
+      link.remove()
       window.URL.revokeObjectURL(url)
     } else if (application.cvFilePath) {
       // Legacy: Open CV file path in new tab
@@ -91,7 +91,7 @@ export function JobApplicationModal({ application, isOpen, onClose, onExportPDF 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl">İş Başvurusu Detayları</DialogTitle>
           <DialogDescription>
@@ -99,141 +99,141 @@ export function JobApplicationModal({ application, isOpen, onClose, onExportPDF 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
-          {/* Status */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {formatDate(application.createdAt)}
-              </span>
-            </div>
-            <Badge className={statusColors[application.status as keyof typeof statusColors]}>
-              {statusLabels[application.status as keyof typeof statusLabels]}
-            </Badge>
-          </div>
-
-          <Separator />
-
-          {/* Contact Information */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Başvuran Bilgileri</h3>
-            
-            <div className="grid gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <FileText className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Ad Soyad</div>
-                  <div className="text-base font-semibold">{application.name}</div>
-                </div>
+        <div className="flex-1 overflow-y-auto py-4">
+          <div className="space-y-6">
+            {/* Status */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {formatDate(application.createdAt)}
+                </span>
               </div>
+              <Badge className={statusColors[application.status as keyof typeof statusColors]}>
+                {statusLabels[application.status as keyof typeof statusLabels]}
+              </Badge>
+            </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Mail className="h-5 w-5 text-primary" />
+            <Separator />
+
+            {/* Contact Information */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Başvuran Bilgileri</h3>
+              
+              <div className="grid gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Ad Soyad</div>
+                    <div className="text-base font-semibold">{application.name}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">E-posta</div>
-                  <div className="text-base font-semibold">
-                    <a href={`mailto:${application.email}`} className="text-primary hover:underline">
-                      {application.email}
-                    </a>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Mail className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">E-posta</div>
+                    <div className="text-base font-semibold">
+                      <a href={`mailto:${application.email}`} className="text-primary hover:underline">
+                        {application.email}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Phone className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Telefon</div>
+                    <div className="text-base font-semibold">
+                      <a href={`tel:${application.phone}`} className="text-primary hover:underline">
+                        {application.phone}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Briefcase className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Başvurulan Pozisyon</div>
+                    <div className="text-base font-semibold">{application.position}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Clock className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Deneyim</div>
+                    <div className="text-base font-semibold">{application.experience}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <GraduationCap className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">Eğitim</div>
+                    <div className="text-base font-semibold">{application.education}</div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Phone className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Telefon</div>
-                  <div className="text-base font-semibold">
-                    <a href={`tel:${application.phone}`} className="text-primary hover:underline">
-                      {application.phone}
-                    </a>
+            <Separator />
+
+            {/* Cover Letter */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg">Ön Yazı</h3>
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {application.coverLetter}
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* CV File */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg">CV Belgesi</h3>
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-8 w-8 text-primary" />
+                  <div>
+                    <div className="font-medium">{application.cvFileName}</div>
+                    <div className="text-xs text-muted-foreground">CV Dosyası</div>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Briefcase className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Başvurulan Pozisyon</div>
-                  <div className="text-base font-semibold">{application.position}</div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Clock className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Deneyim</div>
-                  <div className="text-base font-semibold">{application.experience}</div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <GraduationCap className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Eğitim</div>
-                  <div className="text-base font-semibold">{application.education}</div>
-                </div>
+                <Button size="sm" variant="outline" onClick={handleDownloadCV}>
+                  <Download className="h-4 w-4 mr-2" />
+                  İndir
+                </Button>
               </div>
             </div>
           </div>
+        </div>
 
-          <Separator />
-
-          {/* Cover Letter */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-lg">Ön Yazı</h3>
-            <div className="bg-muted/50 rounded-lg p-4">
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                {application.coverLetter}
-              </p>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* CV File */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-lg">CV Belgesi</h3>
-            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <FileText className="h-8 w-8 text-primary" />
-                <div>
-                  <div className="font-medium">{application.cvFileName}</div>
-                  <div className="text-xs text-muted-foreground">CV Dosyası</div>
-                </div>
-              </div>
-              <Button size="sm" variant="outline" onClick={handleDownloadCV}>
-                <Download className="h-4 w-4 mr-2" />
-                İndir
-              </Button>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Actions */}
-          <div className="flex gap-3 justify-end">
-            <Button variant="outline" onClick={onClose}>
-              Kapat
-            </Button>
-            <Button onClick={() => onExportPDF(application)}>
-              <Download className="h-4 w-4 mr-2" />
-              PDF İndir
-            </Button>
-          </div>
+        {/* Actions - Footer */}
+        <div className="flex gap-3 justify-end pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Kapat
+          </Button>
+          <Button onClick={() => onExportPDF(application)}>
+            <Download className="h-4 w-4 mr-2" />
+            PDF İndir
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
