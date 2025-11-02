@@ -1,31 +1,36 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useLayoutEffect, useRef } from "react"
+
+// Use useLayoutEffect on client, useEffect on server
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 export function DynamicFavicon() {
-  useEffect(() => {
+  const isMountedRef = useRef(true)
+
+  useIsomorphicLayoutEffect(() => {
     // Ensure we're in the browser
     if (typeof window === 'undefined' || !document) return
     if (!document?.head) return
 
-    let isMounted = true
+    isMountedRef.current = true
 
     // Add a delay to ensure DOM is fully ready
     const timeoutId = setTimeout(() => {
-      if (!isMounted) return
+      if (!isMountedRef.current) return
       updateFavicon()
     }, 150)
 
     const updateFavicon = async () => {
       try {
         // Double-check we're still mounted and document is available
-        if (!isMounted || !document || !document.head) return
+        if (!isMountedRef.current || !document || !document.head) return
 
         const response = await fetch('/api/content/site-settings')
-        if (!response.ok || !isMounted) return
+        if (!response.ok || !isMountedRef.current) return
         
         const data = await response.json()
-        if (!isMounted || !document || !document.head) return
+        if (!isMountedRef.current || !document || !document.head) return
         
         // Safely remove existing favicon links using .remove() instead of removeChild
         try {
@@ -35,16 +40,29 @@ export function DynamicFavicon() {
               // Extra safety check before removing
               if (link && typeof link.remove === 'function') {
                 link.remove()
+              } else if (link && link.parentNode) {
+                // Fallback to removeChild if remove is not available, with additional null check
+                try {
+                  // Check if parent node still exists and contains the child
+                  if (link.parentNode && typeof link.parentNode.contains === 'function' && link.parentNode.contains(link)) {
+                    link.parentNode.removeChild(link)
+                  }
+                } catch (removeError) {
+                  // Ignore errors when removing child - element may have already been removed
+                  // console.warn('Error removing favicon link:', removeError)
+                }
               }
             } catch (e) {
               // Ignore individual removal errors
+              console.warn('Error processing favicon link:', e)
             }
           })
         } catch (e) {
           // Ignore query/removal errors
+          console.warn('Error querying favicon links:', e)
         }
         
-        if (!isMounted || !document || !document.head) return
+        if (!isMountedRef.current || !document || !document.head) return
 
         // Create new favicon link
         const link = document.createElement('link')
@@ -62,30 +80,33 @@ export function DynamicFavicon() {
         
         // Safely append to head
         try {
-          if (document.head && isMounted && document.head.appendChild) {
+          if (document.head && isMountedRef.current) {
             document.head.appendChild(link)
           }
         } catch (e) {
           // Ignore append errors
+          console.warn('Error appending favicon link:', e)
         }
 
         // Update title safely
         try {
-          if (isMounted && document) {
+          if (isMountedRef.current && document) {
             document.title = data?.siteName 
               ? `${data.siteName} - Profesyonel Mali Müşavirlik Hizmetleri`
               : 'SMMM - Profesyonel Mali Müşavirlik Hizmetleri'
           }
         } catch (e) {
           // Ignore title update errors
+          console.warn('Error updating document title:', e)
         }
       } catch (error) {
         // Silently handle all errors - don't break the app
+        console.warn('Error in favicon update:', error)
       }
     }
 
     return () => {
-      isMounted = false
+      isMountedRef.current = false
       clearTimeout(timeoutId)
     }
   }, [])

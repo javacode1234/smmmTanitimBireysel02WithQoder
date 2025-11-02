@@ -230,6 +230,7 @@ model AboutFeature {
   icon        String? // Lucide icon name
   title       String
   description String       @db.Text
+  isActive    Boolean      @default(true) // Add this line
   order       Int          @default(0)
   section     AboutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 }

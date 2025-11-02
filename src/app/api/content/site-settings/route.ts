@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Default values
+const DEFAULT_SETTINGS = {
+  siteName: 'SMMM Ofisi',
+  siteDescription: 'Profesyonel mali müşavirlik hizmetleri ile işletmenizin mali yönetiminde güvenilir çözüm ortağınız.',
+  phone: '+90 (212) 123 45 67',
+  email: 'info@smmmofisi.com',
+  address: 'İstanbul, Türkiye',
+  facebookUrl: 'https://facebook.com',
+  twitterUrl: 'https://twitter.com',
+  linkedinUrl: 'https://linkedin.com',
+  instagramUrl: 'https://instagram.com',
+  youtubeUrl: 'https://youtube.com',
+}
+
 export async function GET() {
   try {
     let settings = await prisma.siteSettings.findFirst()
@@ -8,23 +22,30 @@ export async function GET() {
     // Create default settings if none exist
     if (!settings) {
       settings = await prisma.siteSettings.create({
-        data: {
-          siteName: 'SMMM Ofisi',
-          siteDescription: '',
-          phone: '',
-          email: '',
-          address: '',
-        },
+        data: DEFAULT_SETTINGS,
       })
     }
 
-    return NextResponse.json(settings)
+    // Return settings with defaults for empty fields
+    const responseSettings = {
+      ...settings,
+      siteName: settings.siteName || DEFAULT_SETTINGS.siteName,
+      siteDescription: settings.siteDescription || DEFAULT_SETTINGS.siteDescription,
+      phone: settings.phone || DEFAULT_SETTINGS.phone,
+      email: settings.email || DEFAULT_SETTINGS.email,
+      address: settings.address || DEFAULT_SETTINGS.address,
+      facebookUrl: settings.facebookUrl || DEFAULT_SETTINGS.facebookUrl,
+      twitterUrl: settings.twitterUrl || DEFAULT_SETTINGS.twitterUrl,
+      linkedinUrl: settings.linkedinUrl || DEFAULT_SETTINGS.linkedinUrl,
+      instagramUrl: settings.instagramUrl || DEFAULT_SETTINGS.instagramUrl,
+      youtubeUrl: settings.youtubeUrl || DEFAULT_SETTINGS.youtubeUrl,
+    }
+
+    return NextResponse.json(responseSettings)
   } catch (error) {
     console.error('Error fetching site settings:', error)
-    return NextResponse.json(
-      { error: 'Site ayarları alınamadı' },
-      { status: 500 }
-    )
+    // Return default settings if there's an error
+    return NextResponse.json(DEFAULT_SETTINGS)
   }
 }
 

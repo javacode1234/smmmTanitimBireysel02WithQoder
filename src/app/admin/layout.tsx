@@ -1,9 +1,8 @@
 "use client"
-"use client"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { DashboardNavbar } from "@/components/dashboard/navbar"
 import { Breadcrumb } from "@/components/dashboard/breadcrumb"
@@ -47,14 +46,42 @@ export default function AdminLayout({
     }
   }
 
+  const handleLogout = () => {
+    try {
+      // Use a small delay to ensure any animations complete before navigation
+      setTimeout(() => {
+        // Use window.location.href for a full page reload to avoid React DOM reconciliation issues
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/signin'
+        }
+      }, 100)
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Fallback to direct navigation
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/signin'
+      }
+    }
+  }
+
   const sidebarWidth = sidebarState === "open" ? "w-64" : sidebarState === "collapsed" ? "w-20" : "w-0"
   const sidebarWidthPx = sidebarState === "open" ? "256px" : sidebarState === "collapsed" ? "80px" : "0px"
   const mainMargin = sidebarState === "open" ? "pl-64" : sidebarState === "collapsed" ? "pl-20" : "pl-0"
 
+  // Ensure proper cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup function if needed
+    }
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-50" suppressHydrationWarning>
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 z-40 h-screen ${sidebarWidth} bg-white border-r transition-all duration-300 overflow-hidden`}>
+      <aside 
+        className={`fixed left-0 top-0 z-40 h-screen ${sidebarWidth} bg-white border-r transition-all duration-300 overflow-hidden`}
+        style={{ transitionProperty: 'width, transform' }}
+      >
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center border-b px-6 gap-3">
             <Image
@@ -63,6 +90,7 @@ export default function AdminLayout({
               width={32}
               height={32}
               className="object-contain flex-shrink-0"
+              priority={true}
             />
             {sidebarState === "open" && (
               <h1 className="text-xl font-bold text-primary whitespace-nowrap">SMMM Admin</h1>
@@ -90,17 +118,13 @@ export default function AdminLayout({
           </nav>
           <div className="border-t p-4">
             {sidebarState === "open" ? (
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/auth/signin">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Çıkış Yap
-                </Link>
+              <Button variant="outline" className="w-full" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Çıkış Yap
               </Button>
             ) : (
-              <Button variant="outline" size="icon" className="w-full" asChild>
-                <Link href="/auth/signin" title="Çıkış Yap">
-                  <LogOut className="h-4 w-4" />
-                </Link>
+              <Button variant="outline" size="icon" className="w-full" onClick={handleLogout} title="Çıkış Yap">
+                <LogOut className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -108,7 +132,7 @@ export default function AdminLayout({
       </aside>
 
       {/* Main Content */}
-      <main className={`${mainMargin} transition-all duration-300`}>
+      <main className={`${mainMargin} transition-all duration-300`} style={{ transitionProperty: 'padding-left' }}>
         <DashboardNavbar userType="admin" sidebarState={sidebarState} onToggleSidebar={handleToggleSidebar} sidebarWidth={sidebarWidthPx} />
         <div className="p-8 mt-16">
           <Breadcrumb userType="admin" />

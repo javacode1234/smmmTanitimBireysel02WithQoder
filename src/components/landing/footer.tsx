@@ -22,6 +22,20 @@ interface SiteSettings {
   youtubeUrl?: string
 }
 
+// Default values
+const DEFAULT_SETTINGS = {
+  siteName: "SMMM Ofisi",
+  siteDescription: "Profesyonel mali müşavirlik hizmetleri ile işletmenizin mali yönetiminde güvenilir çözüm ortağınız.",
+  phone: "+90 (212) 123 45 67",
+  email: "info@smmmofisi.com",
+  address: "İstanbul, Türkiye",
+  facebookUrl: "https://facebook.com",
+  twitterUrl: "https://twitter.com",
+  linkedinUrl: "https://linkedin.com",
+  instagramUrl: "https://instagram.com",
+  youtubeUrl: "https://youtube.com"
+}
+
 export function Footer() {
   const currentYear = new Date().getFullYear()
   const [privacyOpen, setPrivacyOpen] = useState(false)
@@ -38,11 +52,26 @@ export function Footer() {
       const response = await fetch('/api/content/site-settings')
       if (response.ok) {
         const data = await response.json()
-        setSiteSettings(data || {})
+        setSiteSettings(data)
+      } else {
+        // Use default settings if API call fails
+        setSiteSettings(DEFAULT_SETTINGS)
       }
     } catch (error) {
       console.error('Error fetching site settings:', error)
+      // Use default settings if API call fails
+      setSiteSettings(DEFAULT_SETTINGS)
     }
+  }
+
+  // Helper function to get value or default
+  const getValue = (key: keyof typeof DEFAULT_SETTINGS) => {
+    return siteSettings[key] || DEFAULT_SETTINGS[key]
+  }
+
+  // Helper function to check if social media link should be shown
+  const shouldShowSocialLink = (key: keyof typeof DEFAULT_SETTINGS) => {
+    return siteSettings[key] || DEFAULT_SETTINGS[key]
   }
 
   return (
@@ -56,7 +85,7 @@ export function Footer() {
                 {siteSettings.brandIcon ? (
                   <img
                     src={siteSettings.brandIcon}
-                    alt={siteSettings.siteName || "SMMM"}
+                    alt={getValue('siteName')}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -69,34 +98,34 @@ export function Footer() {
                   />
                 )}
               </div>
-              <h3 className="text-white font-bold text-xl">{siteSettings.siteName || "SMMM"}</h3>
+              <h3 className="text-white font-bold text-xl">{getValue('siteName')}</h3>
             </div>
             <p className="text-sm leading-relaxed mb-4">
-              {siteSettings.siteDescription || "Profesyonel mali müşavirlik hizmetleri ile işletmenizin mali yönetiminde güvenilir çözüm ortağınız."}
+              {getValue('siteDescription')}
             </p>
             <div className="flex space-x-3">
-              {siteSettings.facebookUrl && (
-                <a href={siteSettings.facebookUrl} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-blue-600 flex items-center justify-center transition-colors">
+              {shouldShowSocialLink('facebookUrl') && (
+                <a href={getValue('facebookUrl')} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-blue-600 flex items-center justify-center transition-colors">
                   <Facebook className="h-4 w-4" />
                 </a>
               )}
-              {siteSettings.twitterUrl && (
-                <a href={siteSettings.twitterUrl} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-blue-400 flex items-center justify-center transition-colors">
+              {shouldShowSocialLink('twitterUrl') && (
+                <a href={getValue('twitterUrl')} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-blue-400 flex items-center justify-center transition-colors">
                   <Twitter className="h-4 w-4" />
                 </a>
               )}
-              {siteSettings.linkedinUrl && (
-                <a href={siteSettings.linkedinUrl} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-blue-700 flex items-center justify-center transition-colors">
+              {shouldShowSocialLink('linkedinUrl') && (
+                <a href={getValue('linkedinUrl')} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-blue-700 flex items-center justify-center transition-colors">
                   <Linkedin className="h-4 w-4" />
                 </a>
               )}
-              {siteSettings.instagramUrl && (
-                <a href={siteSettings.instagramUrl} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-pink-600 flex items-center justify-center transition-colors">
+              {shouldShowSocialLink('instagramUrl') && (
+                <a href={getValue('instagramUrl')} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-pink-600 flex items-center justify-center transition-colors">
                   <Instagram className="h-4 w-4" />
                 </a>
               )}
-              {siteSettings.youtubeUrl && (
-                <a href={siteSettings.youtubeUrl} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-red-600 flex items-center justify-center transition-colors">
+              {shouldShowSocialLink('youtubeUrl') && (
+                <a href={getValue('youtubeUrl')} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-red-600 flex items-center justify-center transition-colors">
                   <Youtube className="h-4 w-4" />
                 </a>
               )}
@@ -134,39 +163,33 @@ export function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-4 text-lg">İletişim Bilgileri</h4>
             <ul className="space-y-4 text-sm">
-              {siteSettings.address && (
-                <li className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-white font-medium mb-1">Adres</p>
-                    <p className="leading-relaxed">
-                      {siteSettings.address}
-                    </p>
-                  </div>
-                </li>
-              )}
-              {siteSettings.phone && (
-                <li className="flex items-start gap-3">
-                  <Phone className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-white font-medium mb-1">Telefon</p>
-                    <a href={`tel:${siteSettings.phone.replace(/\s/g, '')}`} className="hover:text-white transition-colors">
-                      {siteSettings.phone}
-                    </a>
-                  </div>
-                </li>
-              )}
-              {siteSettings.email && (
-                <li className="flex items-start gap-3">
-                  <Mail className="h-5 w-5 text-purple-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-white font-medium mb-1">E-posta</p>
-                    <a href={`mailto:${siteSettings.email}`} className="hover:text-white transition-colors">
-                      {siteSettings.email}
-                    </a>
-                  </div>
-                </li>
-              )}
+              <li className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-white font-medium mb-1">Adres</p>
+                  <p className="leading-relaxed">
+                    {getValue('address')}
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <Phone className="h-5 w-5 text-green-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-white font-medium mb-1">Telefon</p>
+                  <a href={`tel:${getValue('phone').replace(/\s/g, '')}`} className="hover:text-white transition-colors">
+                    {getValue('phone')}
+                  </a>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <Mail className="h-5 w-5 text-purple-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-white font-medium mb-1">E-posta</p>
+                  <a href={`mailto:${getValue('email')}`} className="hover:text-white transition-colors">
+                    {getValue('email')}
+                  </a>
+                </div>
+              </li>
             </ul>
           </div>
         </div>
@@ -174,7 +197,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-slate-700 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
-            <p>&copy; {currentYear} {siteSettings.siteName || "SMMM"} - Tüm hakları saklıdır.</p>
+            <p>&copy; {currentYear} {getValue('siteName')} - Tüm hakları saklıdır.</p>
             <div className="flex gap-6">
               <button 
                 onClick={() => setPrivacyOpen(true)}

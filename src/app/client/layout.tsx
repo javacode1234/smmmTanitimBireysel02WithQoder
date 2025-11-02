@@ -45,6 +45,24 @@ export default function ClientLayout({
     }
   }
 
+  const handleLogout = () => {
+    try {
+      // Use a small delay to ensure any animations complete before navigation
+      setTimeout(() => {
+        // Use window.location.href for a full page reload to avoid React DOM reconciliation issues
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/signin'
+        }
+      }, 100)
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Fallback to direct navigation
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/signin'
+      }
+    }
+  }
+
   const sidebarWidth = sidebarState === "open" ? "w-64" : sidebarState === "collapsed" ? "w-20" : "w-0"
   const sidebarWidthPx = sidebarState === "open" ? "256px" : sidebarState === "collapsed" ? "80px" : "0px"
   const mainMargin = sidebarState === "open" ? "pl-64" : sidebarState === "collapsed" ? "pl-20" : "pl-0"
@@ -88,17 +106,13 @@ export default function ClientLayout({
           </nav>
           <div className="border-t p-4">
             {sidebarState === "open" ? (
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/auth/signin">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Çıkış Yap
-                </Link>
+              <Button variant="outline" className="w-full" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Çıkış Yap
               </Button>
             ) : (
-              <Button variant="outline" size="icon" className="w-full" asChild>
-                <Link href="/auth/signin" title="Çıkış Yap">
-                  <LogOut className="h-4 w-4" />
-                </Link>
+              <Button variant="outline" size="icon" className="w-full" onClick={handleLogout} title="Çıkış Yap">
+                <LogOut className="h-4 w-4" />
               </Button>
             )}
           </div>

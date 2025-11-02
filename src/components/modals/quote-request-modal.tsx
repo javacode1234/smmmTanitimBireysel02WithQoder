@@ -1,6 +1,6 @@
 "use client"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -73,7 +73,7 @@ export function QuoteRequestModal({ open, onOpenChange, packageType }: QuoteRequ
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto py-4">
+        <form id="quote-request-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
           {/* Name Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -171,26 +171,24 @@ export function QuoteRequestModal({ open, onOpenChange, packageType }: QuoteRequ
           </div>
         </form>
 
-        {/* Submit Button - Footer */}
-        <div className="flex gap-3 pt-4 border-t">
+        <DialogFooter>
           <Button 
             type="button" 
             variant="outline" 
             onClick={() => onOpenChange(false)}
-            className="flex-1"
             disabled={isSubmitting}
           >
             İptal
           </Button>
           <Button 
             type="submit" 
-            className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600"
+            className="bg-gradient-to-r from-blue-600 to-cyan-600"
             disabled={isSubmitting}
             form="quote-request-form"
           >
             {isSubmitting ? "Gönderiliyor..." : "Teklif Talebi Gönder"}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -34,8 +34,26 @@ export function SiteSettingsTab() {
     youtubeUrl: "",
   })
 
+  // Refs for file inputs to ensure proper cleanup
+  const faviconInputRef = useRef<HTMLInputElement>(null)
+  const brandIconInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     fetchSettings()
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      // Clear file input values
+      if (faviconInputRef.current) {
+        faviconInputRef.current.value = ''
+      }
+      if (brandIconInputRef.current) {
+        brandIconInputRef.current.value = ''
+      }
+      
+      // Reset state to prevent memory leaks
+      setMapModalOpen(false)
+    }
   }, [])
 
   const fetchSettings = async () => {
@@ -220,18 +238,27 @@ export function SiteSettingsTab() {
               <p className="text-xs text-muted-foreground">En iyi sonuç için 32x32 veya 64x64 piksel PNG/ICO kullanın</p>
               <div className="flex items-center gap-4">
                 {formData.favicon && (
-                  <img src={formData.favicon} alt="Favicon" className="h-12 w-12 rounded object-cover border" />
+                  <img 
+                    src={formData.favicon} 
+                    alt="Favicon" 
+                    className="h-12 w-12 rounded object-cover border" 
+                    onError={(e) => {
+                      // Handle broken image gracefully
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
                 )}
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => document.getElementById('favicon-upload')?.click()}
+                  onClick={() => faviconInputRef.current?.click()}
                 >
                   <Camera className="mr-2 h-4 w-4" />
                   {formData.favicon ? 'Değiştir' : 'Yükle'}
                 </Button>
                 <input
+                  ref={faviconInputRef}
                   id="favicon-upload"
                   type="file"
                   accept="image/png,image/x-icon,image/vnd.microsoft.icon"
@@ -246,18 +273,27 @@ export function SiteSettingsTab() {
               <p className="text-xs text-muted-foreground">En iyi sonuç için 32x32 veya 64x64 piksel PNG/ICO kullanın</p>
               <div className="flex items-center gap-4">
                 {formData.brandIcon && (
-                  <img src={formData.brandIcon} alt="Brand Icon" className="h-12 w-12 rounded object-cover border" />
+                  <img 
+                    src={formData.brandIcon} 
+                    alt="Brand Icon" 
+                    className="h-12 w-12 rounded object-cover border" 
+                    onError={(e) => {
+                      // Handle broken image gracefully
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
                 )}
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => document.getElementById('brand-icon-upload')?.click()}
+                  onClick={() => brandIconInputRef.current?.click()}
                 >
                   <Camera className="mr-2 h-4 w-4" />
                   {formData.brandIcon ? 'Değiştir' : 'Yükle'}
                 </Button>
                 <input
+                  ref={brandIconInputRef}
                   id="brand-icon-upload"
                   type="file"
                   accept="image/png,image/x-icon,image/vnd.microsoft.icon"
@@ -314,88 +350,97 @@ export function SiteSettingsTab() {
                     Nasıl Alınır?
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
                   <DialogHeader>
                     <DialogTitle>Google Maps Embed Linkini Nasıl Alırsınız?</DialogTitle>
                     <DialogDescription>
                       Aşağıdaki adımları takip edin
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">1</div>
-                        <div>
-                          <h3 className="font-semibold text-blue-900 mb-1">Google Maps'i Açın</h3>
-                          <p className="text-sm text-blue-800">
-                            <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="underline">https://www.google.com/maps</a> adresine gidin
-                          </p>
+                  <div className="flex-1 overflow-y-auto p-6">
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">1</div>
+                          <div>
+                            <h3 className="font-semibold text-blue-900 mb-1">Google Maps'i Açın</h3>
+                            <p className="text-sm text-blue-800">
+                              <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="underline">https://www.google.com/maps</a> adresine gidin
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">2</div>
-                        <div>
-                          <h3 className="font-semibold text-green-900 mb-1">Konumu Seçin</h3>
-                          <p className="text-sm text-green-800">İstediğiniz konuma gidin (arama yapın veya haritada tıklayın)</p>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">2</div>
+                          <div>
+                            <h3 className="font-semibold text-green-900 mb-1">Konumu Seçin</h3>
+                            <p className="text-sm text-green-800">İstediğiniz konuma gidin (arama yapın veya haritada tıklayın)</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">3</div>
-                        <div>
-                          <h3 className="font-semibold text-purple-900 mb-1">"Paylaş" Butonuna Tıklayın</h3>
-                          <p className="text-sm text-purple-800">Sol taraftaki yan panelde <strong>"Paylaş"</strong> veya <strong>"Share"</strong> butonunu bulun</p>
+                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">3</div>
+                          <div>
+                            <h3 className="font-semibold text-purple-900 mb-1">"Paylaş" Butonuna Tıklayın</h3>
+                            <p className="text-sm text-purple-800">Sol taraftaki yan panelde <strong>"Paylaş"</strong> veya <strong>"Share"</strong> butonunu bulun</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">4</div>
-                        <div>
-                          <h3 className="font-semibold text-orange-900 mb-1">"Harita Göm" Sekmesine Geçin</h3>
-                          <p className="text-sm text-orange-800"><strong>"Harita göm"</strong> veya <strong>"Embed a map"</strong> sekmesine tıklayın</p>
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">4</div>
+                          <div>
+                            <h3 className="font-semibold text-orange-900 mb-1">"Harita Göm" Sekmesine Geçin</h3>
+                            <p className="text-sm text-orange-800"><strong>"Harita göm"</strong> veya <strong>"Embed a map"</strong> sekmesine tıklayın</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">5</div>
-                        <div>
-                          <h3 className="font-semibold text-red-900 mb-1">Link'i Kopyalayın</h3>
-                          <p className="text-sm text-red-800 mb-2">HTML kodundaki <code className="bg-red-100 px-1 rounded">src="..."</code> içindeki linki kopyalayın</p>
-                          <p className="text-xs text-red-700"><strong>Örnek:</strong> <code className="bg-red-100 px-1 rounded text-[10px]">https://www.google.com/maps/embed?pb=...</code></p>
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">5</div>
+                          <div>
+                            <h3 className="font-semibold text-red-900 mb-1">Link'i Kopyalayın</h3>
+                            <p className="text-sm text-red-800 mb-2">HTML kodundaki <code className="bg-red-100 px-1 rounded">src="..."</code> içindeki linki kopyalayın</p>
+                            <p className="text-xs text-red-700"><strong>Örnek:</strong> <code className="bg-red-100 px-1 rounded text-[10px]">https://www.google.com/maps/embed?pb=...</code></p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {formData.mapEmbedUrl && (
-                      <div className="space-y-2">
-                        <Label>Harita Önizlemesi</Label>
-                        <div className="relative w-full h-[350px] bg-gray-100 rounded-lg overflow-hidden border-2">
-                          <iframe
-                            src={formData.mapEmbedUrl}
-                            width="100%"
-                            height="100%"
-                            style={{ border: 0 }}
-                            allowFullScreen
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            title="Map Preview"
-                          />
+                      {formData.mapEmbedUrl && (
+                        <div className="space-y-2">
+                          <Label>Harita Önizlemesi</Label>
+                          <div className="relative w-full h-[350px] bg-gray-100 rounded-lg overflow-hidden border-2">
+                            {/* Added key to force re-render when URL changes */}
+                            {formData.mapEmbedUrl && (
+                              <iframe
+                                key={formData.mapEmbedUrl}
+                                src={formData.mapEmbedUrl}
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0 }}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                title="Map Preview"
+                                onError={(e) => {
+                                  // Handle iframe loading errors
+                                  console.error('Map iframe failed to load')
+                                }}
+                              />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-
-                    <div className="flex justify-end pt-4 border-t">
-                      <Button onClick={() => setMapModalOpen(false)}>Kapat</Button>
+                      )}
                     </div>
+                  </div>
+                  <div className="flex justify-end p-6 border-t">
+                    <Button onClick={() => setMapModalOpen(false)}>Kapat</Button>
                   </div>
                 </DialogContent>
               </Dialog>

@@ -1,7 +1,7 @@
 "use client"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 
 interface TermsModalProps {
   open: boolean
@@ -11,7 +11,7 @@ interface TermsModalProps {
 export function TermsModal({ open, onOpenChange }: TermsModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
+      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             Kullanım Koşulları
@@ -20,7 +20,7 @@ export function TermsModal({ open, onOpenChange }: TermsModalProps) {
             Son Güncelleme: 28 Ekim 2024
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-[60vh] pr-4">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-6 text-sm">
             <section>
               <h3 className="font-semibold text-base mb-2 text-gray-900">1. Genel Hükümler</h3>
@@ -172,7 +172,10 @@ export function TermsModal({ open, onOpenChange }: TermsModalProps) {
               </div>
             </section>
           </div>
-        </ScrollArea>
+        </div>
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)}>Kapat</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

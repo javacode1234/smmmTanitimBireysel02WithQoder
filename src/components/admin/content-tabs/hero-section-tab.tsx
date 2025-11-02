@@ -15,7 +15,7 @@ const PAGE_SECTIONS = [
   { value: "#hero", label: "Ana Sayfa (En Üst)" },
   { value: "#services", label: "Hizmetlerimiz" },
   { value: "#about", label: "Hakkımızda" },
-  { value: "#clients", label: "Müşterilerimiz" },
+  { value: "#clients", label: "Kurumlar" },
   { value: "#testimonials", label: "Müşteri Yorumları" },
   { value: "#faq", label: "Sıkça Sorulan Sorular" },
   { value: "#contact", label: "İletişim" },

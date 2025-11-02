@@ -1,6 +1,6 @@
 "use client"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -90,7 +90,7 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto py-4">
+        <form id="career-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
           {/* Name Fields */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -276,27 +276,25 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
           </div>
         </form>
 
-        {/* Submit Button - Footer */}
-        <div className="flex gap-3 pt-4 border-t">
+        <DialogFooter>
           <Button 
             type="button" 
             variant="outline" 
             onClick={() => onOpenChange(false)}
-            className="flex-1"
             disabled={isSubmitting}
           >
             İptal
           </Button>
           <Button 
             type="submit" 
-            className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600"
+            className="bg-gradient-to-r from-blue-600 to-cyan-600"
             disabled={isSubmitting}
             form="career-form"
           >
             {isSubmitting ? "Gönderiliyor..." : "Başvuruyu Gönder"}
-        </Button>
-      </div>
-    </DialogContent>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
 
       {/* KVKK Modal */}
       <KVKKModal open={kvkkModalOpen} onOpenChange={setKvkkModalOpen} />

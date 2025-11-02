@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/landing/navbar"
 import { HeroSection } from "@/components/landing/hero-section"
-import { ClientsSection } from "@/components/landing/clients-section"
+import { InstitutionsSection } from "@/components/landing/institutions-section"
 import { AboutSection } from "@/components/landing/about-section"
 import { ServicesSection } from "@/components/landing/services-section"
 import { WorkflowSection } from "@/components/landing/workflow-section"
@@ -17,7 +17,7 @@ export default function HomePage() {
     <main className="min-h-screen">
       <Navbar />
       <HeroSection />
-      <ClientsSection />
+      <InstitutionsSection />
       <AboutSection />
       <ServicesSection />
       <WorkflowSection />

@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { DynamicFavicon } from "@/components/dynamic-favicon";
+import DomErrorBoundary from "@/components/dom-error-boundary";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,17 +24,19 @@ export default function RootLayout({
   return (
     <html lang="tr" suppressHydrationWarning>
       <head suppressHydrationWarning />
-      <body className={`${inter.className} antialiased`}>
-        <DynamicFavicon />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <Toaster />
-        </ThemeProvider>
+      <body className={`${inter.className} antialiased`} suppressHydrationWarning>
+        <DomErrorBoundary>
+          <DynamicFavicon />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </DomErrorBoundary>
       </body>
     </html>
   );

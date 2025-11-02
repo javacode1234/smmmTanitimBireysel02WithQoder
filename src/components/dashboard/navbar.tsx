@@ -105,8 +105,24 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
   }, [userType])
 
   const handleLogout = () => {
-    // TODO: Implement actual logout logic
-    router.push("/auth/signin")
+    try {
+      // Close the dropdown first to prevent DOM errors
+      setIsOpen(false)
+      
+      // Use a small delay to ensure dropdown is closed before navigation
+      setTimeout(() => {
+        // Use window.location.href for a full page reload to avoid React DOM reconciliation issues
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/signin'
+        }
+      }, 100)
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Fallback to direct navigation
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/signin'
+      }
+    }
   }
 
   const profileLink = userType === "admin" ? "/admin/profile" : "/client/profile"

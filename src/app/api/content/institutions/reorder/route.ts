@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error reordering client logos:', error)
+    console.error('Error reordering institutions:', error)
     return NextResponse.json(
       { error: 'Sıralama güncellenemedi' },
       { status: 500 }

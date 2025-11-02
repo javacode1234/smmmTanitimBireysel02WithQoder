@@ -116,37 +116,37 @@ export function Navbar() {
         {/* Mobile Menu */}
         {isOpen && (
           <div className="md:hidden py-4 space-y-4">
-            <Link href="/" className="block text-sm font-medium hover:text-primary transition-colors">
+            <Link href="/" className="block text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>
               Anasayfa
             </Link>
-            <Link href="#clients" className="block text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#clients" className="block text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>
               Kurumlar
             </Link>
-            <Link href="#about" className="block text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#about" className="block text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>
               Hakkımızda
             </Link>
-            <Link href="#services" className="block text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#services" className="block text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>
               Hizmetler
             </Link>
-            <Link href="#workflow" className="block text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#workflow" className="block text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>
               Süreç
             </Link>
-            <Link href="#pricing" className="block text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#pricing" className="block text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>
               Fiyatlandırma
             </Link>
-            <Link href="#testimonials" className="block text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#testimonials" className="block text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>
               Referanslarımız
             </Link>
-            <Link href="#team" className="block text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#team" className="block text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>
               Ekibimiz
             </Link>
-            <Link href="#faq" className="block text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#faq" className="block text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>
               SSS
             </Link>
-            <Link href="#contact" className="block text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#contact" className="block text-sm font-medium hover:text-primary transition-colors" onClick={() => setIsOpen(false)}>
               İletişim
             </Link>
-            <Link href="/auth/signin">
+            <Link href="/auth/signin" onClick={() => setIsOpen(false)}>
               <Button className="w-full">Giriş Yap</Button>
             </Link>
           </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import { SiteSettingsTab } from "@/components/admin/content-tabs/site-settings-tab"
 import { HeroSectionTab } from "@/components/admin/content-tabs/hero-section-tab"
-import { ClientsTab } from "@/components/admin/content-tabs/clients-tab"
+import { InstitutionsTab } from "@/components/admin/content-tabs/institutions-tab"
 import { AboutTab } from "@/components/admin/content-tabs/about-tab"
 import { ServicesTab } from "@/components/admin/content-tabs/services-tab"
 import { WorkflowTab } from "@/components/admin/content-tabs/workflow-tab"
@@ -28,6 +28,13 @@ import { FAQTab } from "@/components/admin/content-tabs/faq-tab"
 
 export default function ContentManagementPage() {
   const [activeTab, setActiveTab] = useState("site-settings")
+
+  // Ensure proper cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup function if needed
+    }
+  }, [])
 
   return (
     <div>
@@ -82,43 +89,43 @@ export default function ContentManagementPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="site-settings">
+        <TabsContent value="site-settings" key="site-settings">
           <SiteSettingsTab />
         </TabsContent>
 
-        <TabsContent value="hero">
+        <TabsContent value="hero" key="hero">
           <HeroSectionTab />
         </TabsContent>
 
-        <TabsContent value="clients">
-          <ClientsTab />
+        <TabsContent value="clients" key="clients">
+          <InstitutionsTab />
         </TabsContent>
 
-        <TabsContent value="about">
+        <TabsContent value="about" key="about">
           <AboutTab />
         </TabsContent>
 
-        <TabsContent value="services">
+        <TabsContent value="services" key="services">
           <ServicesTab />
         </TabsContent>
 
-        <TabsContent value="workflow">
+        <TabsContent value="workflow" key="workflow">
           <WorkflowTab />
         </TabsContent>
 
-        <TabsContent value="pricing">
+        <TabsContent value="pricing" key="pricing">
           <PricingTab />
         </TabsContent>
 
-        <TabsContent value="testimonials">
+        <TabsContent value="testimonials" key="testimonials">
           <TestimonialsTab />
         </TabsContent>
 
-        <TabsContent value="team">
+        <TabsContent value="team" key="team">
           <TeamTab />
         </TabsContent>
 
-        <TabsContent value="faq">
+        <TabsContent value="faq" key="faq">
           <FAQTab />
         </TabsContent>
       </Tabs>

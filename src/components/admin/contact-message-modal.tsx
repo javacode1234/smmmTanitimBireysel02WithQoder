@@ -6,6 +6,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -67,7 +68,7 @@ export function ContactMessageModal({ message, isOpen, onClose, onExportPDF }: C
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto py-4">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-6">
             {/* Status */}
             <div className="flex items-center justify-between gap-4">
@@ -153,8 +154,7 @@ export function ContactMessageModal({ message, isOpen, onClose, onExportPDF }: C
           </div>
         </div>
 
-        {/* Actions - Footer */}
-        <div className="flex gap-3 justify-end pt-4 border-t">
+        <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Kapat
           </Button>
@@ -162,7 +162,7 @@ export function ContactMessageModal({ message, isOpen, onClose, onExportPDF }: C
             <Download className="h-4 w-4 mr-2" />
             PDF İndir
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

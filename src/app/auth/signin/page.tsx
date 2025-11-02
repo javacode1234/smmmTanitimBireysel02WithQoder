@@ -53,7 +53,7 @@ export default function SignInPage() {
       // For now, simulate login
       await new Promise(resolve => setTimeout(resolve, 1000))
 
-      // Mock login based on user type
+      // Mock login based on user type using Next.js router for consistent navigation
       if (userType === "admin") {
         router.push("/admin")
       } else {

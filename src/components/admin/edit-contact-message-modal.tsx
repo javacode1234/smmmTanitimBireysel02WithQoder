@@ -6,6 +6,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -66,7 +67,7 @@ export function EditContactMessageModal({ message, isOpen, onClose, onStatusUpda
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto py-4">
+        <div className="flex-1 overflow-y-auto p-6">
           {/* Current Status */}
           <div>
             <Label className="text-sm font-medium text-muted-foreground mb-2">
@@ -134,23 +135,20 @@ export function EditContactMessageModal({ message, isOpen, onClose, onStatusUpda
           </div>
         </div>
 
-        {/* Actions - Footer */}
-        <div className="flex gap-3 pt-4 border-t">
+        <DialogFooter>
           <Button 
             variant="outline" 
             onClick={onClose}
-            className="flex-1"
           >
             İptal
           </Button>
           <Button 
             onClick={handleSave}
-            className="flex-1"
             disabled={selectedStatus === message.status}
           >
             Kaydet
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

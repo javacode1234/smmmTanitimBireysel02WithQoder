@@ -6,6 +6,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -76,10 +77,39 @@ export function JobApplicationModal({ application, isOpen, onClose, onExportPDF 
       const link = document.createElement('a')
       link.href = url
       link.download = application.cvFileName || 'cv.pdf'
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
+      
+      // Safely append, click, and remove the link
+      try {
+        if (document.body) {
+          document.body.appendChild(link)
+          link.click()
+          
+          // Use setTimeout to ensure click is processed before removal
+          setTimeout(() => {
+            try {
+              // Check if link still has a parent before removing
+              if (link && link.parentNode && link.parentNode.contains(link)) {
+                link.parentNode.removeChild(link)
+              } else if (link && typeof link.remove === 'function') {
+                link.remove()
+              }
+            } catch (removeError) {
+              console.warn('Error removing download link:', removeError)
+            }
+          }, 100)
+        }
+      } catch (error) {
+        console.warn('Error handling download:', error)
+      } finally {
+        // Revoke URL after a delay to ensure download starts
+        setTimeout(() => {
+          try {
+            window.URL.revokeObjectURL(url)
+          } catch (revokeError) {
+            console.warn('Error revoking URL:', revokeError)
+          }
+        }, 1000)
+      }
     } else if (application.cvFilePath) {
       // Legacy: Open CV file path in new tab
       window.open(application.cvFilePath, '_blank')
@@ -99,7 +129,7 @@ export function JobApplicationModal({ application, isOpen, onClose, onExportPDF 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto py-4">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-6">
             {/* Status */}
             <div className="flex items-center justify-between gap-4">
@@ -225,8 +255,7 @@ export function JobApplicationModal({ application, isOpen, onClose, onExportPDF 
           </div>
         </div>
 
-        {/* Actions - Footer */}
-        <div className="flex gap-3 justify-end pt-4 border-t">
+        <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Kapat
           </Button>
@@ -234,7 +263,7 @@ export function JobApplicationModal({ application, isOpen, onClose, onExportPDF 
             <Download className="h-4 w-4 mr-2" />
             PDF İndir
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

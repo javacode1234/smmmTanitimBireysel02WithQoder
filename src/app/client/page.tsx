@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Bell, CreditCard, Calendar } from "lucide-react"
+import { InstitutionLogoCarousel } from "@/components/client/client-logo-carousel"
 
 export default function ClientDashboard() {
   return (
@@ -72,7 +73,10 @@ export default function ClientDashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Client Logo Carousel */}
+      <InstitutionLogoCarousel />
+
+      <div className="grid gap-6 md:grid-cols-2 mt-8">
         <Card>
           <CardHeader>
             <CardTitle>Son Beyannameler</CardTitle>

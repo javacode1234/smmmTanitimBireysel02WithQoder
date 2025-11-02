@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,7 +24,14 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
-import { Camera, Edit, Trash2, Plus, Loader2, ArrowUp, ArrowDown, X } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Camera, Edit, Trash2, Plus, Loader2, ArrowUp, ArrowDown, X, Search } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
 
@@ -38,7 +45,7 @@ interface ClientLogo {
   order: number
 }
 
-export function ClientsTab() {
+export function InstitutionsTab() {
   const [items, setItems] = useState<ClientLogo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -55,6 +62,12 @@ export function ClientsTab() {
     isActive: true,
     order: 0,
   })
+  
+  // Pagination and filtering states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
 
   useEffect(() => {
     fetchItems()
@@ -63,7 +76,7 @@ export function ClientsTab() {
   const fetchItems = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/content/clients')
+      const response = await fetch('/api/content/institutions')
       if (response.ok) {
         const data = await response.json()
         setItems(data)
@@ -74,6 +87,42 @@ export function ClientsTab() {
       setIsLoading(false)
     }
   }
+
+  // Filter and paginate items
+  const filteredAndPaginatedItems = useMemo(() => {
+    // Filter items based on search term and status
+    const filtered = items.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      const matchesStatus = statusFilter === "all" || 
+                           (statusFilter === "active" && item.isActive) || 
+                           (statusFilter === "inactive" && !item.isActive)
+      return matchesSearch && matchesStatus
+    })
+    
+    // Calculate pagination
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return filtered.slice(startIndex, endIndex)
+  }, [items, currentPage, itemsPerPage, searchTerm, statusFilter])
+
+  // Calculate total pages
+  const totalPages = useMemo(() => {
+    const filtered = items.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      const matchesStatus = statusFilter === "all" || 
+                           (statusFilter === "active" && item.isActive) || 
+                           (statusFilter === "inactive" && !item.isActive)
+      return matchesSearch && matchesStatus
+    })
+    return Math.ceil(filtered.length / itemsPerPage)
+  }, [items, searchTerm, statusFilter, itemsPerPage])
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter, itemsPerPage])
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -122,7 +171,7 @@ export function ClientsTab() {
 
     setIsSaving(true)
     try {
-      const url = editingItem ? `/api/content/clients?id=${editingItem.id}` : '/api/content/clients'
+      const url = editingItem ? `/api/content/institutions?id=${editingItem.id}` : '/api/content/institutions'
       const method = editingItem ? 'PATCH' : 'POST'
 
       const response = await fetch(url, {
@@ -149,7 +198,7 @@ export function ClientsTab() {
   const handleDelete = async (id: string) => {
     setIsDeleting(true)
     try {
-      const response = await fetch(`/api/content/clients?id=${id}`, {
+      const response = await fetch(`/api/content/institutions?id=${id}`, {
         method: 'DELETE',
       })
 
@@ -162,21 +211,16 @@ export function ClientsTab() {
         toast.error('Silme işlemi başarısız oldu')
       }
     } catch (error) {
-      console.error('Error deleting client logo:', error)
+      console.error('Error deleting institution logo:', error)
       toast.error('Silme işlemi başarısız oldu')
     } finally {
       setIsDeleting(false)
     }
   }
 
-  const confirmDelete = (item: ClientLogo) => {
-    setItemToDelete(item)
-    setIsDeleteDialogOpen(true)
-  }
-
   const handleToggleActive = async (item: ClientLogo) => {
     try {
-      const response = await fetch(`/api/content/clients?id=${item.id}`, {
+      const response = await fetch(`/api/content/institutions?id=${item.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !item.isActive }),
@@ -192,28 +236,47 @@ export function ClientsTab() {
     }
   }
 
-  const handleReorder = async (item: ClientLogo, direction: 'up' | 'down') => {
+  const moveItem = (item: ClientLogo, direction: 'up' | 'down') => {
     const currentIndex = items.findIndex(i => i.id === item.id)
-    if (direction === 'up' && currentIndex === 0) return
-    if (direction === 'down' && currentIndex === items.length - 1) return
+    if (currentIndex === -1) return
 
+    let newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+    // Boundary checks
+    if (newIndex < 0 || newIndex >= items.length) return
+
+    // Create a new array with items in the correct order
     const newItems = [...items]
-    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
-    ;[newItems[currentIndex], newItems[swapIndex]] = [newItems[swapIndex], newItems[currentIndex]]
+    // Remove item from current position
+    const [movedItem] = newItems.splice(currentIndex, 1)
+    // Insert at new position
+    newItems.splice(newIndex, 0, movedItem)
 
-    setItems(newItems)
+    // Update order property for all items
+    const itemsWithNewOrder = newItems.map((item, index) => ({
+      ...item,
+      order: index
+    }))
 
+    handleReorder(itemsWithNewOrder)
+  }
+
+  const handleReorder = async (newItems: ClientLogo[]) => {
     try {
-      await fetch('/api/content/clients/reorder', {
+      const response = await fetch('/api/content/institutions/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: newItems.map((i, idx) => ({ id: i.id, order: idx })) }),
+        body: JSON.stringify({ items: newItems }),
       })
-      toast.success('Sıralama güncellendi')
+
+      if (response.ok) {
+        setItems(newItems)
+        toast.success('Sıralama güncellendi')
+      } else {
+        toast.error('Sıralama güncellenemedi')
+      }
     } catch (error) {
-      console.error('Error reordering:', error)
-      toast.error('Sıralama güncellenemedi')
-      fetchItems()
+      console.error('Error reordering institutions:', error)
+      toast.error('Sıralama güncellenirken hata oluştu')
     }
   }
 
@@ -243,6 +306,43 @@ export function ClientsTab() {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Filters and Controls */}
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Kurum adı veya açıklama ara..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={(value: "all" | "active" | "inactive") => setStatusFilter(value)}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Durum" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tümü</SelectItem>
+                  <SelectItem value="active">Aktif</SelectItem>
+                  <SelectItem value="inactive">Pasif</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Sayfa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 / sayfa</SelectItem>
+                  <SelectItem value="10">10 / sayfa</SelectItem>
+                  <SelectItem value="20">20 / sayfa</SelectItem>
+                  <SelectItem value="50">50 / sayfa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Table */}
           <Table>
             <TableHeader>
               <TableRow>
@@ -255,104 +355,170 @@ export function ClientsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.length === 0 ? (
+              {filteredAndPaginatedItems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    Henüz kurum logosu eklenmemiş
+                    {searchTerm || statusFilter !== "all" 
+                      ? "Arama kriterlerine uygun sonuç bulunamadı" 
+                      : "Henüz kurum logosu eklenmemiş"}
                   </TableCell>
                 </TableRow>
               ) : (
-                items.map((item, index) => (
-                  <TableRow key={item.id} className={!item.isActive ? 'opacity-50' : ''}>
-                    <TableCell>
-                      <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center p-2 border">
-                        {item.logo && (
-                          <img
-                            src={item.logo}
-                            alt={item.name}
-                            className="max-w-full max-h-full object-contain"
-                          />
+                filteredAndPaginatedItems.map((item, index) => {
+                  // Calculate the actual index in the full items array for reordering
+                  const actualIndex = items.findIndex(i => i.id === item.id)
+                  return (
+                    <TableRow key={item.id} className={!item.isActive ? 'opacity-50' : ''}>
+                      <TableCell>
+                        <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center p-2 border">
+                          {item.logo && (
+                            <img
+                              src={item.logo}
+                              alt={item.name}
+                              className="max-w-full max-h-full object-contain"
+                            />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>
+                        {item.description ? (
+                          <span className="text-sm text-muted-foreground line-clamp-2" title={item.description}>
+                            {item.description}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">-</span>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>
-                      {item.description ? (
-                        <span className="text-sm text-muted-foreground line-clamp-2" title={item.description}>
-                          {item.description}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground italic">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {item.url ? (
-                        <a 
-                          href={item.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline"
+                      </TableCell>
+                      <TableCell>
+                        {item.url ? (
+                          <a 
+                            href={item.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline"
+                          >
+                            {new URL(item.url).hostname}
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={item.isActive ? "default" : "secondary"}
+                          className="cursor-pointer"
+                          onClick={() => handleToggleActive(item)}
                         >
-                          {new URL(item.url).hostname}
-                        </a>
-                      ) : (
-                        <span className="text-xs text-muted-foreground italic">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={item.isActive ? "default" : "secondary"}
-                        className="cursor-pointer"
-                        onClick={() => handleToggleActive(item)}
-                      >
-                        {item.isActive ? "Aktif" : "Pasif"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleReorder(item, 'up')}
-                          disabled={index === 0}
-                          title="Yukarı taşı"
-                        >
-                          <ArrowUp className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleReorder(item, 'down')}
-                          disabled={index === items.length - 1}
-                          title="Aşağı taşı"
-                        >
-                          <ArrowDown className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleOpenModal(item)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => confirmDelete(item)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                          {item.isActive ? "Aktif" : "Pasif"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => moveItem(item, 'up')}
+                            disabled={actualIndex === 0}
+                            title="Yukarı taşı"
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => moveItem(item, 'down')}
+                            disabled={actualIndex === items.length - 1}
+                            title="Aşağı taşı"
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleOpenModal(item)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDelete(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
               )}
             </TableBody>
           </Table>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                Toplam {items.length} kurum - Sayfa {currentPage} / {totalPages}
+              </div>
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Önceki
+                </Button>
+                
+                {/* Page numbers */}
+                {[...Array(totalPages)].map((_, i) => {
+                  const pageNumber = i + 1
+                  // Show first, last, current, and nearby pages
+                  if (
+                    pageNumber === 1 ||
+                    pageNumber === totalPages ||
+                    (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                  ) {
+                    return (
+                      <Button
+                        key={pageNumber}
+                        variant={currentPage === pageNumber ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNumber)}
+                        className={currentPage === pageNumber ? "bg-blue-600 text-white" : ""}
+                      >
+                        {pageNumber}
+                      </Button>
+                    )
+                  }
+                  // Show ellipsis for gaps
+                  if (pageNumber === currentPage - 2 || pageNumber === currentPage + 2) {
+                    return (
+                      <span key={pageNumber} className="px-2 py-1 text-muted-foreground">
+                        ...
+                      </span>
+                    )
+                  }
+                  return null
+                })}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Sonraki
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
