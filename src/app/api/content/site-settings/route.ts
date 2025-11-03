@@ -17,39 +17,25 @@ const DEFAULT_SETTINGS = {
 
 export async function GET() {
   try {
-    let settings = await prisma.siteSettings.findFirst()
+    const settings = await prisma.siteSettings.findFirst()
     
-    // Create default settings if none exist
+    // Kayıt yoksa null dön (otomatik oluşturma)
     if (!settings) {
-      settings = await prisma.siteSettings.create({
-        data: DEFAULT_SETTINGS,
-      })
+      return NextResponse.json(null)
     }
 
-    // Return settings with defaults for empty fields
-    const responseSettings = {
-      ...settings,
-      siteName: settings.siteName || DEFAULT_SETTINGS.siteName,
-      siteDescription: settings.siteDescription || DEFAULT_SETTINGS.siteDescription,
-      phone: settings.phone || DEFAULT_SETTINGS.phone,
-      email: settings.email || DEFAULT_SETTINGS.email,
-      address: settings.address || DEFAULT_SETTINGS.address,
-      facebookUrl: settings.facebookUrl || DEFAULT_SETTINGS.facebookUrl,
-      twitterUrl: settings.twitterUrl || DEFAULT_SETTINGS.twitterUrl,
-      linkedinUrl: settings.linkedinUrl || DEFAULT_SETTINGS.linkedinUrl,
-      instagramUrl: settings.instagramUrl || DEFAULT_SETTINGS.instagramUrl,
-      youtubeUrl: settings.youtubeUrl || DEFAULT_SETTINGS.youtubeUrl,
-    }
-
-    return NextResponse.json(responseSettings)
+    // Kayıt varsa dön
+    return NextResponse.json(settings)
   } catch (error: any) {
     console.error('Error fetching site settings:', error)
-    // Handle missing table (P2021) - return default settings
+    // Handle missing table (P2021)
     if (error.code === 'P2021' || error.message?.includes('does not exist')) {
-      return NextResponse.json(DEFAULT_SETTINGS)
+      return NextResponse.json(null)
     }
-    // Return default settings if there's an error
-    return NextResponse.json(DEFAULT_SETTINGS)
+    return NextResponse.json(
+      { error: 'Site ayarları yüklenemedi' },
+      { status: 500 }
+    )
   }
 }
 

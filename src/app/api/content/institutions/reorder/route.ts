@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     // Update all items with new order
     await Promise.all(
       items.map((item: { id: string; order: number }) =>
-        prisma.clientLogo.update({
+        prisma.institutionItem.update({
           where: { id: item.id },
           data: { order: item.order },
         })

@@ -199,17 +199,32 @@ model HeroSection {
   updatedAt   DateTime @updatedAt
 }
 
-// Clients Section (Logos)
-model ClientLogo {
-  id          String   @id @default(cuid())
+// Institutions Section
+model InstitutionsSection {
+  id          String              @id @default(cuid())
+  title       String              @default("İş Birliği Yaptığımız Kurumlar")
+  paragraph   String?             @db.Text
+  items       InstitutionItem[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@map("institutions_section")
+}
+
+model InstitutionItem {
+  id          String              @id @default(cuid())
+  sectionId   String
   name        String
-  description String?  @db.Text
+  description String?             @db.Text
   url         String?
-  logo        String   @db.LongText // Base64
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  logo        String              @db.LongText // Base64
+  isActive    Boolean             @default(true)
+  order       Int                 @default(0)
+  section     InstitutionsSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@map("institutions_section_items")
 }
 
 // About Section

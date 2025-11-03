@@ -37,7 +37,6 @@ const DEFAULT_HERO_DATA = {
 export function HeroSectionTab() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [isResetting, setIsResetting] = useState(false)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [heroId, setHeroId] = useState<string | null>(null)
   const [selectedSection, setSelectedSection] = useState<string>("#services")
@@ -174,54 +173,28 @@ export function HeroSectionTab() {
     }
   }
 
-  // Reset to default values
-  const handleReset = async () => {
-    setIsResetting(true)
-    try {
-      // 1. Database'i sil
-      const deleteResponse = await fetch('/api/content/hero/reset', {
-        method: 'DELETE',
-      })
-
-      if (!deleteResponse.ok) {
-        toast.error('Sıfırlama işlemi başarısız oldu.')
-        return
-      }
-
-      // 2. Varsayılan değerleri database'e kaydet (Landing page için)
-      const saveResponse = await fetch('/api/content/hero', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...DEFAULT_HERO_DATA,
-          isActive: true,
-          order: 0
-        })
-      })
-
-      if (saveResponse.ok) {
-        const savedData = await saveResponse.json()
-        setHeroId(savedData.id)
-        toast.success('Hero bölümü varsayılan değerlere sıfırlandı.')
-        // Reload hero data
-        await fetchHeroData()
-        setSelectedSection("#services")
-        setCustomUrl("")
-      } else {
-        toast.error('Varsayılan değerler kaydedilemedi.')
-      }
-    } catch (error) {
-      console.error('Error resetting hero:', error)
-      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.')
-    } finally {
-      setIsResetting(false)
-      setIsResetDialogOpen(false)
-    }
+  // Reset to default values (state only - no database change)
+  const handleReset = () => {
+    // Form'a default değerleri yükle
+    setFormData(DEFAULT_HERO_DATA)
+    setHeroId(null)
+    setIsDatabaseEmpty(true)
+    setSelectedSection("#services")
+    setCustomUrl("")
+    
+    toast.success('Varsayılan değerlere sıfırlandı (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
+    setIsResetDialogOpen(false)
   }
 
   const saveDefaultsToDatabase = async () => {
     setIsSavingDefaults(true)
     try {
+      // 1. Database'i temizle
+      await fetch('/api/content/hero/reset', {
+        method: 'DELETE',
+      })
+
+      // 2. Varsayılan değerleri kaydet
       const payload = {
         ...DEFAULT_HERO_DATA,
         isActive: true,
@@ -237,6 +210,7 @@ export function HeroSectionTab() {
       if (response.ok) {
         const savedData = await response.json()
         setHeroId(savedData.id)
+        setIsDatabaseEmpty(false)
         toast.success('Varsayılan değerler veritabanına kaydedildi!')
         await fetchHeroData()
       } else {
@@ -391,20 +365,11 @@ export function HeroSectionTab() {
         <div className="flex items-center gap-4">
           <Button 
             onClick={() => setIsResetDialogOpen(true)} 
-            disabled={isResetting}
             variant="outline"
+            className="border-amber-600 text-amber-600 hover:bg-amber-50"
           >
-            {isResetting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sıfırlanıyor...
-              </>
-            ) : (
-              <>
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Varsayılan Değerlere Sıfırla
-              </>
-            )}
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Varsayılan Değerlere Sıfırla
           </Button>
           
           {isDatabaseEmpty && (
@@ -412,6 +377,7 @@ export function HeroSectionTab() {
               onClick={saveDefaultsToDatabase} 
               disabled={isSavingDefaults}
               variant="default"
+              className={`bg-blue-600 hover:bg-blue-700 ${!isDatabaseEmpty ? 'opacity-50' : ''}`}
             >
               {isSavingDefaults ? (
                 <>
@@ -427,9 +393,10 @@ export function HeroSectionTab() {
             </Button>
           )}
         </div>
-        <Button onClick={handleSave} disabled={isSaving} size="lg">
+        <Button onClick={handleSave} disabled={isSaving} size="lg" className="bg-green-600 hover:bg-green-700">
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Kaydet
+          <Save className="mr-2 h-4 w-4" />
+          Tüm Değişiklikleri Kaydet
         </Button>
       </div>
     </div>

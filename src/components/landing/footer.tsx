@@ -53,7 +53,12 @@ export function Footer() {
       const response = await fetch('/api/content/site-settings')
       if (response.ok) {
         const data = await response.json()
-        setSiteSettings(data)
+        // null veya boş data için default kullan
+        if (data && data.id) {
+          setSiteSettings(data)
+        } else {
+          setSiteSettings(DEFAULT_SETTINGS)
+        }
       } else {
         // Use default settings if API call fails
         setSiteSettings(DEFAULT_SETTINGS)

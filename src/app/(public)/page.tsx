@@ -1,3 +1,6 @@
+"use client"
+"use client"
+
 import { Navbar } from "@/components/landing/navbar"
 import { HeroSection } from "@/components/landing/hero-section"
 import { InstitutionsSection } from "@/components/landing/institutions-section"

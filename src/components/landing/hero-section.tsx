@@ -6,7 +6,6 @@ import { motion } from "framer-motion"
 import { ArrowRight, TrendingUp } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
 
 interface HeroData {
   id: string
@@ -19,11 +18,8 @@ interface HeroData {
 }
 
 export function HeroSection() {
-  const pathname = usePathname()
-  const router = useRouter()
   const [heroData, setHeroData] = useState<HeroData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isNavigating, setIsNavigating] = useState(false)
   const scrollingRef = useRef(false)
 
   useEffect(() => {
@@ -53,48 +49,35 @@ export function HeroSection() {
   const buttonUrl = heroData?.buttonUrl || "#services"
   const imageUrl = heroData?.image || "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1200&auto=format&fit=crop"
 
-  // Handle button click for both anchor links and page navigation
-  const handleButtonClick = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
-    // If it's an anchor link
-    if (url.startsWith('#')) {
-      if (scrollingRef.current) {
-        e.preventDefault()
-        return
-      }
-      
+  // Handle button click ONLY for anchor links (not page navigation)
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+    // Only handle anchor links
+    if (!url.startsWith('#')) {
+      return // Let Link handle page navigation
+    }
+    
+    if (scrollingRef.current) {
       e.preventDefault()
-      scrollingRef.current = true
+      return
+    }
+    
+    e.preventDefault()
+    scrollingRef.current = true
 
-      const targetId = url.substring(1)
-      const targetElement = document.getElementById(targetId)
+    const targetId = url.substring(1)
+    const targetElement = document.getElementById(targetId)
+    
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
       
-      if (targetElement) {
-        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        setTimeout(() => {
+      // Use requestAnimationFrame instead of setTimeout
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
           scrollingRef.current = false
-        }, 1000)
-      } else {
-        scrollingRef.current = false
-      }
-    }
-    // If navigating to same page (e.g., already on /auth/signin)
-    else if (pathname === url) {
-      e.preventDefault()
-    }
-    // For external navigation (like /auth/signin)
-    else if (!url.startsWith('#')) {
-      if (isNavigating) {
-        e.preventDefault()
-        return
-      }
-      
-      e.preventDefault()
-      setIsNavigating(true)
-      
-      // Add delay to ensure Framer Motion animations complete
-      setTimeout(() => {
-        router.push(url)
-      }, 150)
+        })
+      })
+    } else {
+      scrollingRef.current = false
     }
   }
 
@@ -120,22 +103,21 @@ export function HeroSection() {
               {subtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-2.5">
-              <Button size="sm" className="text-sm shadow-lg hover:shadow-xl transition-shadow w-full sm:w-auto" asChild>
-                <Link 
-                  href={buttonUrl}
-                  onClick={(e) => handleButtonClick(e, buttonUrl)}
-                >
-                  {buttonText} <ArrowRight className="ml-2 h-3.5 w-3.5" />
-                </Link>
-              </Button>
-              <Button size="sm" variant="outline" className="text-sm border-2 w-full sm:w-auto" asChild>
-                <Link 
-                  href="#contact"
-                  onClick={(e) => handleButtonClick(e, '#contact')}
-                >
-                  Daha Fazla Bilgi
-                </Link>
-              </Button>
+              <Link 
+                href={buttonUrl}
+                prefetch={false}
+                onClick={(e) => handleAnchorClick(e, buttonUrl)}
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 shadow-lg hover:shadow-xl transition-shadow w-full sm:w-auto"
+              >
+                {buttonText} <ArrowRight className="ml-2 h-3.5 w-3.5" />
+              </Link>
+              <Link 
+                href="#contact"
+                onClick={(e) => handleAnchorClick(e, '#contact')}
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 w-full sm:w-auto"
+              >
+                Daha Fazla Bilgi
+              </Link>
             </div>
             
             {/* Stats */}

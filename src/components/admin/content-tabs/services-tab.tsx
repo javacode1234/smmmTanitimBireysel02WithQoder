@@ -199,14 +199,12 @@ export function ServicesTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isResetting, setIsResetting] = useState(false)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [featureInput, setFeatureInput] = useState("")
   const [editingValue, setEditingValue] = useState<any>(null)
   const [isValueDialogOpen, setIsValueDialogOpen] = useState(false)
   const [valueToDelete, setValueToDelete] = useState<any>(null)
   const [isDeleteValueDialogOpen, setIsDeleteValueDialogOpen] = useState(false)
-  const [hasChanges, setHasChanges] = useState(false)
   const [valueSearchTerm, setValueSearchTerm] = useState("")
   const [valueCurrentPage, setValueCurrentPage] = useState(1)
   const [valueItemsPerPage, setValueItemsPerPage] = useState(5)
@@ -231,8 +229,8 @@ export function ServicesTab() {
       const response = await fetch('/api/content/services/section')
       if (response.ok) {
         const data = await response.json()
-        // Sadece database'den gelen gerçek veriler varsa state'i güncelle
-        if (data && Object.keys(data).length > 0) {
+        // Database'den gelen gerçek veriler varsa kullan, yoksa default'ları kullan
+        if (data && data.id) {
           setSectionData({
             title: data.title || DEFAULT_SECTION_DATA.title,
             paragraph: data.paragraph || DEFAULT_SECTION_DATA.paragraph,
@@ -241,7 +239,13 @@ export function ServicesTab() {
             footerSignature: data.footerSignature || DEFAULT_SECTION_DATA.footerSignature,
             values: data.values && data.values.length > 0 ? data.values : DEFAULT_SECTION_DATA.values
           })
+        } else {
+          // Database boş - default'ları kullan
+          setSectionData(DEFAULT_SECTION_DATA)
         }
+      } else {
+        // API hatası - default'ları kullan
+        setSectionData(DEFAULT_SECTION_DATA)
       }
     } catch (error) {
       console.error('Error fetching section data:', error)
@@ -328,9 +332,10 @@ export function ServicesTab() {
       })
 
       if (sectionResponse.ok) {
+        const savedData = await sectionResponse.json()
         console.log('All changes saved successfully!')
         toast.success('Tüm değişiklikler başarıyla kaydedildi!')
-        setHasChanges(false)
+        setIsDatabaseEmpty(false)
         // Fresh data çek
         await fetchServices()
         await fetchSectionData()
@@ -399,7 +404,7 @@ export function ServicesTab() {
       }
 
       toast.success('Varsayılan değerler veritabanına kaydedildi!')
-      setHasChanges(false)
+      setIsDatabaseEmpty(false)
       
       // Fresh data çek
       await fetchServices()
@@ -419,17 +424,29 @@ export function ServicesTab() {
       if (response.ok) {
         const data = await response.json()
         console.log('Services data:', data) // Debug
+        
         // Eğer gerçek veri varsa kullan, yoksa default'ları kullan
         if (data && data.length > 0) {
+          // Check if all services are defaults (id starts with 'default-')
+          const allDefaults = data.every((s: any) => s.id?.startsWith('default-'))
+          
           const parsedData = data.map((service: any) => ({
             ...service,
             features: typeof service.features === 'string' 
               ? JSON.parse(service.features) 
               : service.features || []
           }))
+          
           setServices(parsedData)
-          setIsDatabaseEmpty(false)
-          console.log('Database NOT empty - count:', data.length)
+          
+          // If all services are defaults, database is considered empty
+          if (allDefaults) {
+            setIsDatabaseEmpty(true)
+            console.log('Database IS empty - all services are defaults')
+          } else {
+            setIsDatabaseEmpty(false)
+            console.log('Database NOT empty - count:', data.length)
+          }
         } else {
           setServices(DEFAULT_SERVICES)
           setIsDatabaseEmpty(true) // Database boş
@@ -516,70 +533,25 @@ export function ServicesTab() {
       toast.success('Yeni hizmet eklendi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     }
     
-    setHasChanges(true)
     setIsDialogOpen(false)
   }
 
   const handleDelete = async (id: string) => {
     // Sadece local state'ten sil, database'den silme
     setServices(services.filter(s => s.id !== id))
-    setHasChanges(true)
     toast.success('Hizmet silindi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     setIsDeleteDialogOpen(false)
     setServiceToDelete(null)
   }
 
-  const handleReset = async () => {
-    setIsResetting(true)
-    try {
-      // 1. Database'i sil
-      const deleteResponse = await fetch('/api/content/services/reset', {
-        method: 'DELETE',
-      })
-
-      if (!deleteResponse.ok) {
-        toast.error('Sıfırlama işlemi başarısız oldu.')
-        return
-      }
-
-      // 2. Varsayılan değerleri database'e kaydet (Landing page için)
-      // Hizmetleri kaydet
-      for (let i = 0; i < DEFAULT_SERVICES.length; i++) {
-        const service = DEFAULT_SERVICES[i]
-        await fetch('/api/content/services', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            icon: service.icon,
-            title: service.title,
-            description: service.description,
-            features: service.features,
-            color: service.color,
-            isActive: service.isActive,
-            order: i
-          })
-        })
-      }
-
-      // Section data'yı kaydet
-      await fetch('/api/content/services/section', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(DEFAULT_SECTION_DATA)
-      })
-
-      toast.success('Hizmetler bölümü varsayılan değerlere sıfırlandı.')
-      
-      // 3. Verileri yeniden yükle
-      await fetchServices()
-      await fetchSectionData()
-    } catch (error) {
-      console.error('Error resetting services:', error)
-      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.')
-    } finally {
-      setIsResetting(false)
-      setIsResetDialogOpen(false)
-    }
+  const handleReset = () => {
+    // Sadece local state'i varsayılan değerlere sıfırla, database'e dokunma
+    setServices(DEFAULT_SERVICES)
+    setSectionData(DEFAULT_SECTION_DATA)
+    setIsDatabaseEmpty(true)
+    
+    toast.success('Varsayılan değerlere sıfırlandı (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
+    setIsResetDialogOpen(false)
   }
 
   const moveService = (service: Service, direction: 'up' | 'down') => {
@@ -604,7 +576,6 @@ export function ServicesTab() {
   const handleReorder = async (newServices: Service[]) => {
     // Sadece local state'i güncelle
     setServices(newServices)
-    setHasChanges(true)
     toast.success('Sıralama güncellendi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
   }
 
@@ -655,14 +626,12 @@ export function ServicesTab() {
         v.id === editingValue.id ? { ...editingValue } : v
       )
       setSectionData({ ...sectionData, values: updatedValues })
-      setHasChanges(true)
       toast.success("Değer güncellendi")
     } else {
       setSectionData({
         ...sectionData,
         values: [...sectionData.values, { ...editingValue }]
       })
-      setHasChanges(true)
       toast.success("Yeni değer eklendi")
     }
 
@@ -681,7 +650,6 @@ export function ServicesTab() {
         ...sectionData,
         values: sectionData.values.filter((v: any) => v.id !== valueToDelete.id)
       })
-      setHasChanges(true)
       toast.success("Değer silindi")
     }
     setIsDeleteValueDialogOpen(false)
@@ -713,7 +681,6 @@ export function ServicesTab() {
                 value={sectionData.title}
                 onChange={(e) => {
                   setSectionData({ ...sectionData, title: e.target.value })
-                  setHasChanges(true)
                 }}
                 placeholder="Hizmetlerimiz"
               />
@@ -724,7 +691,6 @@ export function ServicesTab() {
                 value={sectionData.paragraph || ""}
                 onChange={(e) => {
                   setSectionData({ ...sectionData, paragraph: e.target.value })
-                  setHasChanges(true)
                 }}
                 placeholder="Hizmetler bölümü açıklaması"
                 rows={3}
@@ -810,8 +776,10 @@ export function ServicesTab() {
                       </TableCell>
                       <TableCell className="font-medium">{service.title}</TableCell>
                       <TableCell>
-                        <span className="text-sm text-muted-foreground line-clamp-2">
-                          {service.description}
+                        <span className="text-sm text-muted-foreground" title={service.description}>
+                          {service.description.length > 80 
+                            ? `${service.description.substring(0, 80)}...` 
+                            : service.description}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -822,9 +790,9 @@ export function ServicesTab() {
                       <TableCell>
                         <span className="text-sm">
                           {service.isActive ? (
-                            <Badge variant="default">Aktif</Badge>
+                            <Badge className="bg-green-100 text-green-700 border-green-300">Aktif</Badge>
                           ) : (
-                            <Badge variant="secondary">Pasif</Badge>
+                            <Badge className="bg-amber-100 text-amber-700 border-amber-300">Pasif</Badge>
                           )}
                         </span>
                       </TableCell>
@@ -935,7 +903,6 @@ export function ServicesTab() {
                 value={sectionData.valuesTitle || ""}
                 onChange={(e) => {
                   setSectionData({ ...sectionData, valuesTitle: e.target.value })
-                  setHasChanges(true)
                 }}
                 placeholder="Hizmet Değerlerimiz"
               />
@@ -946,7 +913,6 @@ export function ServicesTab() {
                 value={sectionData.footerText || ""}
                 onChange={(e) => {
                   setSectionData({ ...sectionData, footerText: e.target.value })
-                  setHasChanges(true)
                 }}
                 placeholder="Alt metin"
                 rows={2}
@@ -960,7 +926,6 @@ export function ServicesTab() {
               value={sectionData.footerSignature || ""}
               onChange={(e) => {
                 setSectionData({ ...sectionData, footerSignature: e.target.value })
-                setHasChanges(true)
               }}
               placeholder="SMMM Ekibi"
             />
@@ -1042,9 +1007,9 @@ export function ServicesTab() {
                         <TableCell>
                           <span className="text-sm">
                             {value.isActive ? (
-                              <Badge variant="default">Aktif</Badge>
+                              <Badge className="bg-green-100 text-green-700 border-green-300">Aktif</Badge>
                             ) : (
-                              <Badge variant="secondary">Pasif</Badge>
+                              <Badge className="bg-amber-100 text-amber-700 border-amber-300">Pasif</Badge>
                             )}
                           </span>
                         </TableCell>
@@ -1131,51 +1096,20 @@ export function ServicesTab() {
         <div className="flex items-center gap-4">
           <Button 
             onClick={() => setIsResetDialogOpen(true)} 
-            disabled={isResetting}
             variant="outline"
+            className="border-amber-600 text-amber-600 hover:bg-amber-50"
           >
-            {isResetting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sıfırlanıyor...
-              </>
-            ) : (
-              <>
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Varsayılan Değerlere Sıfırla
-              </>
-            )}
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Varsayılan Değerlere Sıfırla
           </Button>
           
-          {isDatabaseEmpty && (
-            <Button 
-              onClick={saveDefaultsToDatabase} 
-              disabled={isSavingDefaults}
-              variant="default"
-            >
-              {isSavingDefaults ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Kaydediliyor...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Varsayılan Değerleri Veritabanına Kaydet
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-4">
-          {hasChanges && (
-            <span className="text-sm text-amber-600 font-medium">
-              Kaydedilmemiş değişiklikler var
-            </span>
-          )}
-          <Button onClick={saveAllChanges} disabled={saving || !hasChanges}>
-            {saving ? (
+          <Button 
+            onClick={saveDefaultsToDatabase} 
+            disabled={!isDatabaseEmpty || isSavingDefaults}
+            variant="default"
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isSavingDefaults ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Kaydediliyor...
@@ -1183,6 +1117,27 @@ export function ServicesTab() {
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
+                Varsayılan Değerleri Veritabanına Kaydet
+              </>
+            )}
+          </Button>
+          {!isDatabaseEmpty && (
+            <span className="text-sm text-muted-foreground">
+              Varsayılan değerler zaten kaydedilmiş
+            </span>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <Button onClick={saveAllChanges} disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700">
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Kaydediliyor...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
                 Tüm Değişiklikleri Kaydet
               </>
             )}
@@ -1321,7 +1276,7 @@ export function ServicesTab() {
               <X className="h-4 w-4 mr-2" />
               İptal
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
               <Check className="h-4 w-4 mr-2" />
               {editingService?.id ? 'Güncelle' : 'Kaydet'}
             </Button>
@@ -1374,7 +1329,7 @@ export function ServicesTab() {
               <X className="h-4 w-4 mr-2" />
               İptal
             </Button>
-            <Button onClick={saveValue}>
+            <Button onClick={saveValue} className="bg-blue-600 hover:bg-blue-700">
               <Check className="h-4 w-4 mr-2" />
               {editingValue?.id?.startsWith("value-") ? "Kaydet" : "Güncelle"}
             </Button>

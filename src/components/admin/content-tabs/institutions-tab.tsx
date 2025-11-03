@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Table,
   TableBody,
@@ -35,7 +36,7 @@ import { Camera, Edit, Trash2, Plus, Loader2, ArrowUp, ArrowDown, X, Search, Rot
 import { toast } from "sonner"
 import Image from "next/image"
 
-interface ClientLogo {
+interface Institution {
   id: string
   name: string
   description?: string
@@ -45,7 +46,18 @@ interface ClientLogo {
   order: number
 }
 
-const DEFAULT_INSTITUTIONS: Omit<ClientLogo, 'id'>[] = [
+interface SectionData {
+  id?: string
+  title: string
+  paragraph: string
+}
+
+const DEFAULT_SECTION: SectionData = {
+  title: "İş Birliği Yaptığımız Kurumlar",
+  paragraph: "Güçlü kurum ortaklıklarımız sayesinde size en kaliteli mali müşavirlik hizmetini sunuyoruz.",
+}
+
+const DEFAULT_INSTITUTIONS: Omit<Institution, 'id'>[] = [
   {
     name: "TOBB",
     description: "Türkiye Odalar ve Borsalar Birliği",
@@ -81,19 +93,22 @@ const DEFAULT_INSTITUTIONS: Omit<ClientLogo, 'id'>[] = [
 ]
 
 export function InstitutionsTab() {
-  const [items, setItems] = useState<ClientLogo[]>([])
+  // Section state
+  const [sectionData, setSectionData] = useState<SectionData>(DEFAULT_SECTION)
+  
+  // Items state - tüm değişiklikler burada tutulur
+  const [items, setItems] = useState<Institution[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
-  const [itemToDelete, setItemToDelete] = useState<ClientLogo | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<Institution | null>(null)
   const [isResetting, setIsResetting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [editingItem, setEditingItem] = useState<ClientLogo | null>(null)
+  const [editingItem, setEditingItem] = useState<Institution | null>(null)
   const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false)
   const [isSavingDefaults, setIsSavingDefaults] = useState(false)
-  const [formData, setFormData] = useState<Partial<ClientLogo>>({
+  const [formData, setFormData] = useState<Partial<Institution>>({
     name: "",
     description: "",
     url: "",
@@ -109,7 +124,7 @@ export function InstitutionsTab() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
 
   useEffect(() => {
-    fetchItems()
+    fetchData()
     
     // Cleanup function to close dialogs on unmount
     return () => {
@@ -119,26 +134,52 @@ export function InstitutionsTab() {
     }
   }, [])
 
-  const fetchItems = async () => {
+  const fetchData = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/content/institutions')
-      if (response.ok) {
-        const data = await response.json()
-        if (data && data.length > 0) {
-          setItems(data)
+      // Fetch section data
+      const sectionResponse = await fetch('/api/content/institutions/section')
+      if (sectionResponse.ok) {
+        const sectionJson = await sectionResponse.json()
+        if (sectionJson && sectionJson.id) {
+          setSectionData(sectionJson)
+        } else {
+          setSectionData(DEFAULT_SECTION)
+        }
+      } else {
+        setSectionData(DEFAULT_SECTION)
+      }
+
+      // Fetch items
+      const itemsResponse = await fetch('/api/content/institutions')
+      if (itemsResponse.ok) {
+        const itemsJson = await itemsResponse.json()
+        if (itemsJson && itemsJson.length > 0) {
+          setItems(itemsJson)
           setIsDatabaseEmpty(false)
         } else {
-          setItems([])
+          // Database boş - default değerleri göster
+          setItems(DEFAULT_INSTITUTIONS.map((inst, idx) => ({
+            id: `temp-${idx}`,
+            ...inst
+          })))
           setIsDatabaseEmpty(true)
         }
       } else {
-        setItems([])
+        // Hata durumunda default değerleri göster
+        setItems(DEFAULT_INSTITUTIONS.map((inst, idx) => ({
+          id: `temp-${idx}`,
+          ...inst
+        })))
         setIsDatabaseEmpty(true)
       }
     } catch (error) {
-      console.error('Error fetching client logos:', error)
-      setItems([])
+      console.error('Error fetching data:', error)
+      setSectionData(DEFAULT_SECTION)
+      setItems(DEFAULT_INSTITUTIONS.map((inst, idx) => ({
+        id: `temp-${idx}`,
+        ...inst
+      })))
       setIsDatabaseEmpty(true)
     } finally {
       setIsLoading(false)
@@ -202,7 +243,7 @@ export function InstitutionsTab() {
     reader.readAsDataURL(file)
   }
 
-  const handleOpenModal = (item?: ClientLogo) => {
+  const handleOpenModal = (item?: Institution) => {
     if (item) {
       setEditingItem(item)
       setFormData(item)
@@ -220,80 +261,46 @@ export function InstitutionsTab() {
     setIsModalOpen(true)
   }
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!formData.name || !formData.logo) {
       toast.error('Kurum adı ve logo zorunludur')
       return
     }
 
-    setIsSaving(true)
-    try {
-      const url = editingItem ? `/api/content/institutions?id=${editingItem.id}` : '/api/content/institutions'
-      const method = editingItem ? 'PATCH' : 'POST'
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-
-      if (response.ok) {
-        toast.success(editingItem ? 'Kurum güncellendi!' : 'Kurum eklendi!')
-        setIsModalOpen(false)
-        fetchItems()
-      } else {
-        toast.error('İşlem sırasında bir hata oluştu')
+    if (editingItem) {
+      // Güncelleme - state'de değiştir
+      setItems(prev => prev.map(item => 
+        item.id === editingItem.id ? { ...item, ...formData as Institution } : item
+      ))
+      toast.success('Değişiklikler kaydedildi (Kaydet butonuna basın)')
+    } else {
+      // Yeni ekleme - state'e ekle
+      const newItem: Institution = {
+        id: `temp-${Date.now()}`,
+        name: formData.name!,
+        description: formData.description,
+        url: formData.url,
+        logo: formData.logo!,
+        isActive: formData.isActive ?? true,
+        order: items.length
       }
-    } catch (error) {
-      console.error('Error saving client logo:', error)
-      toast.error('İşlem sırasında bir hata oluştu')
-    } finally {
-      setIsSaving(false)
+      setItems(prev => [...prev, newItem])
+      toast.success('Kurum eklendi (Kaydet butonuna basın)')
     }
+    
+    setIsModalOpen(false)
+    setEditingItem(null)
   }
 
-  const handleDelete = async (id: string) => {
-    setIsDeleting(true)
-    try {
-      const response = await fetch(`/api/content/institutions?id=${id}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        setItems(prev => prev.filter(item => item.id !== id))
-        setIsDeleteDialogOpen(false)
-        setItemToDelete(null)
-        toast.success('Kurum logosu silindi!')
-      } else {
-        toast.error('Silme işlemi başarısız oldu')
-      }
-    } catch (error) {
-      console.error('Error deleting institution logo:', error)
-      toast.error('Silme işlemi başarısız oldu')
-    } finally {
-      setIsDeleting(false)
-    }
+  const handleDelete = (id: string) => {
+    // State'den sil
+    setItems(prev => prev.filter(item => item.id !== id))
+    setIsDeleteDialogOpen(false)
+    setItemToDelete(null)
+    toast.success('Kurum silindi (Kaydet butonuna basın)')
   }
 
-  const handleToggleActive = async (item: ClientLogo) => {
-    try {
-      const response = await fetch(`/api/content/institutions?id=${item.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isActive: !item.isActive }),
-      })
-
-      if (response.ok) {
-        setItems(prev => prev.map(i => i.id === item.id ? { ...i, isActive: !i.isActive } : i))
-        toast.success(item.isActive ? 'Logo gizlendi' : 'Logo görünür yapıldı')
-      }
-    } catch (error) {
-      console.error('Error toggling active:', error)
-      toast.error('Durum değiştirilemedi')
-    }
-  }
-
-  const moveItem = (item: ClientLogo, direction: 'up' | 'down') => {
+  const moveItem = (item: Institution, direction: 'up' | 'down') => {
     const currentIndex = items.findIndex(i => i.id === item.id)
     if (currentIndex === -1) return
 
@@ -314,69 +321,91 @@ export function InstitutionsTab() {
       order: index
     }))
 
-    handleReorder(itemsWithNewOrder)
+    setItems(itemsWithNewOrder)
   }
 
-  const handleReorder = async (newItems: ClientLogo[]) => {
+  // Bulk save - Tüm değişiklikleri kaydet
+  const handleBulkSave = async () => {
+    setIsSaving(true)
     try {
-      const response = await fetch('/api/content/institutions/reorder', {
+      // 1. Section bilgilerini kaydet
+      const sectionResponse = await fetch('/api/content/institutions/section', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: newItems }),
+        body: JSON.stringify(sectionData),
       })
 
-      if (response.ok) {
-        setItems(newItems)
-        toast.success('Sıralama güncellendi')
-      } else {
-        toast.error('Sıralama güncellenemedi')
+      if (!sectionResponse.ok) {
+        throw new Error('Section kaydedilemedi')
       }
-    } catch (error) {
-      console.error('Error reordering institutions:', error)
-      toast.error('Sıralama güncellenirken hata oluştu')
-    }
-  }
 
-  // Reset to default (delete all)
-  const handleReset = async () => {
-    setIsResetting(true)
-    try {
-      // 1. Database'i sil
-      const deleteResponse = await fetch('/api/content/institutions/reset', {
+      // 2. Tüm items'ı sil
+      await fetch('/api/content/institutions/reset', {
         method: 'DELETE',
       })
 
-      if (!deleteResponse.ok) {
-        toast.error('Sıfırlama işlemi başarısız oldu.')
-        return
-      }
+      // 3. Tüm items'ı yeniden oluştur
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        const payload = {
+          name: item.name,
+          description: item.description,
+          url: item.url,
+          logo: item.logo,
+          isActive: item.isActive,
+          order: i
+        }
 
-      // 2. Varsayılan değerleri database'e kaydet (Landing page için)
-      for (let i = 0; i < DEFAULT_INSTITUTIONS.length; i++) {
-        const institution = DEFAULT_INSTITUTIONS[i]
-        await fetch('/api/content/institutions', {
+        const response = await fetch('/api/content/institutions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(institution)
+          body: JSON.stringify(payload)
         })
+
+        if (!response.ok) {
+          throw new Error(`Kurum kaydedilemedi: ${item.name}`)
+        }
       }
 
-      toast.success('Kurumlar bölümü varsayılan değerlere sıfırlandı.')
-      // Reload items
-      await fetchItems()
+      toast.success('Tüm değişiklikler kaydedildi!')
+      
+      // Reload
+      await fetchData()
     } catch (error) {
-      console.error('Error resetting institutions:', error)
-      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.')
+      console.error('Error saving:', error)
+      toast.error('Kaydetme sırasında bir hata oluştu')
     } finally {
-      setIsResetting(false)
-      setIsResetDialogOpen(false)
+      setIsSaving(false)
     }
+  }
+
+  // Reset to default
+  const handleReset = () => {
+    setSectionData(DEFAULT_SECTION)
+    setItems(DEFAULT_INSTITUTIONS.map((inst, idx) => ({
+      id: `temp-${idx}`,
+      ...inst
+    })))
+    toast.success('Varsayılan değerlere sıfırlandı (Kaydet butonuna basın)')
+    setIsResetDialogOpen(false)
   }
 
   const saveDefaultsToDatabase = async () => {
     setIsSavingDefaults(true)
     try {
-      // Varsayılan kurumları tek tek kaydet
+      // 1. Section bilgilerini kaydet
+      await fetch('/api/content/institutions/section', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(DEFAULT_SECTION),
+      })
+
+      // 2. Tüm items'ı sil
+      await fetch('/api/content/institutions/reset', {
+        method: 'DELETE',
+      })
+
+      // 3. Varsayılan kurumları kaydet
       for (let i = 0; i < DEFAULT_INSTITUTIONS.length; i++) {
         const institution = DEFAULT_INSTITUTIONS[i]
         const response = await fetch('/api/content/institutions', {
@@ -391,7 +420,7 @@ export function InstitutionsTab() {
       }
 
       toast.success('Varsayılan değerler veritabanına kaydedildi!')
-      await fetchItems()
+      await fetchData()
     } catch (error) {
       console.error('Error saving defaults:', error)
       toast.error('Varsayılan değerler kaydedilemedi')
@@ -412,6 +441,37 @@ export function InstitutionsTab() {
 
   return (
     <div className="space-y-4">
+      {/* Section Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bölüm Ayarları</CardTitle>
+          <CardDescription>Kurumlar bölümünün başlık ve açıklamasını düzenleyin</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="section-title">Başlık</Label>
+            <Input
+              id="section-title"
+              value={sectionData.title}
+              onChange={(e) => setSectionData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="İş Birliği Yaptığımız Kurumlar"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="section-paragraph">Açıklama</Label>
+            <Textarea
+              id="section-paragraph"
+              value={sectionData.paragraph}
+              onChange={(e) => setSectionData(prev => ({ ...prev, paragraph: e.target.value }))}
+              placeholder="Güçlü kurum ortaklıklarımız sayesinde..."
+              rows={3}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Institutions List Card */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -503,8 +563,10 @@ export function InstitutionsTab() {
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>
                         {item.description ? (
-                          <span className="text-sm text-muted-foreground line-clamp-2" title={item.description}>
-                            {item.description}
+                          <span className="text-sm text-muted-foreground" title={item.description}>
+                            {item.description.length > 60 
+                              ? `${item.description.substring(0, 60)}...` 
+                              : item.description}
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground italic">-</span>
@@ -526,9 +588,7 @@ export function InstitutionsTab() {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={item.isActive ? "default" : "secondary"}
-                          className="cursor-pointer"
-                          onClick={() => handleToggleActive(item)}
+                          className={item.isActive ? "bg-green-100 text-green-700 border-green-300" : "bg-amber-100 text-amber-700 border-amber-300"}
                         >
                           {item.isActive ? "Aktif" : "Pasif"}
                         </Badge>
@@ -644,6 +704,47 @@ export function InstitutionsTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Bottom Action Buttons */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <Button 
+            onClick={() => setIsResetDialogOpen(true)} 
+            disabled={isResetting}
+            variant="outline"
+            className="border-amber-600 text-amber-600 hover:bg-amber-50"
+          >
+            {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {!isResetting && <RotateCcw className="mr-2 h-4 w-4" />}
+            Varsayılan Değerlere Sıfırla
+          </Button>
+          
+          <Button 
+            onClick={saveDefaultsToDatabase} 
+            disabled={isSavingDefaults}
+            variant="default"
+            className={`bg-blue-600 hover:bg-blue-700 ${!isDatabaseEmpty ? 'opacity-50' : ''}`}
+          >
+            {isSavingDefaults ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Kaydediliyor...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Varsayılan Değerleri Veritabanına Kaydet {!isDatabaseEmpty && '(Zaten kayıtlı)'}
+              </>
+            )}
+          </Button>
+        </div>
+
+        <Button onClick={handleBulkSave} disabled={isSaving} size="lg" className="bg-green-600 hover:bg-green-700">
+          {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Save className="mr-2 h-4 w-4" />
+          Tüm Değişiklikleri Kaydet
+        </Button>
+      </div>
 
       {/* Edit/Add Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -779,7 +880,7 @@ export function InstitutionsTab() {
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               İptal
             </Button>
-            <Button onClick={handleSave} disabled={isSaving || !formData.logo || !formData.name}>
+            <Button onClick={handleSave} disabled={isSaving || !formData.logo || !formData.name} className="bg-blue-600 hover:bg-blue-700">
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {editingItem ? 'Güncelle' : 'Kaydet'}
             </Button>
@@ -797,7 +898,6 @@ export function InstitutionsTab() {
         onConfirm={() => itemToDelete && handleDelete(itemToDelete.id)}
         title="Kurum Logosu Sil"
         description={itemToDelete ? `"${itemToDelete.name}" kurumunu silmek istediğinizden emin misiniz?` : undefined}
-        isDeleting={isDeleting}
       />
 
       {/* Reset Confirmation Dialog */}
@@ -809,46 +909,6 @@ export function InstitutionsTab() {
         description="Tüm kurumları silmek ve bölümü varsayılan değerlere sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm kurum verileri kaybolacaktır."
       />
 
-      {/* Reset Button */}
-      <div className="flex justify-start items-center gap-4 mt-4">
-        <Button 
-          onClick={() => setIsResetDialogOpen(true)} 
-          disabled={isResetting || items.length === 0}
-          variant="outline"
-        >
-          {isResetting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Sıfırlanıyor...
-            </>
-          ) : (
-            <>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Varsayılan Değerlere Sıfırla
-            </>
-          )}
-        </Button>
-        
-        {isDatabaseEmpty && (
-          <Button 
-            onClick={saveDefaultsToDatabase} 
-            disabled={isSavingDefaults}
-            variant="default"
-          >
-            {isSavingDefaults ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Kaydediliyor...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Varsayılan Değerleri Veritabanına Kaydet
-              </>
-            )}
-          </Button>
-        )}
-      </div>
     </div>
   )
 }

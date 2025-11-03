@@ -4,8 +4,8 @@ import { prisma } from '@/lib/prisma'
 // DELETE all institutions (reset to empty)
 export async function DELETE() {
   try {
-    // Delete all client logos
-    await prisma.clientLogo.deleteMany({})
+    // Delete all institution items
+    await prisma.institutionItem.deleteMany({})
     
     return NextResponse.json({
       success: true,

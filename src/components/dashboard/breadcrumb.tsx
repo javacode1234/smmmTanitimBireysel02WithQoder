@@ -51,23 +51,22 @@ export function Breadcrumb({ userType }: BreadcrumbProps) {
   const homeLink = userType === "admin" ? "/admin" : "/client"
 
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, targetPath: string) => {
-    if (pathname === targetPath || isNavigating) {
-      e.preventDefault()
-      return
-    }
-    
     e.preventDefault()
+    
+    if (isNavigating || pathname === targetPath) return
+    
     setIsNavigating(true)
     
-    setTimeout(() => {
-      router.push(targetPath)
-    }, 100)
+    // Use window.location.href for consistent navigation
+    window.location.href = targetPath
   }
 
   return (
     <nav className="flex items-center space-x-1 text-sm text-gray-600 mb-6">
       <Link 
-        href={homeLink} 
+        href={homeLink}
+        prefetch={false}
+        scroll={false}
         onClick={(e) => handleNavigation(e, homeLink)}
         className="flex items-center hover:text-primary transition-colors"
       >
@@ -81,7 +80,9 @@ export function Breadcrumb({ userType }: BreadcrumbProps) {
             <span className="font-medium text-gray-900">{item.name}</span>
           ) : (
             <Link 
-              href={item.path} 
+              href={item.path}
+              prefetch={false}
+              scroll={false}
               onClick={(e) => handleNavigation(e, item.path)}
               className="hover:text-primary transition-colors"
             >

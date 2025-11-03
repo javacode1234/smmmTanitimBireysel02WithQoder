@@ -48,27 +48,18 @@ export default function ClientLayout({
   }
 
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, targetPath: string) => {
-    if (pathname === targetPath || isNavigating) {
-      e.preventDefault()
-      return
-    }
-    
     e.preventDefault()
+    
+    if (isNavigating || pathname === targetPath) return
+    
     setIsNavigating(true)
     
-    setTimeout(() => {
-      router.push(targetPath)
-    }, 100)
+    // Use window.location.href to avoid removeChild errors with sidebar animations
+    window.location.href = targetPath
   }
 
   const handleLogout = () => {
-    if (isNavigating) return
-    
-    setIsNavigating(true)
-    
-    setTimeout(() => {
-      router.push('/auth/signin')
-    }, 100)
+    window.location.href = '/auth/signin'
   }
 
   const sidebarWidth = sidebarState === "open" ? "w-64" : sidebarState === "collapsed" ? "w-20" : "w-0"
@@ -99,6 +90,8 @@ export default function ClientLayout({
                 <Link
                   key={item.name}
                   href={item.href}
+                  prefetch={false}
+                  scroll={false}
                   onClick={(e) => handleNavigation(e, item.href)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
@@ -129,9 +122,9 @@ export default function ClientLayout({
       </aside>
 
       {/* Main Content */}
-      <main className={`${mainMargin} transition-all duration-300`}>
+      <main className={`${mainMargin} transition-all duration-300`} suppressHydrationWarning>
         <DashboardNavbar userType="client" sidebarState={sidebarState} onToggleSidebar={handleToggleSidebar} sidebarWidth={sidebarWidthPx} />
-        <div className="p-8 mt-16">
+        <div className="p-8 mt-16" suppressHydrationWarning>
           <Breadcrumb userType="client" />
           {children}
         </div>

@@ -1,10 +1,11 @@
 "use client"
+"use client"
 
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Menu } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 
 interface SiteSettings {
@@ -18,7 +19,6 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({})
   const [isNavigating, setIsNavigating] = useState(false)
-  const scrollingRef = useRef(false)
 
   useEffect(() => {
     fetchSiteSettings()
@@ -36,35 +36,27 @@ export function Navbar() {
     }
   }
 
-  // Handle navigation to signin page
-  const handleSignInClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (pathname === "/auth/signin" || isNavigating) {
-      e.preventDefault()
-      return
-    }
-    
+  // Handle signin navigation with cleanup - FINAL FIX for removeChild error
+  const handleSignIn = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
+    
+    if (isNavigating) return
+    
     setIsNavigating(true)
     setIsOpen(false)
     
-    // Add delay to ensure any animations complete
-    setTimeout(() => {
-      router.push('/auth/signin')
-    }, 100)
+    // Use window.location instead of router.push to avoid React Fiber conflicts
+    // This forces a full page reload and avoids DOM cleanup race conditions
+    requestAnimationFrame(() => {
+      window.location.href = '/auth/signin'
+    })
   }
 
-  // Smooth scroll handler with debounce to prevent animation conflicts
+  // Smooth scroll handler - simple version without setTimeout
   const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!href.startsWith('#')) return
     
-    // If already scrolling, prevent additional clicks
-    if (scrollingRef.current) {
-      e.preventDefault()
-      return
-    }
-    
     e.preventDefault()
-    scrollingRef.current = true
     setIsOpen(false)
 
     const targetId = href.substring(1)
@@ -72,13 +64,6 @@ export function Navbar() {
     
     if (targetElement) {
       targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      
-      // Reset scrolling flag after animation completes
-      setTimeout(() => {
-        scrollingRef.current = false
-      }, 1000) // Smooth scroll typically takes ~500-800ms, add buffer
-    } else {
-      scrollingRef.current = false
     }
   }
 
@@ -212,14 +197,15 @@ export function Navbar() {
               <span>İletişim</span>
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
-            <Button asChild>
-              <Link 
-                href="/auth/signin"
-                onClick={handleSignInClick}
-              >
-                Giriş Yap
-              </Link>
-            </Button>
+            <Link 
+              href="/auth/signin"
+              prefetch={false}
+              scroll={false}
+              onClick={handleSignIn}
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+            >
+              Giriş Yap
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -315,14 +301,15 @@ export function Navbar() {
             >
               İletişim
             </Link>
-            <Button className="w-full" asChild>
-              <Link 
-                href="/auth/signin" 
-                onClick={handleSignInClick}
-              >
-                Giriş Yap
-              </Link>
-            </Button>
+            <Link 
+              href="/auth/signin"
+              prefetch={false}
+              scroll={false}
+              onClick={handleSignIn}
+              className="w-full inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+            >
+              Giriş Yap
+            </Link>
           </div>
         )}
       </div>

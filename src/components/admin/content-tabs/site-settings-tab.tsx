@@ -33,7 +33,6 @@ const DEFAULT_SETTINGS = {
 export function SiteSettingsTab() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [isResetting, setIsResetting] = useState(false)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [settingsId, setSettingsId] = useState<string | null>(null)
   const [mapModalOpen, setMapModalOpen] = useState(false)
@@ -49,7 +48,7 @@ export function SiteSettingsTab() {
   useEffect(() => {
     fetchSettings()
     
-    // Cleanup function to prevent memory leaks
+    // Cleanup function to prevent memory leaks and close dialogs
     return () => {
       // Clear file input values
       if (faviconInputRef.current) {
@@ -59,8 +58,9 @@ export function SiteSettingsTab() {
         brandIconInputRef.current.value = ''
       }
       
-      // Reset state to prevent memory leaks
+      // Close all dialogs
       setMapModalOpen(false)
+      setIsResetDialogOpen(false)
     }
   }, [])
 
@@ -71,7 +71,15 @@ export function SiteSettingsTab() {
       if (response.ok) {
         const data = await response.json()
         console.log('Site settings data:', data) // Debug
-        if (data && data.id) {
+        
+        // null veya boş obje döndüğünde
+        if (!data || !data.id) {
+          setFormData(DEFAULT_SETTINGS)
+          setSettingsId(null)
+          setIsDatabaseEmpty(true)
+          console.log('Database IS empty - no data or ID')
+        } else {
+          // Veri var
           setSettingsId(data.id)
           setFormData({
             siteName: data.siteName || DEFAULT_SETTINGS.siteName,
@@ -92,13 +100,10 @@ export function SiteSettingsTab() {
           })
           setIsDatabaseEmpty(false)
           console.log('Database NOT empty - ID:', data.id)
-        } else {
-          setFormData(DEFAULT_SETTINGS)
-          setIsDatabaseEmpty(true)
-          console.log('Database IS empty - no ID found')
         }
       } else {
         setFormData(DEFAULT_SETTINGS)
+        setSettingsId(null)
         setIsDatabaseEmpty(true)
         console.log('Database IS empty - API error')
       }
@@ -106,6 +111,7 @@ export function SiteSettingsTab() {
       console.error('Error fetching settings:', error)
       toast.error('Ayarlar yüklenirken hata oluştu')
       setFormData(DEFAULT_SETTINGS)
+      setSettingsId(null)
       setIsDatabaseEmpty(true)
       console.log('Database IS empty - exception')
     } finally {
@@ -203,51 +209,26 @@ export function SiteSettingsTab() {
     setMapModalOpen(true)
   }
 
-  // Reset to default values
-  const handleReset = async () => {
-    setIsResetting(true)
-    try {
-      // 1. Database'i sil
-      const deleteResponse = await fetch('/api/content/site-settings', {
-        method: 'DELETE',
-      })
-
-      if (!deleteResponse.ok) {
-        toast.error('Sıfırlama işlemi başarısız oldu.')
-        return
-      }
-
-      // 2. Varsayılan değerleri database'e kaydet (Landing page için)
-      const saveResponse = await fetch('/api/content/site-settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...DEFAULT_SETTINGS,
-          id: null
-        })
-      })
-
-      if (saveResponse.ok) {
-        const savedData = await saveResponse.json()
-        setSettingsId(savedData.id)
-        toast.success('Site ayarları varsayılan değerlere sıfırlandı.')
-        // Reload settings to get defaults
-        await fetchSettings()
-      } else {
-        toast.error('Varsayılan değerler kaydedilemedi.')
-      }
-    } catch (error) {
-      console.error('Error resetting settings:', error)
-      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.')
-    } finally {
-      setIsResetting(false)
-      setIsResetDialogOpen(false)
-    }
+  // Reset to default values (state only - no database change)
+  const handleReset = () => {
+    // Form'a default değerleri yükle
+    setFormData(DEFAULT_SETTINGS)
+    setSettingsId(null)
+    setIsDatabaseEmpty(true)
+    
+    toast.success('Varsayılan değerlere sıfırlandı (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
+    setIsResetDialogOpen(false)
   }
 
   const saveDefaultsToDatabase = async () => {
     setIsSavingDefaults(true)
     try {
+      // 1. Database'i temizle
+      await fetch('/api/content/site-settings', {
+        method: 'DELETE',
+      })
+
+      // 2. Varsayılan değerleri kaydet
       const payload = {
         ...DEFAULT_SETTINGS,
         id: null,
@@ -262,6 +243,7 @@ export function SiteSettingsTab() {
       if (response.ok) {
         const savedData = await response.json()
         setSettingsId(savedData.id)
+        setIsDatabaseEmpty(false)
         toast.success('Varsayılan değerler veritabanına kaydedildi!')
         await fetchSettings()
       } else {
@@ -624,37 +606,36 @@ export function SiteSettingsTab() {
         <div className="flex items-center gap-4">
           <Button 
             onClick={() => setIsResetDialogOpen(true)} 
-            disabled={isResetting}
             variant="outline"
+            className="border-amber-600 text-amber-600 hover:bg-amber-50"
           >
-            {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {!isResetting && <RotateCcw className="mr-2 h-4 w-4" />}
+            <RotateCcw className="mr-2 h-4 w-4" />
             Varsayılan Değerlere Sıfırla
           </Button>
           
-          {isDatabaseEmpty && (
-            <Button 
-              onClick={saveDefaultsToDatabase} 
-              disabled={isSavingDefaults}
-              variant="default"
-            >
-              {isSavingDefaults ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Kaydediliyor...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Varsayılan Değerleri Veritabanına Kaydet
-                </>
-              )}
-            </Button>
-          )}
+          <Button 
+            onClick={saveDefaultsToDatabase} 
+            disabled={isSavingDefaults}
+            variant="default"
+            className={`bg-blue-600 hover:bg-blue-700 ${!isDatabaseEmpty ? 'opacity-50' : ''}`}
+          >
+            {isSavingDefaults ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Kaydediliyor...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Varsayılan Değerleri Veritabanına Kaydet {!isDatabaseEmpty && '(Zaten kayıtlı)'}
+              </>
+            )}
+          </Button>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} size="lg">
+        <Button onClick={handleSave} disabled={isSaving} size="lg" className="bg-green-600 hover:bg-green-700">
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Kaydet
+          <Save className="mr-2 h-4 w-4" />
+          Tüm Değişiklikleri Kaydet
         </Button>
       </div>
     </div>

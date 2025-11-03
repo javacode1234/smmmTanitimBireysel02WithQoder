@@ -6,8 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { toast } from "sonner"
 import { Lock, Eye, EyeOff } from "lucide-react"
 
@@ -33,23 +31,6 @@ export default function SignInPage() {
   const [backgroundImage, setBackgroundImage] = useState("")
   const [activeTab, setActiveTab] = useState<UserType>("admin")
   const [isChangingTab, setIsChangingTab] = useState(false)
-  const [isNavigating, setIsNavigating] = useState(false)
-  const router = useRouter()
-
-  const handleGoHome = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (isNavigating) {
-      e.preventDefault()
-      return
-    }
-    
-    e.preventDefault()
-    setIsNavigating(true)
-    
-    // Add delay to ensure any Tabs animations complete
-    setTimeout(() => {
-      router.push('/')
-    }, 100)
-  }
 
   const handleTabChange = (value: string) => {
     if (isChangingTab) return
@@ -89,11 +70,11 @@ export default function SignInPage() {
       // Add small delay before navigation to allow toast to show
       await new Promise(resolve => setTimeout(resolve, 300))
       
-      // Mock login based on user type using Next.js router for consistent navigation
+      // Use window.location.href instead of router.push to avoid removeChild errors
       if (userType === "admin") {
-        router.push("/admin")
+        window.location.href = "/admin"
       } else {
-        router.push("/client")
+        window.location.href = "/client"
       }
     } catch (error) {
       toast.error("Giriş başarısız. Lütfen bilgilerinizi kontrol edin.")
@@ -223,13 +204,16 @@ export default function SignInPage() {
           </Tabs>
 
           <div className="mt-6 text-center text-sm">
-            <Link 
-              href="/" 
-              onClick={handleGoHome}
-              className="text-white/90 hover:text-white hover:underline inline-flex items-center gap-1"
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                window.location.href = '/'
+              }}
+              className="text-white/90 hover:text-white hover:underline inline-flex items-center gap-1 cursor-pointer bg-transparent border-0"
             >
               ← Ana sayfaya dön
-            </Link>
+            </button>
           </div>
         </CardContent>
       </Card>

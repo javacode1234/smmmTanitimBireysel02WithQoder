@@ -107,29 +107,19 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
   }, [userType])
 
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, targetPath: string) => {
-    if (pathname === targetPath || isNavigating) {
-      e.preventDefault()
-      return
-    }
-    
     e.preventDefault()
+    
+    if (isNavigating || pathname === targetPath) return
+    
     setIsNavigating(true)
     
-    setTimeout(() => {
-      router.push(targetPath)
-    }, 100)
+    // Use window.location.href for consistent navigation
+    window.location.href = targetPath
   }
 
   const handleLogout = () => {
-    if (isNavigating) return
-    
-    // Close the dropdown first to prevent DOM errors
     setIsOpen(false)
-    setIsNavigating(true)
-    
-    setTimeout(() => {
-      router.push('/auth/signin')
-    }, 150)
+    window.location.href = '/auth/signin'
   }
 
   const profileLink = userType === "admin" ? "/admin/profile" : "/client/profile"
@@ -172,8 +162,10 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
         {userType === "admin" && (
           <div className="flex items-center gap-4">
             <Link 
-              href="/admin/quote-requests" 
-              onClick={(e) => handleNavigation(e, "/admin/quote-requests")}
+              href="/admin/quote-requests"
+              prefetch={false}
+              scroll={false}
+              onClick={(e) => handleNavigation(e, '/admin/quote-requests')}
               className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
               title="Teklif Talepleri"
             >
@@ -185,8 +177,10 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
               )}
             </Link>
             <Link 
-              href="/admin/contact-messages" 
-              onClick={(e) => handleNavigation(e, "/admin/contact-messages")}
+              href="/admin/contact-messages"
+              prefetch={false}
+              scroll={false}
+              onClick={(e) => handleNavigation(e, '/admin/contact-messages')}
               className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
               title="İletişim Mesajları"
             >
@@ -198,8 +192,10 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
               )}
             </Link>
             <Link 
-              href="/admin/job-applications" 
-              onClick={(e) => handleNavigation(e, "/admin/job-applications")}
+              href="/admin/job-applications"
+              prefetch={false}
+              scroll={false}
+              onClick={(e) => handleNavigation(e, '/admin/job-applications')}
               className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
               title="İş Müracaatları"
             >
@@ -236,17 +232,27 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href={profileLink} className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                Profil
-              </Link>
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.preventDefault()
+                setIsOpen(false)
+                handleNavigation(e as any, profileLink)
+              }}
+              className="cursor-pointer"
+            >
+              <User className="mr-2 h-4 w-4" />
+              Profil
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href={settingsLink} className="cursor-pointer">
-                <Settings className="mr-2 h-4 w-4" />
-                Ayarlar
-              </Link>
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.preventDefault()
+                setIsOpen(false)
+                handleNavigation(e as any, settingsLink)
+              }}
+              className="cursor-pointer"
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Ayarlar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">

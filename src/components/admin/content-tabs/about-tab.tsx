@@ -105,7 +105,6 @@ export function AboutTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [featureToDelete, setFeatureToDelete] = useState<any>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isResetting, setIsResetting] = useState(false)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false)
   const [isSavingDefaults, setIsSavingDefaults] = useState(false)
@@ -275,6 +274,9 @@ export function AboutTab() {
       })
 
       if (response.ok) {
+        const savedData = await response.json()
+        setAboutData(savedData)
+        setIsDatabaseEmpty(false)
         toast.success('Hakkımızda bölümü başarıyla kaydedildi.')
       } else {
         toast.error('Hakkımızda bölümü kaydedilemedi.')
@@ -287,43 +289,14 @@ export function AboutTab() {
     }
   }
 
-  // Reset to default values
-  const handleReset = async () => {
-    setIsResetting(true)
-    try {
-      // 1. Database'i sil
-      const deleteResponse = await fetch('/api/content/about', {
-        method: 'DELETE',
-      })
-
-      if (!deleteResponse.ok) {
-        toast.error('Sıfırlama işlemi başarısız oldu.')
-        return
-      }
-
-      // 2. Varsayılan değerleri database'e kaydet (Landing page için)
-      const saveResponse = await fetch('/api/content/about', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(DEFAULT_ABOUT),
-      })
-
-      if (saveResponse.ok) {
-        const savedData = await saveResponse.json()
-        toast.success('Hakkımızda bölümü varsayılan değerlere sıfırlandı.')
-        setAboutData(savedData)
-      } else {
-        toast.error('Varsayılan değerler kaydedilemedi.')
-      }
-    } catch (error) {
-      console.error('Error resetting about data:', error)
-      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.')
-    } finally {
-      setIsResetting(false)
-      setIsResetDialogOpen(false)
-    }
+  // Reset to default values (state only - no database change)
+  const handleReset = () => {
+    // Form'a default değerleri yükle
+    setAboutData(DEFAULT_ABOUT)
+    setIsDatabaseEmpty(true)
+    
+    toast.success('Varsayılan değerlere sıfırlandı (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
+    setIsResetDialogOpen(false)
   }
 
   const saveDefaultsToDatabase = async () => {
@@ -454,27 +427,30 @@ export function AboutTab() {
                           : feature.description}
                       </TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          feature.isActive 
-                            ? "bg-green-100 text-green-800" 
-                            : "bg-red-100 text-red-800"
-                        }`}>
+                        <Badge className={feature.isActive 
+                          ? "bg-green-100 text-green-700 border-green-300" 
+                          : "bg-amber-100 text-amber-700 border-amber-300"
+                        }>
                           {feature.isActive ? "Aktif" : "Pasif"}
-                        </span>
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
-                            size="sm"
+                            size="icon"
+                            className="h-8 w-8"
                             onClick={() => editFeature(feature)}
+                            title="Düzenle"
                           >
                             <Edit3 className="h-4 w-4" />
                           </Button>
                           <Button
-                            variant="destructive"
-                            size="sm"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={() => openDeleteDialog(feature)}
+                            title="Sil"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -629,7 +605,7 @@ export function AboutTab() {
               <X className="h-4 w-4 mr-2" />
               İptal
             </Button>
-            <Button onClick={saveFeature}>
+            <Button onClick={saveFeature} className="bg-blue-600 hover:bg-blue-700">
               <Check className="h-4 w-4 mr-2" />
               {editingFeature?.id?.startsWith("feature-") ? "Kaydet" : "Güncelle"}
             </Button>
@@ -661,44 +637,39 @@ export function AboutTab() {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
           <Button 
-            onClick={() => setIsResetDialogOpen(true)} 
-            disabled={isResetting}
+            onClick={() => setIsResetDialogOpen(true)}
             variant="outline"
+            className="border-amber-600 text-amber-600 hover:bg-amber-50"
           >
-            {isResetting ? (
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Varsayılan Değerlere Sıfırla
+          </Button>
+          
+          <Button 
+            onClick={saveDefaultsToDatabase} 
+            disabled={!isDatabaseEmpty || isSavingDefaults}
+            variant="default"
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isSavingDefaults ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-                Sıfırlanıyor...
+                Kaydediliyor...
               </>
             ) : (
               <>
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Varsayılan Değerlere Sıfırla
+                <Save className="h-4 w-4 mr-2" />
+                Varsayılan Değerleri Veritabanına Kaydet
               </>
             )}
           </Button>
-          
-          {isDatabaseEmpty && (
-            <Button 
-              onClick={saveDefaultsToDatabase} 
-              disabled={isSavingDefaults}
-              variant="default"
-            >
-              {isSavingDefaults ? (
-                <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-                  Kaydediliyor...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Varsayılan Değerleri Veritabanına Kaydet
-                </>
-              )}
-            </Button>
+          {!isDatabaseEmpty && (
+            <span className="text-sm text-muted-foreground">
+              Varsayılan değerler zaten kaydedilmiş
+            </span>
           )}
         </div>
-        <Button onClick={saveAboutData} disabled={saving}>
+        <Button onClick={saveAboutData} disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700">
           {saving ? (
             <>
               <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
@@ -706,8 +677,8 @@ export function AboutTab() {
             </>
           ) : (
             <>
-              <Save className="h-4 w-4 mr-2" />
-              Değişiklikleri Kaydet
+              <Save className="mr-2 h-4 w-4" />
+              Tüm Değişiklikleri Kaydet
             </>
           )}
         </Button>
