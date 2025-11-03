@@ -1,11 +1,22 @@
 "use client"
 
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileText, Calculator, Building2, TrendingUp, Shield, Users, ArrowRight, CheckCircle } from "lucide-react"
 import { motion } from "framer-motion"
 
-const services = [
+// Icon map
+const iconMap: any = {
+  FileText: FileText,
+  Calculator: Calculator,
+  Building2: Building2,
+  TrendingUp: TrendingUp,
+  Shield: Shield,
+  Users: Users
+}
+
+const defaultServices = [
   {
     icon: FileText,
     title: "Beyanname Hazırlama",
@@ -81,6 +92,82 @@ const services = [
 ]
 
 export function ServicesSection() {
+  const [services, setServices] = useState<any[]>(defaultServices)
+  const [sectionData, setSectionData] = useState({ title: "Hizmetlerimiz", paragraph: "" })
+  const [loading, setLoading] = useState(true)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    isMountedRef.current = true
+
+    const fetchServices = async () => {
+      try {
+        const response = await fetch('/api/content/services')
+        if (response.ok && isMountedRef.current) {
+          const data = await response.json()
+          // API'den veri geldi mi kontrol et
+          if (data && data.length > 0) {
+            // Features string'i parse et
+            const parsedData = data.map((service: any) => ({
+              ...service,
+              features: typeof service.features === 'string' 
+                ? JSON.parse(service.features) 
+                : service.features
+            }))
+            setServices(parsedData.filter((s: any) => s.isActive !== false))
+          } else {
+            setServices(defaultServices)
+          }
+        } else {
+          setServices(defaultServices)
+        }
+      } catch (error) {
+        console.error('Error fetching services:', error)
+        setServices(defaultServices)
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false)
+        }
+      }
+    }
+
+    const fetchSectionData = async () => {
+      try {
+        const response = await fetch('/api/content/services/section')
+        if (response.ok && isMountedRef.current) {
+          const data = await response.json()
+          setSectionData(data)
+        }
+      } catch (error) {
+        console.error('Error fetching section data:', error)
+      }
+    }
+
+    fetchServices()
+    fetchSectionData()
+
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
+  if (loading) {
+    return (
+      <section id="services" className="py-12 px-4 bg-gradient-to-b from-gray-50 to-white">
+        <div className="container mx-auto">
+          <div className="text-center mb-10">
+            <div className="h-8 bg-gray-200 rounded w-48 mx-auto mb-4 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-96 mx-auto animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-gray-200 rounded-xl h-64 animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
   return (
     <section id="services" className="py-12 px-4 bg-gradient-to-b from-gray-50 to-white">
       <div className="container mx-auto">
@@ -93,36 +180,37 @@ export function ServicesSection() {
           className="text-center mb-10"
         >
           <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            Hizmetlerimiz
+            {sectionData.title || "Hizmetlerimiz"}
           </h2>
           <p className="text-sm text-muted-foreground max-w-3xl mx-auto">
-            İşletmenizin tüm mali ihtiyaçları için kapsamlı ve profesyonel çözümler sunuyoruz. 
-            Uzman kadromuz ile işinizi güvenle büyütün.
+            {sectionData.paragraph || "İşletmenizin tüm mali ihtiyaçları için kapsamlı ve profesyonel çözümler sunuyoruz. Uzman kadromuz ile işinizi güvenle büyütün."}
           </p>
         </motion.div>
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {services.map((service, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className="group"
-            >
+          {services.map((service, index) => {
+            const IconComponent = iconMap[service.icon] || FileText
+            return (
+              <motion.div
+                key={service.id || index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="group"
+              >
               <Card className="h-full hover:shadow-2xl transition-all duration-300 border-2 hover:border-blue-200 transform hover:-translate-y-1">
                 <CardHeader>
-                  <div className={`h-14 w-14 rounded-xl bg-gradient-to-br ${service.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
-                    <service.icon className="h-7 w-7 text-white" />
+                  <div className={`h-14 w-14 rounded-xl bg-gradient-to-br ${service.color || 'from-blue-500 to-blue-600'} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
+                    <IconComponent className="h-7 w-7 text-white" />
                   </div>
                   <CardTitle className="text-base">{service.title}</CardTitle>
                   <CardDescription className="text-xs">{service.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {service.features.map((feature, idx) => (
+                    {service.features.map((feature: string, idx: number) => (
                       <li key={idx} className="flex items-start gap-2 text-[11px] text-gray-600">
                         <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                         <span>{feature}</span>
@@ -132,7 +220,8 @@ export function ServicesSection() {
                 </CardContent>
               </Card>
             </motion.div>
-          ))}
+          )}
+        )}
         </div>
 
         {/* CTA Section */}

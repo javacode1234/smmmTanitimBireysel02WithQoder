@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronDown, HelpCircle, Calendar } from "lucide-react"
@@ -76,6 +76,18 @@ export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<FAQCategory>("Tümü")
   const [startDate, setStartDate] = useState<string>("")
+  const [isVisible, setIsVisible] = useState(false)
+  const isMountedRef = useRef(true)
+
+  useEffect(() => {
+    isMountedRef.current = true
+    setIsVisible(true)
+
+    return () => {
+      isMountedRef.current = false
+      setIsVisible(false)
+    }
+  }, [])
 
   const categories: FAQCategory[] = ["Tümü", "Genel", "Hizmetler", "Ücretlendirme", "İşlemler", "Teknik"]
 
@@ -102,6 +114,7 @@ export function FAQSection() {
     <section id="faq" className="py-12 px-4 bg-gradient-to-b from-white to-blue-50">
       <div className="container mx-auto max-w-4xl">
         {/* Header */}
+        {isVisible && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -120,8 +133,10 @@ export function FAQSection() {
             Sorunuzun cevabını bulamadıysanız, bize ulaşın.
           </p>
         </motion.div>
+        )}
 
         {/* Category Filter */}
+        {isVisible && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -151,8 +166,10 @@ export function FAQSection() {
             ))}
           </div>
         </motion.div>
+        )}
 
         {/* Date Filter */}
+        {isVisible && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -196,6 +213,7 @@ export function FAQSection() {
             )}
           </div>
         </motion.div>
+        )}
 
         {/* FAQ List */}
         <div className="space-y-4">
@@ -239,22 +257,15 @@ export function FAQSection() {
                   </div>
 
                   {/* Answer */}
-                  <AnimatePresence>
-                    {openIndex === index && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <div className="px-4 pb-4 pt-0 border-t bg-blue-50/30">
-                          <p className="text-xs text-gray-700 leading-relaxed pt-3">
-                            {faq.answer}
-                          </p>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {openIndex === index && isMountedRef.current && (
+                    <div className="overflow-hidden">
+                      <div className="px-4 pb-4 pt-0 border-t bg-blue-50/30">
+                        <p className="text-xs text-gray-700 leading-relaxed pt-3">
+                          {faq.answer}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -262,6 +273,7 @@ export function FAQSection() {
         </div>
 
         {/* Contact CTA */}
+        {isVisible && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -283,6 +295,7 @@ export function FAQSection() {
             İletişime Geç
           </a>
         </motion.div>
+        )}
       </div>
     </section>
   )

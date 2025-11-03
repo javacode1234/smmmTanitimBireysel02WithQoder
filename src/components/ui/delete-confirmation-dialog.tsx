@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -34,8 +35,32 @@ export function DeleteConfirmationDialog({
     ? `"${itemName}" kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`
     : "Bu kaydı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
+  // Cleanup on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Ensure dialog is closed when component unmounts
+      if (isOpen && onClose) {
+        onClose()
+      }
+    }
+  }, [])
+
+  // Safe close handler
+  const handleClose = () => {
+    if (!isDeleting && onClose) {
+      onClose()
+    }
+  }
+
+  // Safe confirm handler
+  const handleConfirm = () => {
+    if (!isDeleting && onConfirm) {
+      onConfirm()
+    }
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -52,7 +77,7 @@ export function DeleteConfirmationDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isDeleting}
           >
             İptal
@@ -60,7 +85,7 @@ export function DeleteConfirmationDialog({
           <Button
             type="button"
             variant="destructive"
-            onClick={onConfirm}
+            onClick={handleConfirm}
             disabled={isDeleting}
           >
             {isDeleting ? "Siliniyor..." : "Sil"}

@@ -32,7 +32,38 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [backgroundImage, setBackgroundImage] = useState("")
   const [activeTab, setActiveTab] = useState<UserType>("admin")
+  const [isChangingTab, setIsChangingTab] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
   const router = useRouter()
+
+  const handleGoHome = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isNavigating) {
+      e.preventDefault()
+      return
+    }
+    
+    e.preventDefault()
+    setIsNavigating(true)
+    
+    // Add delay to ensure any Tabs animations complete
+    setTimeout(() => {
+      router.push('/')
+    }, 100)
+  }
+
+  const handleTabChange = (value: string) => {
+    if (isChangingTab) return
+    
+    setIsChangingTab(true)
+    setShowPassword(false) // Reset password visibility when switching tabs
+    
+    setTimeout(() => {
+      setActiveTab(value as UserType)
+      setTimeout(() => {
+        setIsChangingTab(false)
+      }, 50)
+    }, 50)
+  }
 
   // Set random background image on component mount
   useEffect(() => {
@@ -53,17 +84,19 @@ export default function SignInPage() {
       // For now, simulate login
       await new Promise(resolve => setTimeout(resolve, 1000))
 
+      toast.success("Giriş başarılı!")
+      
+      // Add small delay before navigation to allow toast to show
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
       // Mock login based on user type using Next.js router for consistent navigation
       if (userType === "admin") {
         router.push("/admin")
       } else {
         router.push("/client")
       }
-
-      toast.success("Giriş başarılı!")
     } catch (error) {
       toast.error("Giriş başarısız. Lütfen bilgilerinizi kontrol edin.")
-    } finally {
       setIsLoading(false)
     }
   }
@@ -112,9 +145,16 @@ export default function SignInPage() {
           </div>
         </div>
         <div className="flex items-center justify-between">
-          <Link href="#" className="text-sm text-white/90 hover:text-white hover:underline">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              toast.info("Şifre sıfırlama özelliği yakında eklenecek")
+            }}
+            className="text-sm text-white/90 hover:text-white hover:underline"
+          >
             Şifremi unuttum
-          </Link>
+          </button>
         </div>
         <Button type="submit" className="w-full bg-white text-primary hover:bg-white/90" disabled={isLoading}>
           {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
@@ -159,7 +199,7 @@ export default function SignInPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as UserType)} className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-white/5 backdrop-blur-sm">
               <TabsTrigger 
                 value="admin" 
@@ -183,7 +223,11 @@ export default function SignInPage() {
           </Tabs>
 
           <div className="mt-6 text-center text-sm">
-            <Link href="/" className="text-white/90 hover:text-white hover:underline">
+            <Link 
+              href="/" 
+              onClick={handleGoHome}
+              className="text-white/90 hover:text-white hover:underline inline-flex items-center gap-1"
+            >
               ← Ana sayfaya dön
             </Link>
           </div>

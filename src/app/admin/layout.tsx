@@ -1,7 +1,8 @@
 "use client"
+"use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { DashboardNavbar } from "@/components/dashboard/navbar"
@@ -34,7 +35,9 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [sidebarState, setSidebarState] = useState<"open" | "collapsed" | "hidden">("open")
+  const [isNavigating, setIsNavigating] = useState(false)
 
   const handleToggleSidebar = () => {
     if (sidebarState === "open") {
@@ -46,22 +49,28 @@ export default function AdminLayout({
     }
   }
 
-  const handleLogout = () => {
-    try {
-      // Use a small delay to ensure any animations complete before navigation
-      setTimeout(() => {
-        // Use window.location.href for a full page reload to avoid React DOM reconciliation issues
-        if (typeof window !== 'undefined') {
-          window.location.href = '/auth/signin'
-        }
-      }, 100)
-    } catch (error) {
-      console.error('Logout error:', error)
-      // Fallback to direct navigation
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth/signin'
-      }
+  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, targetPath: string) => {
+    if (pathname === targetPath || isNavigating) {
+      e.preventDefault()
+      return
     }
+    
+    e.preventDefault()
+    setIsNavigating(true)
+    
+    setTimeout(() => {
+      router.push(targetPath)
+    }, 100)
+  }
+
+  const handleLogout = () => {
+    if (isNavigating) return
+    
+    setIsNavigating(true)
+    
+    setTimeout(() => {
+      router.push('/auth/signin')
+    }, 100)
   }
 
   const sidebarWidth = sidebarState === "open" ? "w-64" : sidebarState === "collapsed" ? "w-20" : "w-0"
@@ -103,6 +112,7 @@ export default function AdminLayout({
                 <Link
                   key={item.name}
                   href={item.href}
+                  onClick={(e) => handleNavigation(e, item.href)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-primary text-white"

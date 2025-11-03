@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { User, Settings, LogOut, ChevronDown, Menu, MessageSquare, FileText, Bell, Briefcase } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 
@@ -25,7 +25,9 @@ interface DashboardNavbarProps {
 
 export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sidebarWidth }: DashboardNavbarProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
   const [newQuoteRequestsCount, setNewQuoteRequestsCount] = useState(0)
   const [newContactMessagesCount, setNewContactMessagesCount] = useState(0)
   const [newJobApplicationsCount, setNewJobApplicationsCount] = useState(0)
@@ -104,25 +106,30 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
     }
   }, [userType])
 
-  const handleLogout = () => {
-    try {
-      // Close the dropdown first to prevent DOM errors
-      setIsOpen(false)
-      
-      // Use a small delay to ensure dropdown is closed before navigation
-      setTimeout(() => {
-        // Use window.location.href for a full page reload to avoid React DOM reconciliation issues
-        if (typeof window !== 'undefined') {
-          window.location.href = '/auth/signin'
-        }
-      }, 100)
-    } catch (error) {
-      console.error('Logout error:', error)
-      // Fallback to direct navigation
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth/signin'
-      }
+  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, targetPath: string) => {
+    if (pathname === targetPath || isNavigating) {
+      e.preventDefault()
+      return
     }
+    
+    e.preventDefault()
+    setIsNavigating(true)
+    
+    setTimeout(() => {
+      router.push(targetPath)
+    }, 100)
+  }
+
+  const handleLogout = () => {
+    if (isNavigating) return
+    
+    // Close the dropdown first to prevent DOM errors
+    setIsOpen(false)
+    setIsNavigating(true)
+    
+    setTimeout(() => {
+      router.push('/auth/signin')
+    }, 150)
   }
 
   const profileLink = userType === "admin" ? "/admin/profile" : "/client/profile"
@@ -166,6 +173,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
           <div className="flex items-center gap-4">
             <Link 
               href="/admin/quote-requests" 
+              onClick={(e) => handleNavigation(e, "/admin/quote-requests")}
               className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
               title="Teklif Talepleri"
             >
@@ -178,6 +186,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
             </Link>
             <Link 
               href="/admin/contact-messages" 
+              onClick={(e) => handleNavigation(e, "/admin/contact-messages")}
               className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
               title="İletişim Mesajları"
             >
@@ -190,6 +199,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
             </Link>
             <Link 
               href="/admin/job-applications" 
+              onClick={(e) => handleNavigation(e, "/admin/job-applications")}
               className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
               title="İş Müracaatları"
             >

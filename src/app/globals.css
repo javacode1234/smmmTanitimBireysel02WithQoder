@@ -120,3 +120,98 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Blob Animation */
+@keyframes blob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(20px, -20px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  75% {
+    transform: translate(20px, 20px) scale(1.05);
+  }
+}
+
+.animate-blob {
+  animation: blob 20s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+/* Toast Sonner Özelleştirmesi */
+@layer components {
+  [data-sonner-toaster] {
+    @apply !font-sans;
+  }
+  
+  [data-sonner-toast] {
+    @apply !shadow-xl !border-2 !rounded-xl;
+  }
+  
+  [data-sonner-toast][data-type="success"] {
+    @apply !bg-green-50 !text-green-900 !border-green-300;
+  }
+  
+  [data-sonner-toast][data-type="success"] [data-icon] {
+    @apply !text-green-600;
+  }
+  
+  [data-sonner-toast][data-type="error"] {
+    @apply !bg-red-50 !text-red-900 !border-red-300;
+  }
+  
+  [data-sonner-toast][data-type="error"] [data-icon] {
+    @apply !text-red-600;
+  }
+  
+  [data-sonner-toast][data-type="warning"] {
+    @apply !bg-yellow-50 !text-yellow-900 !border-yellow-300;
+  }
+  
+  [data-sonner-toast][data-type="warning"] [data-icon] {
+    @apply !text-yellow-600;
+  }
+  
+  [data-sonner-toast][data-type="info"] {
+    @apply !bg-blue-50 !text-blue-900 !border-blue-300;
+  }
+  
+  [data-sonner-toast][data-type="info"] [data-icon] {
+    @apply !text-blue-600;
+  }
+  
+  [data-sonner-toast] [data-title] {
+    @apply !font-semibold !text-sm;
+  }
+  
+  [data-sonner-toast] [data-description] {
+    @apply !text-xs !opacity-90;
+  }
+  
+  [data-sonner-toast] [data-close-button] {
+    @apply !bg-white !border !border-gray-300 !shadow-sm hover:!bg-gray-100 !rounded-lg !transition-colors;
+  }
+  
+  [data-sonner-toast][data-type="success"] [data-close-button] {
+    @apply !border-green-300 hover:!bg-green-100;
+  }
+  
+  [data-sonner-toast][data-type="error"] [data-close-button] {
+    @apply !border-red-300 hover:!bg-red-100;
+  }
+  
+  [data-sonner-toast][data-type="warning"] [data-close-button] {
+    @apply !border-yellow-300 hover:!bg-yellow-100;
+  }
+  
+  [data-sonner-toast][data-type="info"] [data-close-button] {
+    @apply !border-blue-300 hover:!bg-blue-100;
+  }
+}

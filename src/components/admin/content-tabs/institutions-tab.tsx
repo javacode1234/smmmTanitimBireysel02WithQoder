@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Camera, Edit, Trash2, Plus, Loader2, ArrowUp, ArrowDown, X, Search } from "lucide-react"
+import { Camera, Edit, Trash2, Plus, Loader2, ArrowUp, ArrowDown, X, Search, RotateCcw, Save } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
 
@@ -45,15 +45,54 @@ interface ClientLogo {
   order: number
 }
 
+const DEFAULT_INSTITUTIONS: Omit<ClientLogo, 'id'>[] = [
+  {
+    name: "TOBB",
+    description: "Türkiye Odalar ve Borsalar Birliği",
+    url: "https://www.tobb.org.tr",
+    logo: "",
+    isActive: true,
+    order: 0,
+  },
+  {
+    name: "TÜRMÖB",
+    description: "Türkiye Serbest Muhasebeci Mali Müşavirler ve Yeminli Mali Müşavirler Odaları Birliği",
+    url: "https://www.turmob.org.tr",
+    logo: "",
+    isActive: true,
+    order: 1,
+  },
+  {
+    name: "GIB",
+    description: "Gelir İdaresi Başkanlığı",
+    url: "https://www.gib.gov.tr",
+    logo: "",
+    isActive: true,
+    order: 2,
+  },
+  {
+    name: "SGK",
+    description: "Sosyal Güvenlik Kurumu",
+    url: "https://www.sgk.gov.tr",
+    logo: "",
+    isActive: true,
+    order: 3,
+  },
+]
+
 export function InstitutionsTab() {
   const [items, setItems] = useState<ClientLogo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<ClientLogo | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [editingItem, setEditingItem] = useState<ClientLogo | null>(null)
+  const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false)
+  const [isSavingDefaults, setIsSavingDefaults] = useState(false)
   const [formData, setFormData] = useState<Partial<ClientLogo>>({
     name: "",
     description: "",
@@ -71,6 +110,13 @@ export function InstitutionsTab() {
 
   useEffect(() => {
     fetchItems()
+    
+    // Cleanup function to close dialogs on unmount
+    return () => {
+      setIsModalOpen(false)
+      setIsDeleteDialogOpen(false)
+      setIsResetDialogOpen(false)
+    }
   }, [])
 
   const fetchItems = async () => {
@@ -79,10 +125,21 @@ export function InstitutionsTab() {
       const response = await fetch('/api/content/institutions')
       if (response.ok) {
         const data = await response.json()
-        setItems(data)
+        if (data && data.length > 0) {
+          setItems(data)
+          setIsDatabaseEmpty(false)
+        } else {
+          setItems([])
+          setIsDatabaseEmpty(true)
+        }
+      } else {
+        setItems([])
+        setIsDatabaseEmpty(true)
       }
     } catch (error) {
       console.error('Error fetching client logos:', error)
+      setItems([])
+      setIsDatabaseEmpty(true)
     } finally {
       setIsLoading(false)
     }
@@ -280,6 +337,69 @@ export function InstitutionsTab() {
     }
   }
 
+  // Reset to default (delete all)
+  const handleReset = async () => {
+    setIsResetting(true)
+    try {
+      // 1. Database'i sil
+      const deleteResponse = await fetch('/api/content/institutions/reset', {
+        method: 'DELETE',
+      })
+
+      if (!deleteResponse.ok) {
+        toast.error('Sıfırlama işlemi başarısız oldu.')
+        return
+      }
+
+      // 2. Varsayılan değerleri database'e kaydet (Landing page için)
+      for (let i = 0; i < DEFAULT_INSTITUTIONS.length; i++) {
+        const institution = DEFAULT_INSTITUTIONS[i]
+        await fetch('/api/content/institutions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(institution)
+        })
+      }
+
+      toast.success('Kurumlar bölümü varsayılan değerlere sıfırlandı.')
+      // Reload items
+      await fetchItems()
+    } catch (error) {
+      console.error('Error resetting institutions:', error)
+      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.')
+    } finally {
+      setIsResetting(false)
+      setIsResetDialogOpen(false)
+    }
+  }
+
+  const saveDefaultsToDatabase = async () => {
+    setIsSavingDefaults(true)
+    try {
+      // Varsayılan kurumları tek tek kaydet
+      for (let i = 0; i < DEFAULT_INSTITUTIONS.length; i++) {
+        const institution = DEFAULT_INSTITUTIONS[i]
+        const response = await fetch('/api/content/institutions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(institution),
+        })
+
+        if (!response.ok) {
+          throw new Error('Varsayılan kurum kaydedilemedi')
+        }
+      }
+
+      toast.success('Varsayılan değerler veritabanına kaydedildi!')
+      await fetchItems()
+    } catch (error) {
+      console.error('Error saving defaults:', error)
+      toast.error('Varsayılan değerler kaydedilemedi')
+    } finally {
+      setIsSavingDefaults(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <Card>
@@ -447,7 +567,10 @@ export function InstitutionsTab() {
                             variant="outline"
                             size="icon"
                             className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleDelete(item.id)}
+                            onClick={() => {
+                              setItemToDelete(item)
+                              setIsDeleteDialogOpen(true)
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -676,6 +799,56 @@ export function InstitutionsTab() {
         description={itemToDelete ? `"${itemToDelete.name}" kurumunu silmek istediğinizden emin misiniz?` : undefined}
         isDeleting={isDeleting}
       />
+
+      {/* Reset Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isResetDialogOpen}
+        onClose={() => setIsResetDialogOpen(false)}
+        onConfirm={handleReset}
+        title="Varsayılan Değerlere Sıfırla"
+        description="Tüm kurumları silmek ve bölümü varsayılan değerlere sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm kurum verileri kaybolacaktır."
+      />
+
+      {/* Reset Button */}
+      <div className="flex justify-start items-center gap-4 mt-4">
+        <Button 
+          onClick={() => setIsResetDialogOpen(true)} 
+          disabled={isResetting || items.length === 0}
+          variant="outline"
+        >
+          {isResetting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Sıfırlanıyor...
+            </>
+          ) : (
+            <>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Varsayılan Değerlere Sıfırla
+            </>
+          )}
+        </Button>
+        
+        {isDatabaseEmpty && (
+          <Button 
+            onClick={saveDefaultsToDatabase} 
+            disabled={isSavingDefaults}
+            variant="default"
+          >
+            {isSavingDefaults ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Kaydediliyor...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Varsayılan Değerleri Veritabanına Kaydet
+              </>
+            )}
+          </Button>
+        )}
+      </div>
     </div>
   )
 }

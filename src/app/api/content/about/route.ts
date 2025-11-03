@@ -39,6 +39,16 @@ function getDefaultFeatures() {
   ];
 }
 
+function getDefaultValues() {
+  return [
+    { id: "default-v1", text: "Müşteri memnuniyeti odaklı hizmet anlayışı", isActive: true, order: 0 },
+    { id: "default-v2", text: "Şeffaf ve dürüst iş yapış biçimi", isActive: true, order: 1 },
+    { id: "default-v3", text: "Zamanında ve eksiksiz bildirim süreçleri", isActive: true, order: 2 },
+    { id: "default-v4", text: "7/24 danışmanlık desteği", isActive: true, order: 3 },
+    { id: "default-v5", text: "Dijital dönüşüm ve otomasyon", isActive: true, order: 4 }
+  ];
+}
+
 export async function GET() {
   try {
     const aboutSection = await prisma.aboutSection.findFirst({
@@ -62,10 +72,52 @@ export async function GET() {
     }
 
     return NextResponse.json(aboutSection)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching about section:', error)
+    
+    // If table doesn't exist (P2021), return default values
+    if (error.code === 'P2021' || error.message?.includes('does not exist in the current database')) {
+      return NextResponse.json({
+        title: "Hakkımızda",
+        subtitle: "Serbest Muhasebeci Mali Müşavir olarak, işletmelerin finansal süreçlerini en verimli şekilde yönetmelerine yardımcı oluyoruz.",
+        description: "Profesyonel kadromuz ve modern teknoloji altyapımız ile sektörde fark yaratıyoruz.",
+        features: getDefaultFeatures()
+      })
+    }
+    
     return NextResponse.json(
       { error: 'Hakkımızda bölümü alınamadı' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE endpoint to reset to default values
+export async function DELETE() {
+  try {
+    // Get existing section
+    const existingSection = await prisma.aboutSection.findFirst()
+    
+    if (existingSection) {
+      // Delete all features first
+      await prisma.aboutFeature.deleteMany({
+        where: { sectionId: existingSection.id }
+      })
+      
+      // Delete the section
+      await prisma.aboutSection.delete({
+        where: { id: existingSection.id }
+      })
+    }
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Hakkımızda bölümü varsayılan değerlere sıfırlandı'
+    })
+  } catch (error) {
+    console.error('Error resetting about section:', error)
+    return NextResponse.json(
+      { error: 'Hakkımızda bölümü sıfırlanamadı' },
       { status: 500 }
     )
   }
@@ -125,13 +177,14 @@ export async function POST(request: NextRequest) {
       // Return the updated section with features
       const sectionWithFeatures = await prisma.aboutSection.findUnique({
         where: { id: existingSection.id },
-        include: { features: { orderBy: { order: 'asc' } } }
+        include: { 
+          features: { orderBy: { order: 'asc' } }
+        }
       })
       
       return NextResponse.json(sectionWithFeatures)
     } else {
       // Create new section
-      // Try to create section with isActive field, fallback to without if it fails
       let newSection;
       try {
         newSection = await prisma.aboutSection.create({
@@ -145,7 +198,6 @@ export async function POST(request: NextRequest) {
                 icon: feature.icon,
                 title: feature.title,
                 description: feature.description,
-                // Only include isActive if it exists in the Prisma schema
                 ...(feature.isActive !== undefined && { isActive: feature.isActive }),
                 order: index
               }))

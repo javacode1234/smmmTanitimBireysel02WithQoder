@@ -7,8 +7,12 @@ export async function GET() {
       orderBy: { order: 'asc' },
     })
     return NextResponse.json(items)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching hero items:', error)
+    // Handle missing table (P2021) - return empty array
+    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+      return NextResponse.json([])
+    }
     return NextResponse.json(
       { error: 'Hero bölümü alınamadı' },
       { status: 500 }

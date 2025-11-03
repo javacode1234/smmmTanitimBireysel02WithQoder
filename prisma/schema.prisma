@@ -214,14 +214,14 @@ model ClientLogo {
 
 // About Section
 model AboutSection {
-  id          String          @id @default(cuid())
-  title       String
-  subtitle    String?         @db.Text
-  description String          @db.Text
-  image       String?         @db.LongText // Base64
-  features    AboutFeature[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id                String          @id @default(cuid())
+  title             String
+  subtitle          String?         @db.Text
+  description       String          @db.Text
+  image             String?         @db.LongText // Base64
+  features          AboutFeature[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 }
 
 model AboutFeature {
@@ -230,18 +230,40 @@ model AboutFeature {
   icon        String? // Lucide icon name
   title       String
   description String       @db.Text
-  isActive    Boolean      @default(true) // Add this line
+  isActive    Boolean      @default(true)
   order       Int          @default(0)
   section     AboutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 }
 
 // Services Section
+model ServicesSection {
+  id          String          @id @default(cuid())
+  title       String          @default("Hizmetlerimiz")
+  paragraph   String?         @db.Text
+  valuesTitle String?         @default("Hizmet Değerlerimiz")
+  footerText  String?         @db.Text  // Removed default - TEXT columns can't have defaults in MySQL
+  footerSignature String?      @default("SMMM Ekibi")
+  values      ServiceValue[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model ServiceValue {
+  id        String          @id @default(cuid())
+  sectionId String
+  text      String          @db.Text
+  isActive  Boolean         @default(true)
+  order     Int             @default(0)
+  section   ServicesSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+}
+
 model Service {
   id          String   @id @default(cuid())
   icon        String? // Lucide icon name
   title       String
   description String   @db.Text
   features    String?  @db.Text // JSON array of features
+  // color field removed - not in database
   isActive    Boolean  @default(true)
   order       Int      @default(0)
   createdAt   DateTime @default(now())

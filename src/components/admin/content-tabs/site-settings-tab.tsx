@@ -7,32 +7,40 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Camera, Loader2, MapPin } from "lucide-react"
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
+import { Camera, Loader2, MapPin, RotateCcw, Save } from "lucide-react"
 import { toast } from "sonner"
+
+// Default values
+const DEFAULT_SETTINGS = {
+  siteName: "SMMM Ofisi",
+  siteDescription: "Profesyonel muhasebe ve mali müşavirlik hizmetleri",
+  favicon: "",
+  brandIcon: "",
+  phone: "+90 (212) 123 45 67",
+  email: "info@smmmofisi.com",
+  address: "İstanbul, Türkiye",
+  mapLatitude: "41.0082",
+  mapLongitude: "28.9784",
+  mapEmbedUrl: "",
+  facebookUrl: "",
+  twitterUrl: "",
+  linkedinUrl: "",
+  instagramUrl: "",
+  youtubeUrl: "",
+}
 
 export function SiteSettingsTab() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [settingsId, setSettingsId] = useState<string | null>(null)
   const [mapModalOpen, setMapModalOpen] = useState(false)
   const [tempCoordinates, setTempCoordinates] = useState({ lat: 41.0082, lng: 28.9784 }) // Default: Istanbul
-  const [formData, setFormData] = useState({
-    siteName: "",
-    siteDescription: "",
-    favicon: "",
-    brandIcon: "",
-    phone: "",
-    email: "",
-    address: "",
-    mapLatitude: "",
-    mapLongitude: "",
-    mapEmbedUrl: "",
-    facebookUrl: "",
-    twitterUrl: "",
-    linkedinUrl: "",
-    instagramUrl: "",
-    youtubeUrl: "",
-  })
+  const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false)
+  const [isSavingDefaults, setIsSavingDefaults] = useState(false)
+  const [formData, setFormData] = useState(DEFAULT_SETTINGS)
 
   // Refs for file inputs to ensure proper cleanup
   const faviconInputRef = useRef<HTMLInputElement>(null)
@@ -62,30 +70,44 @@ export function SiteSettingsTab() {
       const response = await fetch('/api/content/site-settings')
       if (response.ok) {
         const data = await response.json()
-        if (data) {
-          setSettingsId(data.id || null)
+        console.log('Site settings data:', data) // Debug
+        if (data && data.id) {
+          setSettingsId(data.id)
           setFormData({
-            siteName: data.siteName || "",
-            siteDescription: data.siteDescription || "",
-            favicon: data.favicon || "",
-            brandIcon: data.brandIcon || "",
-            phone: data.phone || "",
-            email: data.email || "",
-            address: data.address || "",
-            mapLatitude: data.mapLatitude || "",
-            mapLongitude: data.mapLongitude || "",
-            mapEmbedUrl: data.mapEmbedUrl || "",
-            facebookUrl: data.facebookUrl || "",
-            twitterUrl: data.twitterUrl || "",
-            linkedinUrl: data.linkedinUrl || "",
-            instagramUrl: data.instagramUrl || "",
-            youtubeUrl: data.youtubeUrl || "",
+            siteName: data.siteName || DEFAULT_SETTINGS.siteName,
+            siteDescription: data.siteDescription || DEFAULT_SETTINGS.siteDescription,
+            favicon: data.favicon || DEFAULT_SETTINGS.favicon,
+            brandIcon: data.brandIcon || DEFAULT_SETTINGS.brandIcon,
+            phone: data.phone || DEFAULT_SETTINGS.phone,
+            email: data.email || DEFAULT_SETTINGS.email,
+            address: data.address || DEFAULT_SETTINGS.address,
+            mapLatitude: data.mapLatitude || DEFAULT_SETTINGS.mapLatitude,
+            mapLongitude: data.mapLongitude || DEFAULT_SETTINGS.mapLongitude,
+            mapEmbedUrl: data.mapEmbedUrl || DEFAULT_SETTINGS.mapEmbedUrl,
+            facebookUrl: data.facebookUrl || DEFAULT_SETTINGS.facebookUrl,
+            twitterUrl: data.twitterUrl || DEFAULT_SETTINGS.twitterUrl,
+            linkedinUrl: data.linkedinUrl || DEFAULT_SETTINGS.linkedinUrl,
+            instagramUrl: data.instagramUrl || DEFAULT_SETTINGS.instagramUrl,
+            youtubeUrl: data.youtubeUrl || DEFAULT_SETTINGS.youtubeUrl,
           })
+          setIsDatabaseEmpty(false)
+          console.log('Database NOT empty - ID:', data.id)
+        } else {
+          setFormData(DEFAULT_SETTINGS)
+          setIsDatabaseEmpty(true)
+          console.log('Database IS empty - no ID found')
         }
+      } else {
+        setFormData(DEFAULT_SETTINGS)
+        setIsDatabaseEmpty(true)
+        console.log('Database IS empty - API error')
       }
     } catch (error) {
       console.error('Error fetching settings:', error)
       toast.error('Ayarlar yüklenirken hata oluştu')
+      setFormData(DEFAULT_SETTINGS)
+      setIsDatabaseEmpty(true)
+      console.log('Database IS empty - exception')
     } finally {
       setIsLoading(false)
     }
@@ -179,6 +201,80 @@ export function SiteSettingsTab() {
 
   const openMapModal = () => {
     setMapModalOpen(true)
+  }
+
+  // Reset to default values
+  const handleReset = async () => {
+    setIsResetting(true)
+    try {
+      // 1. Database'i sil
+      const deleteResponse = await fetch('/api/content/site-settings', {
+        method: 'DELETE',
+      })
+
+      if (!deleteResponse.ok) {
+        toast.error('Sıfırlama işlemi başarısız oldu.')
+        return
+      }
+
+      // 2. Varsayılan değerleri database'e kaydet (Landing page için)
+      const saveResponse = await fetch('/api/content/site-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...DEFAULT_SETTINGS,
+          id: null
+        })
+      })
+
+      if (saveResponse.ok) {
+        const savedData = await saveResponse.json()
+        setSettingsId(savedData.id)
+        toast.success('Site ayarları varsayılan değerlere sıfırlandı.')
+        // Reload settings to get defaults
+        await fetchSettings()
+      } else {
+        toast.error('Varsayılan değerler kaydedilemedi.')
+      }
+    } catch (error) {
+      console.error('Error resetting settings:', error)
+      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.')
+    } finally {
+      setIsResetting(false)
+      setIsResetDialogOpen(false)
+    }
+  }
+
+  const saveDefaultsToDatabase = async () => {
+    setIsSavingDefaults(true)
+    try {
+      const payload = {
+        ...DEFAULT_SETTINGS,
+        id: null,
+      }
+
+      const response = await fetch('/api/content/site-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (response.ok) {
+        const savedData = await response.json()
+        setSettingsId(savedData.id)
+        toast.success('Varsayılan değerler veritabanına kaydedildi!')
+        await fetchSettings()
+      } else {
+        const error = await response.json()
+        console.error('Save error:', error)
+        toast.error(error.error || 'Varsayılan değerler kaydedilemedi')
+      }
+    } catch (error) {
+      console.error('Error saving defaults:', error)
+      toast.error('Varsayılan değerler kaydedilemedi')
+    } finally {
+      setIsSavingDefaults(false)
+    }
   }
 
   if (isLoading) {
@@ -515,7 +611,47 @@ export function SiteSettingsTab() {
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
+      {/* Reset Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isResetDialogOpen}
+        onClose={() => setIsResetDialogOpen(false)}
+        onConfirm={handleReset}
+        title="Varsayılan Değerlere Sıfırla"
+        description="Site ayarlarını varsayılan değerlere sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm özelleştirilmiş ayarlar kaybolacaktır."
+      />
+
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <Button 
+            onClick={() => setIsResetDialogOpen(true)} 
+            disabled={isResetting}
+            variant="outline"
+          >
+            {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {!isResetting && <RotateCcw className="mr-2 h-4 w-4" />}
+            Varsayılan Değerlere Sıfırla
+          </Button>
+          
+          {isDatabaseEmpty && (
+            <Button 
+              onClick={saveDefaultsToDatabase} 
+              disabled={isSavingDefaults}
+              variant="default"
+            >
+              {isSavingDefaults ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Kaydediliyor...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Varsayılan Değerleri Veritabanına Kaydet
+                </>
+              )}
+            </Button>
+          )}
+        </div>
         <Button onClick={handleSave} disabled={isSaving} size="lg">
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Kaydet

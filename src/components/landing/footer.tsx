@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin, Youtube } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { PrivacyPolicyModal } from "@/components/modals/privacy-policy-modal"
 import { TermsModal } from "@/components/modals/terms-modal"
 import { KVKKModal } from "@/components/modals/kvkk-modal"
@@ -42,6 +42,7 @@ export function Footer() {
   const [termsOpen, setTermsOpen] = useState(false)
   const [kvkkOpen, setKvkkOpen] = useState(false)
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({})
+  const scrollingRef = useRef(false)
 
   useEffect(() => {
     fetchSiteSettings()
@@ -72,6 +73,31 @@ export function Footer() {
   // Helper function to check if social media link should be shown
   const shouldShowSocialLink = (key: keyof typeof DEFAULT_SETTINGS) => {
     return siteSettings[key] || DEFAULT_SETTINGS[key]
+  }
+
+  // Handle anchor link clicks with debounce
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (!href.startsWith('#')) return
+    
+    if (scrollingRef.current) {
+      e.preventDefault()
+      return
+    }
+    
+    e.preventDefault()
+    scrollingRef.current = true
+
+    const targetId = href.substring(1)
+    const targetElement = document.getElementById(targetId)
+    
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setTimeout(() => {
+        scrollingRef.current = false
+      }, 1000)
+    } else {
+      scrollingRef.current = false
+    }
   }
 
   return (
@@ -136,13 +162,13 @@ export function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-4 text-lg">Hızlı Erişim</h4>
             <ul className="space-y-3 text-sm">
-              <li><Link href="#clients" className="hover:text-white transition-colors flex items-center gap-2">→ Kurumlar</Link></li>
-              <li><Link href="#about" className="hover:text-white transition-colors flex items-center gap-2">→ Hakkımızda</Link></li>
-              <li><Link href="#services" className="hover:text-white transition-colors flex items-center gap-2">→ Hizmetler</Link></li>
-              <li><Link href="#workflow" className="hover:text-white transition-colors flex items-center gap-2">→ Çalışma Süreci</Link></li>
-              <li><Link href="#pricing" className="hover:text-white transition-colors flex items-center gap-2">→ Fiyatlandırma</Link></li>
-              <li><Link href="#team" className="hover:text-white transition-colors flex items-center gap-2">→ Ekibimiz</Link></li>
-              <li><Link href="#faq" className="hover:text-white transition-colors flex items-center gap-2">→ SSS</Link></li>
+              <li><Link href="#clients" onClick={(e) => handleAnchorClick(e, '#clients')} className="hover:text-white transition-colors flex items-center gap-2">→ Kurumlar</Link></li>
+              <li><Link href="#about" onClick={(e) => handleAnchorClick(e, '#about')} className="hover:text-white transition-colors flex items-center gap-2">→ Hakkımızda</Link></li>
+              <li><Link href="#services" onClick={(e) => handleAnchorClick(e, '#services')} className="hover:text-white transition-colors flex items-center gap-2">→ Hizmetler</Link></li>
+              <li><Link href="#workflow" onClick={(e) => handleAnchorClick(e, '#workflow')} className="hover:text-white transition-colors flex items-center gap-2">→ Çalışma Süreci</Link></li>
+              <li><Link href="#pricing" onClick={(e) => handleAnchorClick(e, '#pricing')} className="hover:text-white transition-colors flex items-center gap-2">→ Fiyatlandırma</Link></li>
+              <li><Link href="#team" onClick={(e) => handleAnchorClick(e, '#team')} className="hover:text-white transition-colors flex items-center gap-2">→ Ekibimiz</Link></li>
+              <li><Link href="#faq" onClick={(e) => handleAnchorClick(e, '#faq')} className="hover:text-white transition-colors flex items-center gap-2">→ SSS</Link></li>
             </ul>
           </div>
 
@@ -150,12 +176,12 @@ export function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-4 text-lg">Hizmetlerimiz</h4>
             <ul className="space-y-3 text-sm">
-              <li><Link href="#services" className="hover:text-white transition-colors flex items-center gap-2">→ Beyanname Hazırlama</Link></li>
-              <li><Link href="#services" className="hover:text-white transition-colors flex items-center gap-2">→ Muhasebe Hizmetleri</Link></li>
-              <li><Link href="#services" className="hover:text-white transition-colors flex items-center gap-2">→ Şirket Kuruluşu</Link></li>
-              <li><Link href="#services" className="hover:text-white transition-colors flex items-center gap-2">→ Mali Danışmanlık</Link></li>
-              <li><Link href="#services" className="hover:text-white transition-colors flex items-center gap-2">→ Denetim ve Revizyon</Link></li>
-              <li><Link href="#services" className="hover:text-white transition-colors flex items-center gap-2">→ Bordro Hizmetleri</Link></li>
+              <li><Link href="#services" onClick={(e) => handleAnchorClick(e, '#services')} className="hover:text-white transition-colors flex items-center gap-2">→ Beyanname Hazırlama</Link></li>
+              <li><Link href="#services" onClick={(e) => handleAnchorClick(e, '#services')} className="hover:text-white transition-colors flex items-center gap-2">→ Muhasebe Hizmetleri</Link></li>
+              <li><Link href="#services" onClick={(e) => handleAnchorClick(e, '#services')} className="hover:text-white transition-colors flex items-center gap-2">→ Şirket Kuruluşu</Link></li>
+              <li><Link href="#services" onClick={(e) => handleAnchorClick(e, '#services')} className="hover:text-white transition-colors flex items-center gap-2">→ Mali Danışmanlık</Link></li>
+              <li><Link href="#services" onClick={(e) => handleAnchorClick(e, '#services')} className="hover:text-white transition-colors flex items-center gap-2">→ Denetim ve Revizyon</Link></li>
+              <li><Link href="#services" onClick={(e) => handleAnchorClick(e, '#services')} className="hover:text-white transition-colors flex items-center gap-2">→ Bordro Hizmetleri</Link></li>
             </ul>
           </div>
 

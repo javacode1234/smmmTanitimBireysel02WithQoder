@@ -42,10 +42,40 @@ export async function GET() {
     }
 
     return NextResponse.json(responseSettings)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching site settings:', error)
+    // Handle missing table (P2021) - return default settings
+    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+      return NextResponse.json(DEFAULT_SETTINGS)
+    }
     // Return default settings if there's an error
     return NextResponse.json(DEFAULT_SETTINGS)
+  }
+}
+
+// DELETE endpoint to reset to default values
+export async function DELETE() {
+  try {
+    // Get existing settings
+    const existing = await prisma.siteSettings.findFirst()
+    
+    if (existing) {
+      // Delete the settings
+      await prisma.siteSettings.delete({
+        where: { id: existing.id }
+      })
+    }
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Site ayarları varsayılan değerlere sıfırlandı'
+    })
+  } catch (error) {
+    console.error('Error resetting site settings:', error)
+    return NextResponse.json(
+      { error: 'Site ayarları sıfırlanamadı' },
+      { status: 500 }
+    )
   }
 }
 

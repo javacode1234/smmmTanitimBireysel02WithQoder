@@ -1,10 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { ArrowRight, TrendingUp } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 
 interface HeroData {
   id: string
@@ -17,8 +19,12 @@ interface HeroData {
 }
 
 export function HeroSection() {
+  const pathname = usePathname()
+  const router = useRouter()
   const [heroData, setHeroData] = useState<HeroData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const scrollingRef = useRef(false)
 
   useEffect(() => {
     fetchHeroData()
@@ -47,6 +53,51 @@ export function HeroSection() {
   const buttonUrl = heroData?.buttonUrl || "#services"
   const imageUrl = heroData?.image || "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=1200&auto=format&fit=crop"
 
+  // Handle button click for both anchor links and page navigation
+  const handleButtonClick = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+    // If it's an anchor link
+    if (url.startsWith('#')) {
+      if (scrollingRef.current) {
+        e.preventDefault()
+        return
+      }
+      
+      e.preventDefault()
+      scrollingRef.current = true
+
+      const targetId = url.substring(1)
+      const targetElement = document.getElementById(targetId)
+      
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        setTimeout(() => {
+          scrollingRef.current = false
+        }, 1000)
+      } else {
+        scrollingRef.current = false
+      }
+    }
+    // If navigating to same page (e.g., already on /auth/signin)
+    else if (pathname === url) {
+      e.preventDefault()
+    }
+    // For external navigation (like /auth/signin)
+    else if (!url.startsWith('#')) {
+      if (isNavigating) {
+        e.preventDefault()
+        return
+      }
+      
+      e.preventDefault()
+      setIsNavigating(true)
+      
+      // Add delay to ensure Framer Motion animations complete
+      setTimeout(() => {
+        router.push(url)
+      }, 150)
+    }
+  }
+
   return (
     <section className="pt-24 pb-12 px-4 bg-gradient-to-br from-blue-50 via-white to-cyan-50">
       <div className="container mx-auto">
@@ -69,16 +120,22 @@ export function HeroSection() {
               {subtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-2.5">
-              <a href={buttonUrl}>
-                <Button size="sm" className="text-sm shadow-lg hover:shadow-xl transition-shadow w-full sm:w-auto">
+              <Button size="sm" className="text-sm shadow-lg hover:shadow-xl transition-shadow w-full sm:w-auto" asChild>
+                <Link 
+                  href={buttonUrl}
+                  onClick={(e) => handleButtonClick(e, buttonUrl)}
+                >
                   {buttonText} <ArrowRight className="ml-2 h-3.5 w-3.5" />
-                </Button>
-              </a>
-              <a href="#contact">
-                <Button size="sm" variant="outline" className="text-sm border-2 w-full sm:w-auto">
+                </Link>
+              </Button>
+              <Button size="sm" variant="outline" className="text-sm border-2 w-full sm:w-auto" asChild>
+                <Link 
+                  href="#contact"
+                  onClick={(e) => handleButtonClick(e, '#contact')}
+                >
                   Daha Fazla Bilgi
-                </Button>
-              </a>
+                </Link>
+              </Button>
             </div>
             
             {/* Stats */}

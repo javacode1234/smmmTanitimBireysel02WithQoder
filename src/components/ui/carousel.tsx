@@ -244,12 +244,26 @@ const Carousel = React.forwardRef<
 
     const goToPrevious = React.useCallback(() => {
       if (!isMountedRef.current) return;
-      setCurrentIndex((prev) => (prev === 0 ? Math.max(totalItems - 1, 0) : prev - 1));
+      setCurrentIndex((prev) => {
+        const previous = prev - 1;
+        // Sonsuz döngü için sona git
+        if (previous < 0) {
+          return Math.max(totalItems - 1, 0);
+        }
+        return previous;
+      });
     }, [totalItems]);
 
     const goToNext = React.useCallback(() => {
       if (!isMountedRef.current) return;
-      setCurrentIndex((prev) => (prev === totalItems - 1 ? 0 : prev + 1));
+      setCurrentIndex((prev) => {
+        const next = prev + 1;
+        // Sonsuz döngü için başa dön
+        if (next >= totalItems) {
+          return 0;
+        }
+        return next;
+      });
     }, [totalItems]);
 
     const goToSlide = React.useCallback((index: number) => {
@@ -414,17 +428,14 @@ const Carousel = React.forwardRef<
           return;
         }
         
-        // If dragged more than 20% of item width, change slide
-        if (carouselRef.current) {
-          const itemWidth = carouselRef.current.offsetWidth / currentItemsPerView;
-          const threshold = itemWidth * 0.2;
-          
-          if (Math.abs(translateX) > threshold) {
-            if (translateX > 0) {
-              goToPrevious();
-            } else {
-              goToNext();
-            }
+        // If dragged more than 50px, change slide (sabit değer kullanarak logoların kaymasını önle)
+        const threshold = 50;
+        
+        if (Math.abs(translateX) > threshold) {
+          if (translateX > 0) {
+            goToPrevious();
+          } else {
+            goToNext();
           }
         }
       } catch (error) {
@@ -437,7 +448,7 @@ const Carousel = React.forwardRef<
           console.warn('Error resetting translateX:', error);
         }
       }
-    }, [isDragging, translateX, currentItemsPerView, goToPrevious, goToNext, continuousFlow]);
+    }, [isDragging, translateX, goToPrevious, goToNext, continuousFlow]);
 
     const contextValue = React.useMemo(
       () => ({
@@ -597,13 +608,15 @@ const CarouselContent = React.forwardRef<
       } else {
         // Safety check for negative values
         const safeCurrentIndex = Math.max(0, currentIndex)
-        return `translateX(calc(-${(safeCurrentIndex * 100)}% + ${translateX || 0}px))`
+        // Drag sırasında translateX'ı sınırla (logoların çok fazla kaymasını önle)
+        const limitedTranslateX = isDragging ? Math.max(-100, Math.min(100, translateX || 0)) : (translateX || 0)
+        return `translateX(calc(-${(safeCurrentIndex * 100)}% + ${limitedTranslateX}px))`
       }
     } catch (error) {
       console.warn('Error calculating transform:', error)
       return 'translateX(0)'
     }
-  }, [currentIndex, translateX, continuousFlow, flowPosition])
+  }, [currentIndex, translateX, continuousFlow, flowPosition, isDragging])
 
   // For continuous flow, we need to duplicate children to create seamless loop
   const renderChildren = React.useCallback(() => {
@@ -653,7 +666,7 @@ const CarouselContent = React.forwardRef<
 
   return (
     <div 
-      className="overflow-hidden"
+      className="overflow-hidden select-none"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -661,19 +674,24 @@ const CarouselContent = React.forwardRef<
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      style={{ userSelect: 'none' }}
       {...props}
     >
       <CarouselContentErrorBoundary>
         <div
           ref={ref}
           className={cn(
-            "flex transition-transform duration-500 ease-in-out cursor-grab",
-            continuousFlow && "transition-none duration-0",
-            isDragging && "cursor-grabbing transition-none",
+            "flex transition-transform ease-out",
+            continuousFlow ? "duration-0" : "duration-500",
+            isDragging ? "cursor-grabbing transition-none" : "cursor-grab",
             className
           )}
           style={{
             transform: calculateTransform(),
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            MozUserSelect: 'none',
+            msUserSelect: 'none',
           }}
         >
           {/* Safety check to prevent rendering issues */}
@@ -737,8 +755,8 @@ const CarouselPrevious = React.forwardRef<
     };
   }, []);
   
-  // Disable if only one item or at the beginning
-  const isDisabled = disabled || totalItems <= 1 || currentIndex === 0
+  // Sonsuz döngü için sadece tek item varsa disable et
+  const isDisabled = disabled || totalItems <= 1
 
   const handleClick = React.useCallback((e: React.MouseEvent) => {
     try {
@@ -790,8 +808,8 @@ const CarouselNext = React.forwardRef<
     };
   }, []);
   
-  // Disable if only one item or at the end
-  const isDisabled = disabled || totalItems <= 1 || currentIndex === totalItems - 1
+  // Sonsuz döngü için sadece tek item varsa disable et
+  const isDisabled = disabled || totalItems <= 1
 
   const handleClick = React.useCallback((e: React.MouseEvent) => {
     try {

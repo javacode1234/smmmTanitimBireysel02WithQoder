@@ -28,6 +28,22 @@ import { FAQTab } from "@/components/admin/content-tabs/faq-tab"
 
 export default function ContentManagementPage() {
   const [activeTab, setActiveTab] = useState("site-settings")
+  const [isChangingTab, setIsChangingTab] = useState(false)
+
+  // Handle tab changes safely
+  const handleTabChange = (newTab: string) => {
+    if (isChangingTab) return // Prevent rapid tab switching
+    
+    setIsChangingTab(true)
+    
+    // Longer delay to ensure all dialogs close properly before unmounting
+    setTimeout(() => {
+      setActiveTab(newTab)
+      setTimeout(() => {
+        setIsChangingTab(false)
+      }, 100)
+    }, 100)
+  }
 
   // Ensure proper cleanup on unmount
   useEffect(() => {
@@ -45,7 +61,7 @@ export default function ContentManagementPage() {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 h-auto">
           <TabsTrigger value="site-settings" className="flex flex-col gap-1 py-3">
             <Settings className="h-4 w-4" />

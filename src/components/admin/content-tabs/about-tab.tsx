@@ -18,7 +18,8 @@ import {
   ChevronRight,
   Edit3,
   Check,
-  X
+  X,
+  RotateCcw
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -39,6 +40,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
+import { Badge } from "@/components/ui/badge"
 
 // Available icons for selection
 const AVAILABLE_ICONS = [
@@ -103,6 +105,10 @@ export function AboutTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [featureToDelete, setFeatureToDelete] = useState<any>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
+  const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false)
+  const [isSavingDefaults, setIsSavingDefaults] = useState(false)
   const itemsPerPage = 5
 
   // Fetch about section data from API
@@ -112,28 +118,43 @@ export function AboutTab() {
         const response = await fetch('/api/content/about')
         if (response.ok) {
           const data = await response.json()
-          // Ensure all features have isActive property
-          if (data.features) {
-            data.features = data.features.map((feature: any) => ({
-              ...feature,
-              isActive: feature.isActive ?? true
-            }))
+          if (data && data.id) {
+            // Ensure all features have isActive property
+            if (data.features) {
+              data.features = data.features.map((feature: any) => ({
+                ...feature,
+                isActive: feature.isActive ?? true
+              }))
+            }
+            setAboutData(data)
+            setIsDatabaseEmpty(false)
+          } else {
+            setAboutData(DEFAULT_ABOUT)
+            setIsDatabaseEmpty(true)
           }
-          setAboutData(data)
         } else {
           // If there's an error, use default values
           setAboutData(DEFAULT_ABOUT)
+          setIsDatabaseEmpty(true)
         }
       } catch (error) {
         console.error('Error fetching about data:', error)
         // If there's an error, use default values
         setAboutData(DEFAULT_ABOUT)
+        setIsDatabaseEmpty(true)
       } finally {
         setLoading(false)
       }
     }
 
     fetchAboutData()
+    
+    // Cleanup function to close dialogs on unmount
+    return () => {
+      setIsDialogOpen(false)
+      setIsDeleteDialogOpen(false)
+      setIsResetDialogOpen(false)
+    }
   }, [])
 
   // Filter features based on search term
@@ -263,6 +284,73 @@ export function AboutTab() {
       toast.error('Bir hata oluştu. Lütfen tekrar deneyin.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Reset to default values
+  const handleReset = async () => {
+    setIsResetting(true)
+    try {
+      // 1. Database'i sil
+      const deleteResponse = await fetch('/api/content/about', {
+        method: 'DELETE',
+      })
+
+      if (!deleteResponse.ok) {
+        toast.error('Sıfırlama işlemi başarısız oldu.')
+        return
+      }
+
+      // 2. Varsayılan değerleri database'e kaydet (Landing page için)
+      const saveResponse = await fetch('/api/content/about', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(DEFAULT_ABOUT),
+      })
+
+      if (saveResponse.ok) {
+        const savedData = await saveResponse.json()
+        toast.success('Hakkımızda bölümü varsayılan değerlere sıfırlandı.')
+        setAboutData(savedData)
+      } else {
+        toast.error('Varsayılan değerler kaydedilemedi.')
+      }
+    } catch (error) {
+      console.error('Error resetting about data:', error)
+      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.')
+    } finally {
+      setIsResetting(false)
+      setIsResetDialogOpen(false)
+    }
+  }
+
+  const saveDefaultsToDatabase = async () => {
+    setIsSavingDefaults(true)
+    try {
+      const response = await fetch('/api/content/about', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(DEFAULT_ABOUT),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        toast.success('Varsayılan değerler veritabanına kaydedildi!')
+        // Reload data
+        setAboutData(data)
+        setIsDatabaseEmpty(false)
+      } else {
+        toast.error('Varsayılan değerler kaydedilemedi.')
+      }
+    } catch (error) {
+      console.error('Error saving defaults:', error)
+      toast.error('Varsayılan değerler kaydedilemedi.')
+    } finally {
+      setIsSavingDefaults(false)
     }
   }
 
@@ -561,7 +649,55 @@ export function AboutTab() {
         description={`"${featureToDelete?.title}" adlı özelliği silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`}
       />
 
-      <div className="flex justify-end">
+      {/* Reset Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isResetDialogOpen}
+        onClose={() => setIsResetDialogOpen(false)}
+        onConfirm={handleReset}
+        title="Varsayılan Değerlere Sıfırla"
+        description="Hakkımızda bölümünü varsayılan değerlere sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm özelleştirilmiş içerik kaybolacaktır."
+      />
+
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <Button 
+            onClick={() => setIsResetDialogOpen(true)} 
+            disabled={isResetting}
+            variant="outline"
+          >
+            {isResetting ? (
+              <>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                Sıfırlanıyor...
+              </>
+            ) : (
+              <>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Varsayılan Değerlere Sıfırla
+              </>
+            )}
+          </Button>
+          
+          {isDatabaseEmpty && (
+            <Button 
+              onClick={saveDefaultsToDatabase} 
+              disabled={isSavingDefaults}
+              variant="default"
+            >
+              {isSavingDefaults ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                  Kaydediliyor...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Varsayılan Değerleri Veritabanına Kaydet
+                </>
+              )}
+            </Button>
+          )}
+        </div>
         <Button onClick={saveAboutData} disabled={saving}>
           {saving ? (
             <>

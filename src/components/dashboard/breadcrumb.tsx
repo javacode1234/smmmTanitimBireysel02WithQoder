@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { ChevronRight, Home } from "lucide-react"
-import { usePathname } from "next/navigation"
-import { Fragment } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { Fragment, useState } from "react"
 
 interface BreadcrumbProps {
   userType: "admin" | "client"
@@ -11,6 +11,8 @@ interface BreadcrumbProps {
 
 export function Breadcrumb({ userType }: BreadcrumbProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const [isNavigating, setIsNavigating] = useState(false)
   
   // Create breadcrumb items from pathname
   const pathSegments = pathname.split("/").filter(Boolean)
@@ -48,10 +50,25 @@ export function Breadcrumb({ userType }: BreadcrumbProps) {
 
   const homeLink = userType === "admin" ? "/admin" : "/client"
 
+  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, targetPath: string) => {
+    if (pathname === targetPath || isNavigating) {
+      e.preventDefault()
+      return
+    }
+    
+    e.preventDefault()
+    setIsNavigating(true)
+    
+    setTimeout(() => {
+      router.push(targetPath)
+    }, 100)
+  }
+
   return (
     <nav className="flex items-center space-x-1 text-sm text-gray-600 mb-6">
       <Link 
         href={homeLink} 
+        onClick={(e) => handleNavigation(e, homeLink)}
         className="flex items-center hover:text-primary transition-colors"
       >
         <Home className="h-4 w-4" />
@@ -65,6 +82,7 @@ export function Breadcrumb({ userType }: BreadcrumbProps) {
           ) : (
             <Link 
               href={item.path} 
+              onClick={(e) => handleNavigation(e, item.path)}
               className="hover:text-primary transition-colors"
             >
               {item.name}
