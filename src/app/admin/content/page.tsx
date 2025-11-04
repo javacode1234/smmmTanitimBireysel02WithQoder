@@ -1,5 +1,7 @@
 "use client"
 
+"use client"
+
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,10 +12,11 @@ import {
   Info, 
   Briefcase, 
   Workflow, 
-  DollarSign, 
+  Banknote, 
   MessageSquare, 
   UserCircle, 
-  HelpCircle 
+  HelpCircle,
+  FileText
 } from "lucide-react"
 import { SiteSettingsTab } from "@/components/admin/content-tabs/site-settings-tab"
 import { HeroSectionTab } from "@/components/admin/content-tabs/hero-section-tab"
@@ -25,6 +28,7 @@ import { PricingTab } from "@/components/admin/content-tabs/pricing-tab"
 import { TestimonialsTab } from "@/components/admin/content-tabs/testimonials-tab"
 import { TeamTab } from "@/components/admin/content-tabs/team-tab"
 import { FAQTab } from "@/components/admin/content-tabs/faq-tab"
+import { LegalDocumentsTab } from "@/components/admin/content-tabs/legal-documents-tab"
 
 export default function ContentManagementPage() {
   const [activeTab, setActiveTab] = useState("site-settings")
@@ -61,8 +65,8 @@ export default function ContentManagementPage() {
         </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 h-auto">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6" id="admin-content-tabs">
+        <TabsList className="grid w-full grid-cols-5 lg:grid-cols-11 h-auto">
           <TabsTrigger value="site-settings" className="flex flex-col gap-1 py-3">
             <Settings className="h-4 w-4" />
             <span className="text-xs">Site Ayarları</span>
@@ -88,7 +92,7 @@ export default function ContentManagementPage() {
             <span className="text-xs">Süreç</span>
           </TabsTrigger>
           <TabsTrigger value="pricing" className="flex flex-col gap-1 py-3">
-            <DollarSign className="h-4 w-4" />
+            <Banknote className="h-4 w-4" />
             <span className="text-xs">Fiyatlar</span>
           </TabsTrigger>
           <TabsTrigger value="testimonials" className="flex flex-col gap-1 py-3">
@@ -102,6 +106,10 @@ export default function ContentManagementPage() {
           <TabsTrigger value="faq" className="flex flex-col gap-1 py-3">
             <HelpCircle className="h-4 w-4" />
             <span className="text-xs">SSS</span>
+          </TabsTrigger>
+          <TabsTrigger value="legal" className="flex flex-col gap-1 py-3">
+            <FileText className="h-4 w-4" />
+            <span className="text-xs">Yasal</span>
           </TabsTrigger>
         </TabsList>
 
@@ -143,6 +151,10 @@ export default function ContentManagementPage() {
 
         <TabsContent value="faq" key="faq">
           <FAQTab />
+        </TabsContent>
+
+        <TabsContent value="legal" key="legal">
+          <LegalDocumentsTab />
         </TabsContent>
       </Tabs>
     </div>

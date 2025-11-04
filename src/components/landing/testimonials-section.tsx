@@ -1,89 +1,83 @@
 "use client"
 
-import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion"
+"use client"
+
+import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 
-const testimonials = [
-  {
-    name: "Ahmet Yılmaz",
-    role: "Genel Müdür",
-    company: "TechVision A.Ş.",
-    image: "",
-    initials: "AY",
-    rating: 5,
-    text: "15 yıldır birlikte çalışıyoruz. Profesyonel yaklaşımları ve güvenilirlikleri sayesinde mali süreçlerimiz her zaman kontrol altında. Kesinlikle tavsiye ederim.",
-    color: "from-blue-500 to-blue-600"
-  },
-  {
-    name: "Zeynep Kaya",
-    role: "İşletme Sahibi",
-    company: "Kaya Tekstil",
-    image: "",
-    initials: "ZK",
-    rating: 5,
-    text: "Şirket kuruluş sürecimizde baştan sona yanımızda oldular. Tüm resmi işlemler sorunsuz tamamlandı. Muhasebe hizmetlerinden de çok memnunuz.",
-    color: "from-purple-500 to-purple-600"
-  },
-  {
-    name: "Mehmet Demir",
-    role: "Kurucu Ortak",
-    company: "Demir E-Ticaret",
-    image: "",
-    initials: "MD",
-    rating: 5,
-    text: "E-ticaret işimiz için özel çözümler sundular. Vergi optimizasyonu konusundaki tavsiyeleri ile önemli tasarruf sağladık. Çok teşekkür ederiz.",
-    color: "from-green-500 to-green-600"
-  },
-  {
-    name: "Ayşe Şahin",
-    role: "Yönetim Kurulu Başkanı",
-    company: "Şahin Danışmanlık",
-    image: "",
-    initials: "AŞ",
-    rating: 5,
-    text: "7/24 destek hizmeti gerçekten çok değerli. Acil durumlarda her zaman ulaşabiliyoruz. Profesyonel ekipleri ve hızlı çözümleri için teşekkürler.",
-    color: "from-orange-500 to-orange-600"
-  },
-  {
-    name: "Can Öztürk",
-    role: "CEO",
-    company: "Öztürk Holding",
-    image: "",
-    initials: "CÖ",
-    rating: 5,
-    text: "Holdingimizdeki tüm şirketlerin muhasebesini yönetiyorlar. Düzenli raporlama ve analiz hizmetleri stratejik kararlarımızda çok önemli rol oynuyor.",
-    color: "from-red-500 to-red-600"
-  },
-  {
-    name: "Elif Yıldız",
-    role: "Muhasebe Müdürü",
-    company: "Yıldız İnşaat",
-    image: "",
-    initials: "EY",
-    rating: 5,
-    text: "Dijital altyapıları ve modern yaklaşımları sayesinde tüm işlemlerimiz çok hızlı ilerliyor. Ekibin bilgisi ve deneyimi gerçekten fark yaratıyor.",
-    color: "from-cyan-500 to-cyan-600"
-  }
-]
+interface Testimonial {
+  id: string
+  name: string
+  position: string
+  company: string | null
+  content: string
+  avatar: string | null
+  initials: string
+  color: string
+  rating: number
+  isActive: boolean
+  order: number
+}
+
+interface SectionData {
+  title: string
+  paragraph: string
+}
 
 export function TestimonialsSection() {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
-  const [dragDirection, setDragDirection] = useState(0)
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([])
+  const [sectionData, setSectionData] = useState<SectionData>({
+    title: "Müşterilerimiz Ne Diyor?",
+    paragraph: "500'den fazla mutlu müşterimizin deneyimleri. Güven ve memnuniyet odaklı hizmet anlayışımızın en büyük kanıtı."
+  })
 
   useEffect(() => {
-    if (isPaused) return
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    try {
+      const [testimonialsRes, sectionRes] = await Promise.all([
+        fetch('/api/content/testimonials'),
+        fetch('/api/content/testimonials/section')
+      ])
+
+      if (testimonialsRes.ok) {
+        const data = await testimonialsRes.json()
+        // Only show active testimonials
+        const activeTestimonials = (data || []).filter((t: Testimonial) => t.isActive === true)
+        setTestimonials(activeTestimonials)
+      }
+
+      if (sectionRes.ok) {
+        const section = await sectionRes.json()
+        if (section && section.id) {
+          setSectionData({
+            title: section.title || "Müşterilerimiz Ne Diyor?",
+            paragraph: section.paragraph || "500'den fazla mutlu müşterimizin deneyimleri."
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching testimonials data:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (isPaused || testimonials.length === 0) return
 
     const timer = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % testimonials.length)
-    }, 5000) // Changed from 3000 to 5000 (5 seconds)
+    }, 5000)
 
     return () => clearInterval(timer)
-  }, [isPaused])
+  }, [isPaused, testimonials.length])
 
   const goToSlide = (index: number) => {
     setActiveIndex(index)
@@ -106,6 +100,10 @@ export function TestimonialsSection() {
     }
   }
 
+  if (testimonials.length === 0) {
+    return null // Don't show section if no active testimonials
+  }
+
   return (
     <section id="testimonials" className="py-12 px-4 bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto">
@@ -118,11 +116,10 @@ export function TestimonialsSection() {
           className="text-center mb-10"
         >
           <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            Müşterilerimiz Ne Diyor?
+            {sectionData.title}
           </h2>
           <p className="text-sm text-muted-foreground max-w-3xl mx-auto">
-            500'den fazla mutlu müşterimizin deneyimleri. 
-            Güven ve memnuniyet odaklı hizmet anlayışımızın en büyük kanıtı.
+            {sectionData.paragraph}
           </p>
         </motion.div>
 
@@ -185,21 +182,25 @@ export function TestimonialsSection() {
 
                     {/* Testimonial Text */}
                     <p className="text-gray-700 mb-6 leading-relaxed italic text-base">
-                      "{testimonial.text}"
+                      "{testimonial.content}"
                     </p>
 
                     {/* Author Info */}
                     <div className="flex items-center gap-4 justify-center">
                       <Avatar className="h-14 w-14">
-                        <AvatarImage src={testimonial.image} />
+                        {testimonial.avatar ? (
+                          <AvatarImage src={testimonial.avatar} />
+                        ) : null}
                         <AvatarFallback className={`bg-gradient-to-br ${testimonial.color} text-white font-semibold`}>
                           {testimonial.initials}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                        <div className="text-sm text-muted-foreground">{testimonial.role}</div>
-                        <div className="text-sm text-blue-600">{testimonial.company}</div>
+                        <div className="text-sm text-muted-foreground">{testimonial.position}</div>
+                        {testimonial.company && (
+                          <div className="text-sm text-blue-600">{testimonial.company}</div>
+                        )}
                       </div>
                     </div>
                   </CardContent>

@@ -174,12 +174,13 @@ model SiteSettings {
   address         String?  @db.Text
   mapLatitude     String?
   mapLongitude    String?
-  mapEmbedUrl     String?  @db.Text // Google Maps embed URL
+  mapEmbedUrl     String?  @db.Text
   facebookUrl     String?
-  twitterUrl      String?
+  xUrl            String?
   linkedinUrl     String?
   instagramUrl    String?
   youtubeUrl      String?
+  threadsUrl      String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -274,11 +275,11 @@ model ServiceValue {
 
 model Service {
   id          String   @id @default(cuid())
-  icon        String? // Lucide icon name
+  icon        String   @default("FileText") // Lucide icon name
   title       String
   description String   @db.Text
   features    String?  @db.Text // JSON array of features
-  // color field removed - not in database
+  color       String   @default("from-blue-500 to-blue-600") // Tailwind gradient classes
   isActive    Boolean  @default(true)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
@@ -286,23 +287,47 @@ model Service {
 }
 
 // Workflow Section
+model WorkflowSection {
+  id          String   @id @default(cuid())
+  title       String   @default("Çalışma Sürecimiz")
+  paragraph   String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model WorkflowStep {
   id          String   @id @default(cuid())
-  icon        String? // Lucide icon name
+  number      String   // e.g., "01", "02", etc.
+  icon        String   @default("Phone") // Lucide icon name
   title       String
   description String   @db.Text
+  color       String   @default("from-blue-500 to-blue-600") // Tailwind gradient classes
+  isActive    Boolean  @default(true)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 // Pricing Section
+model PricingSection {
+  id                    String                @id @default(cuid())
+  title                 String                @default("Fiyatlandırma")
+  paragraph             String?               @db.Text
+  additionalTitle       String                @default("Ek Hizmetler")
+  additionalParagraph   String?               @db.Text
+  footerText            String?               @db.Text
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+}
+
 model PricingPlan {
   id          String          @id @default(cuid())
   name        String
+  icon        String          @default("Star") // Lucide icon name
   price       String
   period      String          @default("ay")
   description String?         @db.Text
+  color       String          @default("from-blue-500 to-blue-600") // Tailwind gradient classes
   features    PricingFeature[]
   isPopular   Boolean         @default(false)
   isActive    Boolean         @default(true)
@@ -320,7 +345,24 @@ model PricingFeature {
   plan      PricingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 }
 
+model AdditionalService {
+  id          String   @id @default(cuid())
+  text        String   @db.Text
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 // Testimonials Section
+model TestimonialsSection {
+  id          String   @id @default(cuid())
+  title       String   @default("İstemcilerimiz Ne Diyor?")
+  paragraph   String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Testimonial {
   id        String   @id @default(cuid())
   name      String
@@ -328,6 +370,8 @@ model Testimonial {
   company   String?
   content   String   @db.Text
   avatar    String?  @db.LongText // Base64
+  initials  String   @default("??")
+  color     String   @default("from-blue-500 to-blue-600") // Tailwind gradient classes
   rating    Int      @default(5)
   isActive  Boolean  @default(true)
   order     Int      @default(0)
@@ -336,15 +380,29 @@ model Testimonial {
 }
 
 // Team Section
+model TeamSection {
+  id          String   @id @default(cuid())
+  title       String   @default("Uzman Ekibimiz")
+  paragraph   String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model TeamMember {
   id          String   @id @default(cuid())
   name        String
   position    String
   bio         String?  @db.Text
-  avatar      String?  @db.LongText // Base64
+  avatar      String?  @db.LongText
+  initials    String   @default("??")
+  color       String   @default("from-blue-500 to-blue-600")
   email       String?
   phone       String?
   linkedinUrl String?
+  xUrl        String?
+  facebookUrl String?
+  instagramUrl String?
+  threadsUrl  String?
   isActive    Boolean  @default(true)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
@@ -352,6 +410,14 @@ model TeamMember {
 }
 
 // FAQ Section
+model FAQSection {
+  id          String   @id @default(cuid())
+  title       String   @default("Sıkça Sorulan Sorular")
+  paragraph   String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model FAQCategory {
   id        String   @id @default(cuid())
   name      String   @unique
@@ -367,6 +433,7 @@ model FAQ {
   categoryId String
   question   String
   answer     String      @db.Text
+  isActive   Boolean     @default(true)
   order      Int         @default(0)
   category   FAQCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   createdAt  DateTime    @default(now())
@@ -468,4 +535,23 @@ enum ContactMessageStatus {
   PENDING   // Beklemede
   REPLIED   // Yanıtlandı
   RESOLVED  // Çözüldü
+}
+
+// LegalDocument model for Privacy Policy, Terms, KVKK
+model LegalDocument {
+  id          String   @id @default(cuid())
+  type        LegalDocumentType
+  title       String
+  content     String   @db.LongText
+  lastUpdated DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([type])
+}
+
+enum LegalDocumentType {
+  PRIVACY_POLICY
+  TERMS_OF_USE
+  KVKK
 }

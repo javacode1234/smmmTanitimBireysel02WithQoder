@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin, Youtube } from "lucide-react"
+import { Facebook, Linkedin, Instagram, Mail, Phone, MapPin, Youtube } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { PrivacyPolicyModal } from "@/components/modals/privacy-policy-modal"
 import { TermsModal } from "@/components/modals/terms-modal"
@@ -16,10 +16,11 @@ interface SiteSettings {
   email?: string
   address?: string
   facebookUrl?: string
-  twitterUrl?: string
+  xUrl?: string
   linkedinUrl?: string
   instagramUrl?: string
   youtubeUrl?: string
+  threadsUrl?: string
 }
 
 // Default values
@@ -30,10 +31,11 @@ const DEFAULT_SETTINGS = {
   email: "info@smmmofisi.com",
   address: "İstanbul, Türkiye",
   facebookUrl: "https://facebook.com",
-  twitterUrl: "https://twitter.com",
+  xUrl: "https://x.com",
   linkedinUrl: "https://linkedin.com",
   instagramUrl: "https://instagram.com",
-  youtubeUrl: "https://youtube.com"
+  youtubeUrl: "https://youtube.com",
+  threadsUrl: "https://threads.net"
 }
 
 export function Footer() {
@@ -140,9 +142,11 @@ export function Footer() {
                   <Facebook className="h-4 w-4" />
                 </a>
               )}
-              {shouldShowSocialLink('twitterUrl') && (
-                <a href={getValue('twitterUrl')} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-blue-400 flex items-center justify-center transition-colors">
-                  <Twitter className="h-4 w-4" />
+              {shouldShowSocialLink('xUrl') && (
+                <a href={getValue('xUrl')} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-gray-800 flex items-center justify-center transition-colors">
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
                 </a>
               )}
               {shouldShowSocialLink('linkedinUrl') && (
@@ -158,6 +162,11 @@ export function Footer() {
               {shouldShowSocialLink('youtubeUrl') && (
                 <a href={getValue('youtubeUrl')} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-red-600 flex items-center justify-center transition-colors">
                   <Youtube className="h-4 w-4" />
+                </a>
+              )}
+              {shouldShowSocialLink('threadsUrl') && (
+                <a href={getValue('threadsUrl')} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-lg bg-slate-700 hover:bg-gray-900 flex items-center justify-center transition-colors">
+                  <Image src="/nsosyal.png" alt="Threads" width={16} height={16} className="object-contain" />
                 </a>
               )}
             </div>

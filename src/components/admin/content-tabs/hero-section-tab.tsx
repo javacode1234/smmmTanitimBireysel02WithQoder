@@ -372,26 +372,24 @@ export function HeroSectionTab() {
             Varsayılan Değerlere Sıfırla
           </Button>
           
-          {isDatabaseEmpty && (
-            <Button 
-              onClick={saveDefaultsToDatabase} 
-              disabled={isSavingDefaults}
-              variant="default"
-              className={`bg-blue-600 hover:bg-blue-700 ${!isDatabaseEmpty ? 'opacity-50' : ''}`}
-            >
-              {isSavingDefaults ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Kaydediliyor...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Varsayılan Değerleri Veritabanına Kaydet
-                </>
-              )}
-            </Button>
-          )}
+          <Button 
+            onClick={saveDefaultsToDatabase} 
+            disabled={!isDatabaseEmpty || isSavingDefaults}
+            variant="default"
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isSavingDefaults ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Kaydediliyor...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Varsayılan Değerleri Veritabanına Kaydet
+              </>
+            )}
+          </Button>
         </div>
         <Button onClick={handleSave} disabled={isSaving} size="lg" className="bg-green-600 hover:bg-green-700">
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -31,6 +31,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
   const [newQuoteRequestsCount, setNewQuoteRequestsCount] = useState(0)
   const [newContactMessagesCount, setNewContactMessagesCount] = useState(0)
   const [newJobApplicationsCount, setNewJobApplicationsCount] = useState(0)
+  const [mounted, setMounted] = useState(false)
   
   // User data state
   const [userData, setUserData] = useState({
@@ -40,6 +41,11 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
     avatar: "",
     initials: userType === "admin" ? "AK" : "MK"
   })
+
+  // Prevent hydration errors by only rendering dropdown after mount
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Fetch user profile
   useEffect(() => {
@@ -210,10 +216,61 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
         )}
 
         {/* User Dropdown */}
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-          <DropdownMenuTrigger className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors cursor-pointer outline-none">
+        {mounted ? (
+          <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+            <DropdownMenuTrigger className="flex items-center gap-3 hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors cursor-pointer outline-none">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={userData.avatar} alt={userData.name} />
+                <AvatarFallback className="bg-primary text-white text-sm">
+                  {userData.initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-medium text-gray-900">{userData.name}</span>
+                <span className="text-xs text-gray-500">{userData.role}</span>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">{userData.name}</p>
+                  <p className="text-xs text-muted-foreground">{userData.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.preventDefault()
+                  setIsOpen(false)
+                  handleNavigation(e as any, profileLink)
+                }}
+                className="cursor-pointer"
+              >
+                <User className="mr-2 h-4 w-4" />
+                Profil
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={(e) => {
+                  e.preventDefault()
+                  setIsOpen(false)
+                  handleNavigation(e as any, settingsLink)
+                }}
+                className="cursor-pointer"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Ayarlar
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">
+                <LogOut className="mr-2 h-4 w-4" />
+                Çıkış Yap
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2">
             <Avatar className="h-9 w-9">
-              <AvatarImage src={userData.avatar} alt={userData.name} />
               <AvatarFallback className="bg-primary text-white text-sm">
                 {userData.initials}
               </AvatarFallback>
@@ -222,45 +279,8 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
               <span className="text-sm font-medium text-gray-900">{userData.name}</span>
               <span className="text-xs text-gray-500">{userData.role}</span>
             </div>
-            <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{userData.name}</p>
-                <p className="text-xs text-muted-foreground">{userData.email}</p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={(e) => {
-                e.preventDefault()
-                setIsOpen(false)
-                handleNavigation(e as any, profileLink)
-              }}
-              className="cursor-pointer"
-            >
-              <User className="mr-2 h-4 w-4" />
-              Profil
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={(e) => {
-                e.preventDefault()
-                setIsOpen(false)
-                handleNavigation(e as any, settingsLink)
-              }}
-              className="cursor-pointer"
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              Ayarlar
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">
-              <LogOut className="mr-2 h-4 w-4" />
-              Çıkış Yap
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -9,10 +9,11 @@ const DEFAULT_SETTINGS = {
   email: 'info@smmmofisi.com',
   address: 'İstanbul, Türkiye',
   facebookUrl: 'https://facebook.com',
-  twitterUrl: 'https://twitter.com',
+  xUrl: 'https://x.com',
   linkedinUrl: 'https://linkedin.com',
   instagramUrl: 'https://instagram.com',
   youtubeUrl: 'https://youtube.com',
+  threadsUrl: 'https://threads.net',
 }
 
 export async function GET() {
@@ -91,10 +92,11 @@ export async function POST(request: NextRequest) {
           mapLongitude: data.mapLongitude,
           mapEmbedUrl: data.mapEmbedUrl,
           facebookUrl: data.facebookUrl,
-          twitterUrl: data.twitterUrl,
+          xUrl: data.xUrl,
           linkedinUrl: data.linkedinUrl,
           instagramUrl: data.instagramUrl,
           youtubeUrl: data.youtubeUrl,
+          threadsUrl: data.threadsUrl,
         },
       })
       console.log('Updated successfully')
@@ -113,10 +115,11 @@ export async function POST(request: NextRequest) {
           mapLongitude: data.mapLongitude,
           mapEmbedUrl: data.mapEmbedUrl,
           facebookUrl: data.facebookUrl,
-          twitterUrl: data.twitterUrl,
+          xUrl: data.xUrl,
           linkedinUrl: data.linkedinUrl,
           instagramUrl: data.instagramUrl,
           youtubeUrl: data.youtubeUrl,
+          threadsUrl: data.threadsUrl,
         },
       })
       console.log('Created successfully')

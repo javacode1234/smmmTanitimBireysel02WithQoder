@@ -663,11 +663,6 @@ export function AboutTab() {
               </>
             )}
           </Button>
-          {!isDatabaseEmpty && (
-            <span className="text-sm text-muted-foreground">
-              Varsayılan değerler zaten kaydedilmiş
-            </span>
-          )}
         </div>
         <Button onClick={saveAboutData} disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700">
           {saving ? (

@@ -5,76 +5,129 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check, Star, Zap, Crown } from "lucide-react"
-import { useState } from "react"
+import { Check, Star, Zap, Crown, Sparkles } from "lucide-react"
+import { useState, useEffect } from "react"
 import { QuoteRequestModal } from "@/components/modals/quote-request-modal"
 
-const plans = [
-  {
-    name: "Başlangıç",
-    icon: Star,
-    price: "2.500",
-    period: "/ay",
-    description: "Küçük işletmeler için ideal paket",
-    popular: false,
-    features: [
-      "Aylık beyanname hazırlama",
-      "Temel muhasebe kayıtları",
-      "E-posta desteği",
-      "Aylık mali raporlama",
-      "Vergi takvimi takibi"
-    ],
-    color: "from-blue-500 to-blue-600"
-  },
-  {
-    name: "Profesyonel",
-    icon: Zap,
-    price: "4.500",
-    period: "/ay",
-    description: "Orta ölçekli işletmeler için",
-    popular: true,
-    features: [
-      "Tüm Başlangıç özellikleri",
-      "Tam muhasebe hizmeti",
-      "SGK ve bordro işlemleri",
-      "7/24 telefon desteği",
-      "Haftalık mali raporlama",
-      "Stratejik mali danışmanlık",
-      "Vergi optimizasyonu"
-    ],
-    color: "from-purple-500 to-purple-600"
-  },
-  {
-    name: "Kurumsal",
-    icon: Crown,
-    price: "Özel Fiyat",
-    period: "",
-    description: "Büyük işletmeler için özel çözüm",
-    popular: false,
-    features: [
-      "Tüm Profesyonel özellikleri",
-      "Özel hesap yöneticisi",
-      "Denetim ve revizyon",
-      "Gelişmiş finansal analiz",
-      "Yatırım danışmanlığı",
-      "İç kontrol sistemleri",
-      "Özel eğitim programları",
-      "Sınırsız danışmanlık"
-    ],
-    color: "from-orange-500 to-orange-600"
-  }
-]
+interface PricingPlan {
+  id: string
+  name: string
+  price: string
+  period: string
+  description: string
+  features: string[]
+  isPopular: boolean
+  isActive: boolean
+  order: number
+}
 
-const additionalServices = [
-  "Şirket kuruluş işlemleri (2.500₺ - 5.000₺)",
-  "E-Dönüşüm danışmanlığı (1.500₺/ay)",
-  "Özel proje bazlı finansal analiz",
-  "Vergi incelemesi desteği"
-]
+interface AdditionalService {
+  id: string
+  text: string
+  isActive: boolean
+  order: number
+}
+
+interface SectionData {
+  title: string
+  paragraph: string
+  additionalTitle?: string
+  additionalParagraph?: string
+  footerText?: string
+}
+
+const iconMap: { [key: string]: any } = {
+  'Star': Star,
+  'Zap': Zap,
+  'Crown': Crown,
+  'Sparkles': Sparkles
+}
+
+const colorMap: { [key: string]: string } = {
+  'blue': 'from-blue-500 to-blue-600',
+  'purple': 'from-purple-500 to-purple-600',
+  'orange': 'from-orange-500 to-orange-600',
+  'green': 'from-green-500 to-green-600',
+  'red': 'from-red-500 to-red-600',
+  'cyan': 'from-cyan-500 to-cyan-600'
+}
 
 export function PricingSection() {
   const [quoteModalOpen, setQuoteModalOpen] = useState(false)
   const [selectedPackage, setSelectedPackage] = useState("")
+  const [plans, setPlans] = useState<PricingPlan[]>([])
+  const [additionalServices, setAdditionalServices] = useState<AdditionalService[]>([])
+  const [sectionData, setSectionData] = useState<SectionData>({
+    title: "Fiyatlandırma",
+    paragraph: "İşletmenizin büyüklüğüne ve ihtiyaçlarına göre esnek paketler. Tüm paketlerde şeffaf fiyatlandırma, gizli ücret yok.",
+    additionalTitle: "Ek Hizmetler",
+    additionalParagraph: "Tüm paketlere eklenebilecek özel hizmetler",
+    footerText: "* Tüm fiyatlar KDV hariçtir. Özel ihtiyaçlarınız için size özel paket oluşturabiliriz. İlk ay ücretsiz danışmanlık hizmeti ile başlayabilirsiniz."
+  })
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    try {
+      const [plansRes, servicesRes, sectionRes] = await Promise.all([
+        fetch('/api/content/pricing'),
+        fetch('/api/content/pricing/additional-services'),
+        fetch('/api/content/pricing/section')
+      ])
+
+      if (plansRes.ok) {
+        const data = await plansRes.json()
+        // Only show active pricing plans
+        const activePlans = (data || []).filter((p: PricingPlan) => p.isActive === true)
+        // Parse features from JSON string or array
+        const parsedPlans = activePlans.map((plan: any) => {
+          let features = plan.features
+          
+          // Eğer string ise JSON parse et
+          if (typeof features === 'string') {
+            features = JSON.parse(features)
+          }
+          
+          // Eğer array içinde objeler varsa, sadece text alır ve isIncluded=true olanları filtrele
+          if (Array.isArray(features) && features.length > 0 && typeof features[0] === 'object') {
+            features = features
+              .filter((f: any) => f.isIncluded !== false)
+              .map((f: any) => f.text)
+          }
+          
+          return {
+            ...plan,
+            features
+          }
+        })
+        setPlans(parsedPlans)
+      }
+
+      if (servicesRes.ok) {
+        const data = await servicesRes.json()
+        // Only show active additional services
+        const activeServices = (data || []).filter((s: AdditionalService) => s.isActive === true)
+        setAdditionalServices(activeServices)
+      }
+
+      if (sectionRes.ok) {
+        const section = await sectionRes.json()
+        if (section && section.id) {
+          setSectionData({
+            title: section.title || "Fiyatlandırma",
+            paragraph: section.paragraph || "İşletmenizin büyüklüğüne ve ihtiyaçlarına göre esnek paketler.",
+            additionalTitle: section.additionalTitle || "Ek Hizmetler",
+            additionalParagraph: section.additionalParagraph || "Tüm paketlere eklenebilecek özel hizmetler",
+            footerText: section.footerText || "* Tüm fiyatlar KDV hariçtir."
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching pricing data:', error)
+    }
+  }
 
   const handleQuoteRequest = (packageName: string) => {
     setSelectedPackage(packageName)
@@ -93,26 +146,29 @@ export function PricingSection() {
           className="text-center mb-10"
         >
           <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            Fiyatlandırma
+            {sectionData.title}
           </h2>
           <p className="text-sm text-muted-foreground max-w-3xl mx-auto">
-            İşletmenizin büyüklüğüne ve ihtiyaçlarına göre esnek paketler. 
-            Tüm paketlerde şeffaf fiyatlandırma, gizli ücret yok.
+            {sectionData.paragraph}
           </p>
         </motion.div>
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
-          {plans.map((plan, index) => (
+          {plans.map((plan, index) => {
+            const IconComponent = Star // Default icon
+            const colorClass = 'from-blue-500 to-blue-600' // Default color
+            
+            return (
             <motion.div
-              key={index}
+              key={plan.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="relative"
             >
-              {plan.popular && (
+              {plan.isPopular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
                   <span className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
                     En Popüler
@@ -120,22 +176,23 @@ export function PricingSection() {
                 </div>
               )}
               
-              <Card className={`h-full ${plan.popular ? 'border-2 border-purple-500 shadow-2xl scale-105' : 'hover:shadow-xl'} transition-all duration-300`}>
+              <Card className={`h-full ${plan.isPopular ? 'border-2 border-purple-500 shadow-2xl scale-105' : 'hover:shadow-xl'} transition-all duration-300`}>
                 <CardHeader className="text-center pb-8">
-                  <div className={`h-16 w-16 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center mx-auto mb-4 shadow-lg`}>
-                    <plan.icon className="h-8 w-8 text-white" />
+                  <div className={`h-16 w-16 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center mx-auto mb-4 shadow-lg`}>
+                    <IconComponent className="h-8 w-8 text-white" />
                   </div>
                   <CardTitle className="text-lg mb-2">{plan.name}</CardTitle>
                   <CardDescription className="text-xs">{plan.description}</CardDescription>
                   <div className="mt-6">
                     <div className="flex items-baseline justify-center">
-                      {plan.price !== "Özel Fiyat" && (
-                        <span className="text-4xl font-bold text-gray-900">{plan.price}₺</span>
-                      )}
-                      {plan.price === "Özel Fiyat" && (
+                      {!plan.price.includes('Özel') && !plan.price.includes('Fiyat') ? (
+                        <>
+                          <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
+                          <span className="text-gray-500 ml-1">{plan.period}</span>
+                        </>
+                      ) : (
                         <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
                       )}
-                      <span className="text-gray-500 ml-1">{plan.period}</span>
                     </div>
                   </div>
                 </CardHeader>
@@ -151,7 +208,7 @@ export function PricingSection() {
                   </ul>
                   
                   <Button 
-                    className={`w-full ${plan.popular ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800' : ''}`}
+                    className={`w-full ${plan.isPopular ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800' : ''}`}
                     size="lg"
                     onClick={() => handleQuoteRequest(plan.name)}
                   >
@@ -160,32 +217,44 @@ export function PricingSection() {
                 </CardContent>
               </Card>
             </motion.div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Additional Services */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="bg-blue-50 rounded-2xl p-8 border border-blue-100"
-        >
-          <h3 className="text-2xl font-bold mb-4 text-center text-gray-900">
-            Ek Hizmetler
-          </h3>
-          <p className="text-center text-muted-foreground mb-6">
-            Tüm paketlere eklenebilecek özel hizmetler
-          </p>
-          <div className="grid md:grid-cols-2 gap-4 max-w-3xl mx-auto">
-            {additionalServices.map((service, index) => (
-              <div key={index} className="flex items-start gap-3 bg-white p-4 rounded-lg">
-                <Check className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-gray-700">{service}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+        {additionalServices.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-16"
+          >
+            <div className="text-center mb-8">
+              <h3 className="text-xl font-bold mb-2 text-gray-900">
+                {sectionData.additionalTitle || "Ek Hizmetler"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {sectionData.additionalParagraph || "T\u00fcm paketlere eklenebilecek \u00f6zel hizmetler"}
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+              {additionalServices.map((service, index) => (
+                <motion.div
+                  key={service.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="flex items-start gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+                >
+                  <Check className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{service.text}</span>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Bottom Note */}
         <motion.div
@@ -196,8 +265,7 @@ export function PricingSection() {
           className="mt-12 text-center"
         >
           <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-            * Tüm fiyatlar KDV hariçtir. Özel ihtiyaçlarınız için size özel paket oluşturabiliriz. 
-            İlk ay ücretsiz danışmanlık hizmeti ile başlayabilirsiniz.
+            {sectionData.footerText || "* Tüm fiyatlar KDV hariçtir. Özel ihtiyaçlarınız için size özel paket oluşturabiliriz. İlk ay ücretsiz danışmanlık hizmeti ile başlayabilirsiniz."}
           </p>
           <div className="mt-6">
             <Button 

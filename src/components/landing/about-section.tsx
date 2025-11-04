@@ -19,12 +19,12 @@ const iconMap: any = {
   Shield: Shield,
   Users: Users,
   TrendingUp: TrendingUp,
-  Star: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>,
-  Heart: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>,
-  Lightbulb: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18h6m-3-11a6 6 0 1 1 0 12H9a6 6 0 1 1 0-12Z"></path><path d="M12 7v1"></path><path d="M10 15h.01"></path><path d="M14 15h.01"></path><path d="M10 11h.01"></path><path d="M14 11h.01"></path></svg>,
-  Target: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>,
-  Globe: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>,
-  Clock: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+  Star: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>,
+  Heart: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>,
+  Lightbulb: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><path d="M9 18h6m-3-11a6 6 0 1 1 0 12H9a6 6 0 1 1 0-12Z"></path><path d="M12 7v1"></path><path d="M10 15h.01"></path><path d="M14 15h.01"></path><path d="M10 11h.01"></path><path d="M14 11h.01"></path></svg>,
+  Target: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>,
+  Globe: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>,
+  Clock: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
 }
 
 const defaultValues = {
@@ -34,13 +34,6 @@ const defaultValues = {
   valuesTitle: "Hizmet Değerlerimiz",
   footerText: "Profesyonel kadromuz ve modern teknoloji altyapımız ile sektörde fark yaratıyoruz.",
   footerSignature: "SMMM Ekibi",
-  values: [
-    "Müşteri memnuniyeti odaklı hizmet anlayışı",
-    "Şeffaf ve dürüst iş yapış biçimi",
-    "Zamanında ve eksiksiz bildirim süreçleri",
-    "7/24 danışmanlık desteği",
-    "Dijital dönüşüm ve otomasyon"
-  ],
   features: [
     {
       icon: "Award",
@@ -131,8 +124,15 @@ export function AboutSection() {
         if (response.ok && isMountedRef.current) {
           const data = await response.json()
           if (data && data.valuesTitle) {
-            // API'den gelen values'i string array'e çevir
-            const valuesArray = (data.values || []).map((v: any) => 
+            // API'den gelen values'i string array'e çevir ve aktif olanları filtrele
+            const valuesArray = (data.values || []).filter((v: any) => {
+              // Eğer obje ise ve isActive false değilse
+              if (typeof v === 'object') {
+                return v.isActive !== false
+              }
+              // String ise direkt al
+              return true
+            }).map((v: any) => 
               typeof v === 'object' ? v.text : v
             ).filter((v: any) => v)
             
@@ -241,16 +241,16 @@ export function AboutSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group"
+                className="group h-full"
               >
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 h-full border border-blue-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                  <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <IconComponent className="h-6 w-6 text-white" />
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 h-full border border-blue-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
+                  <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform flex-shrink-0">
+                    <IconComponent className="h-6 w-6 text-white" strokeWidth={2.5} stroke="white" />
                   </div>
                   <h3 className="font-bold text-sm mb-2 text-gray-900">
                     {feature.title}
                   </h3>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground flex-grow">
                     {feature.description}
                   </p>
                 </div>

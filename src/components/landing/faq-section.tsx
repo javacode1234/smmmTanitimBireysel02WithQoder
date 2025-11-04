@@ -1,87 +1,51 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronDown, HelpCircle, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-type FAQCategory = "Tümü" | "Genel" | "Hizmetler" | "Ücretlendirme" | "İşlemler" | "Teknik"
-type DateFilter = "Tümü" | "Son 7 Gün" | "Son 30 Gün" | "Son 3 Ay" | "Son 6 Ay"
+interface FAQCategory {
+  id: string
+  name: string
+  slug: string
+  order: number
+}
 
-const faqs = [
-  {
-    category: "Genel" as const,
-    question: "SMMM (Serbest Muhasebeci Mali Müşavir) nedir?",
-    answer: "SMMM, işletmelerin mali işlemlerini kaydetmek, raporlamak ve vergi mevzuatına uygun şekilde beyan etmek için yetkilendirilmiş profesyonellerdir. Meslek odalarına bağlı, sertifikalı ve deneyimli uzmanlarız.",
-    date: new Date('2024-10-15')
-  },
-  {
-    category: "Hizmetler" as const,
-    question: "Hangi hizmetleri sunuyorsunuz?",
-    answer: "Muhasebe ve finansal raporlama, vergi danışmanlığı ve planlaması, SGK ve bordro işlemleri, şirket kuruluşu, bağımsız denetim ve mali analiz gibi geniş kapsamlı hizmetler sunuyoruz.",
-    date: new Date('2024-10-18')
-  },
-  {
-    category: "Ücretlendirme" as const,
-    question: "Ücretlendirme nasıl yapılıyor?",
-    answer: "Fiyatlarımız işletmenizin büyüklüğüne, işlem hacmine ve ihtiyaç duyulan hizmetlere göre belirlenir. Başlangıç, Profesyonel ve Kurumsal olmak üzere 3 farklı paketimiz bulunmaktadır. Detaylı teklif için bizimle iletişime geçebilirsiniz.",
-    date: new Date('2024-10-20')
-  },
-  {
-    category: "İşlemler" as const,
-    question: "Belge ve evrakları nasıl teslim edebilirim?",
-    answer: "Belgelerinizi ofisimize fiziksel olarak getirebilir, kargo ile gönderebilir veya dijital platformumuz üzerinden güvenli şekilde yükleyebilirsiniz. E-dönüşüm entegrasyonumuz sayesinde birçok belge otomatik olarak sisteme aktarılır.",
-    date: new Date('2024-10-21')
-  },
-  {
-    category: "İşlemler" as const,
-    question: "Ne kadar sürede işlemler tamamlanır?",
-    answer: "Rutin muhasebe işlemleri ayda bir kez düzenli olarak yapılır. Vergi beyannameleri yasal sürelere uygun şekilde zamanında teslim edilir. Acil işlemler için aynı gün hizmet sağlayabiliyoruz.",
-    date: new Date('2024-10-22')
-  },
-  {
-    category: "Teknik" as const,
-    question: "Gizlilik ve güvenlik nasıl sağlanıyor?",
-    answer: "Tüm finansal verileriniz yasal gizlilik yükümlülüğümüz altında korunur. Dijital sistemlerimiz 256-bit SSL şifreleme ile güvence altındadır. KVKK ve veri koruma yasalarına tam uyum sağlıyoruz.",
-    date: new Date('2024-10-23')
-  },
-  {
-    category: "Teknik" as const,
-    question: "Hangi kurumlarla entegrasyonunuz var?",
-    answer: "GİB (Gelir İdaresi Başkanlığı), SGK, Ticaret Sicil, Gümrük ve diğer tüm resmi kurumlarla doğrudan entegrasyonumuz bulunmaktadır. E-fatura, e-defter, e-arşiv gibi tüm dijital platformları kullanıyoruz.",
-    date: new Date('2024-10-24')
-  },
-  {
-    category: "Hizmetler" as const,
-    question: "Şirket kuruluşunda yardımcı olabiliir misiniz?",
-    answer: "Evet, A'dan Z'ye şirket kuruluş sürecinde yanınızdayız. Şirket türü seçimi, ticaret sicil işlemleri, vergi kaydı, SGK bildirimleri ve tüm yasal prosedürler için profesyonel destek sağlıyoruz.",
-    date: new Date('2024-10-25')
-  },
-  {
-    category: "Genel" as const,
-    question: "Destek hizmeti nasıl alınır?",
-    answer: "Telefon, e-posta, WhatsApp veya ofisimize gelerek 7/24 bize ulaşabilirsiniz. Acil durumlar için özel destek hattımız mevcuttur. Danışman mali müşaviriniz size tahsis edilir ve her zaman ulaşılabilir olur.",
-    date: new Date('2024-10-26')
-  },
-  {
-    category: "Ücretlendirme" as const,
-    question: "Sözleşme süresi ve iptal koşulları nelerdir?",
-    answer: "Sözleşmelerimiz genellikle 1 yıllık olup, otomatik yenilenir. 30 gün önceden bildirimle istediğiniz zaman sözleşmeyi sonlandırabilirsiniz. Herhangi bir ceza veya ek ücret yoktur.",
-    date: new Date('2024-10-28')
-  }
-]
+interface FAQ {
+  id: string
+  categoryId: string
+  question: string
+  answer: string
+  isActive: boolean
+  order: number
+  createdAt: string
+  category?: FAQCategory
+}
+
+interface SectionData {
+  title: string
+  paragraph: string
+}
 
 export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState<FAQCategory>("Tümü")
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all")
   const [startDate, setStartDate] = useState<string>("")
+  const [categories, setCategories] = useState<FAQCategory[]>([])
+  const [faqs, setFaqs] = useState<FAQ[]>([])
+  const [sectionData, setSectionData] = useState<SectionData>({
+    title: "Sıkça Sorulan Sorular",
+    paragraph: "Mali müşavirlik hizmetlerimiz hakkında merak ettikleriniz. Sorunuzun cevabını bulamadıysanız, bize ulaşın."
+  })
   const [isVisible, setIsVisible] = useState(false)
   const isMountedRef = useRef(true)
 
   useEffect(() => {
     isMountedRef.current = true
     setIsVisible(true)
+    fetchData()
 
     return () => {
       isMountedRef.current = false
@@ -89,22 +53,55 @@ export function FAQSection() {
     }
   }, [])
 
-  const categories: FAQCategory[] = ["Tümü", "Genel", "Hizmetler", "Ücretlendirme", "İşlemler", "Teknik"]
+  const fetchData = async () => {
+    try {
+      // Fetch categories, FAQs, and section data in parallel
+      const [categoriesRes, faqsRes, sectionRes] = await Promise.all([
+        fetch('/api/content/faq/categories'),
+        fetch('/api/content/faq'),
+        fetch('/api/content/faq/section')
+      ])
 
-  const filterByDate = (faq: typeof faqs[0]) => {
+      if (categoriesRes.ok) {
+        const cats = await categoriesRes.json()
+        setCategories(cats || [])
+      }
+
+      if (faqsRes.ok) {
+        const faqsData = await faqsRes.json()
+        // Only show active FAQs
+        const activeFaqs = (faqsData || []).filter((f: FAQ) => f.isActive === true)
+        setFaqs(activeFaqs)
+      }
+
+      if (sectionRes.ok) {
+        const section = await sectionRes.json()
+        if (section && section.id) {
+          setSectionData({
+            title: section.title || "Sıkça Sorulan Sorular",
+            paragraph: section.paragraph || "Mali müşavirlik hizmetlerimiz hakkında merak ettikleriniz."
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching FAQ data:', error)
+    }
+  }
+
+  const filterByDate = (faq: FAQ) => {
     if (!startDate) return true
     
     const selectedDate = new Date(startDate)
-    const faqDate = faq.date
+    const faqDate = new Date(faq.createdAt)
     
     // Başlangıç tarihinden bugüne kadar
     return faqDate >= selectedDate
   }
 
   const filteredFAQs = faqs
-    .filter(faq => selectedCategory === "Tümü" || faq.category === selectedCategory)
+    .filter(faq => selectedCategoryId === "all" || faq.categoryId === selectedCategoryId)
     .filter(filterByDate)
-    .sort((a, b) => b.date.getTime() - a.date.getTime()) // Yeniden eskiye sırala
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) // Yeniden eskiye sırala
 
   const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex === index ? null : index)
@@ -125,12 +122,11 @@ export function FAQSection() {
           <div className="inline-flex items-center gap-2 mb-3">
             <HelpCircle className="h-8 w-8 text-blue-600" />
             <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              Sıkça Sorulan Sorular
+              {sectionData.title}
             </h2>
           </div>
           <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-            Mali müşavirlik hizmetlerimiz hakkında merak ettikleriniz. 
-            Sorunuzun cevabını bulamadıysanız, bize ulaşın.
+            {sectionData.paragraph}
           </p>
         </motion.div>
         )}
@@ -146,22 +142,38 @@ export function FAQSection() {
         >
           <h3 className="text-center text-sm font-semibold text-gray-700 mb-4">Kategori Seçin:</h3>
           <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              key="all"
+              onClick={() => {
+                setSelectedCategoryId("all")
+                setOpenIndex(null)
+              }}
+              variant={selectedCategoryId === "all" ? "default" : "outline"}
+              size="lg"
+              className={`rounded-full transition-all font-medium px-6 ${
+                selectedCategoryId === "all" 
+                  ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg scale-105" 
+                  : "hover:border-blue-400 hover:bg-blue-50"
+              }`}
+            >
+              Tümü
+            </Button>
             {categories.map((category) => (
               <Button
-                key={category}
+                key={category.id}
                 onClick={() => {
-                  setSelectedCategory(category)
+                  setSelectedCategoryId(category.id)
                   setOpenIndex(null)
                 }}
-                variant={selectedCategory === category ? "default" : "outline"}
+                variant={selectedCategoryId === category.id ? "default" : "outline"}
                 size="lg"
                 className={`rounded-full transition-all font-medium px-6 ${
-                  selectedCategory === category 
+                  selectedCategoryId === category.id 
                     ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg scale-105" 
                     : "hover:border-blue-400 hover:bg-blue-50"
                 }`}
               >
-                {category}
+                {category.name}
               </Button>
             ))}
           </div>
@@ -239,7 +251,7 @@ export function FAQSection() {
                       <div className="flex items-center gap-1.5 mt-2">
                         <Calendar className="h-3.5 w-3.5 text-green-600" />
                         <span className="text-xs text-green-600 font-medium">
-                          {faq.date.toLocaleDateString('tr-TR', { 
+                          {new Date(faq.createdAt).toLocaleDateString('tr-TR', { 
                             year: 'numeric', 
                             month: 'long', 
                             day: 'numeric' 

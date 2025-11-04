@@ -1121,11 +1121,6 @@ export function ServicesTab() {
               </>
             )}
           </Button>
-          {!isDatabaseEmpty && (
-            <span className="text-sm text-muted-foreground">
-              Varsayılan değerler zaten kaydedilmiş
-            </span>
-          )}
         </div>
         
         <div className="flex items-center gap-4">

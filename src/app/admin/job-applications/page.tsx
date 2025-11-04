@@ -288,48 +288,52 @@ export default function JobApplicationsPage() {
               </div>
             </div>
             
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Durum Filtrele" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Durumlar</SelectItem>
-                <SelectItem value="NEW">Yeni</SelectItem>
-                <SelectItem value="REVIEWING">İnceleniyor</SelectItem>
-                <SelectItem value="INTERVIEWED">Görüşme Yapıldı</SelectItem>
-                <SelectItem value="REJECTED">Reddedildi</SelectItem>
-                <SelectItem value="ACCEPTED">Kabul Edildi</SelectItem>
-              </SelectContent>
-            </Select>
+            {isMounted && (
+              <>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full md:w-[200px]">
+                    <SelectValue placeholder="Durum Filtrele" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm Durumlar</SelectItem>
+                    <SelectItem value="NEW">Yeni</SelectItem>
+                    <SelectItem value="REVIEWING">İnceleniyor</SelectItem>
+                    <SelectItem value="INTERVIEWED">Görüşme Yapıldı</SelectItem>
+                    <SelectItem value="REJECTED">Reddedildi</SelectItem>
+                    <SelectItem value="ACCEPTED">Kabul Edildi</SelectItem>
+                  </SelectContent>
+                </Select>
 
-            <Select value={positionFilter} onValueChange={setPositionFilter}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Pozisyon Filtrele" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tüm Pozisyonlar</SelectItem>
-                {positions.map((position) => (
-                  <SelectItem key={position} value={position}>
-                    {position}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                <Select value={positionFilter} onValueChange={setPositionFilter}>
+                  <SelectTrigger className="w-full md:w-[200px]">
+                    <SelectValue placeholder="Pozisyon Filtrele" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm Pozisyonlar</SelectItem>
+                    {positions.map((position) => (
+                      <SelectItem key={position} value={position}>
+                        {position}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-            <Select value={itemsPerPage.toString()} onValueChange={(value) => {
-              setItemsPerPage(Number(value))
-              setCurrentPage(1)
-            }}>
-              <SelectTrigger className="w-full md:w-[150px]">
-                <SelectValue placeholder="Kayıt Sayısı" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 Kayıt</SelectItem>
-                <SelectItem value="10">10 Kayıt</SelectItem>
-                <SelectItem value="25">25 Kayıt</SelectItem>
-                <SelectItem value="50">50 Kayıt</SelectItem>
-              </SelectContent>
-            </Select>
+                <Select value={itemsPerPage.toString()} onValueChange={(value) => {
+                  setItemsPerPage(Number(value))
+                  setCurrentPage(1)
+                }}>
+                  <SelectTrigger className="w-full md:w-[150px]">
+                    <SelectValue placeholder="Kayıt Sayısı" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 Kayıt</SelectItem>
+                    <SelectItem value="10">10 Kayıt</SelectItem>
+                    <SelectItem value="25">25 Kayıt</SelectItem>
+                    <SelectItem value="50">50 Kayıt</SelectItem>
+                  </SelectContent>
+                </Select>
+              </>
+            )}
           </div>
         </CardHeader>
 

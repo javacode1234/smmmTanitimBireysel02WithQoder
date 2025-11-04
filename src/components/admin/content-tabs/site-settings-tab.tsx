@@ -24,10 +24,11 @@ const DEFAULT_SETTINGS = {
   mapLongitude: "28.9784",
   mapEmbedUrl: "",
   facebookUrl: "",
-  twitterUrl: "",
+  xUrl: "",
   linkedinUrl: "",
   instagramUrl: "",
   youtubeUrl: "",
+  threadsUrl: "",
 }
 
 export function SiteSettingsTab() {
@@ -93,10 +94,11 @@ export function SiteSettingsTab() {
             mapLongitude: data.mapLongitude || DEFAULT_SETTINGS.mapLongitude,
             mapEmbedUrl: data.mapEmbedUrl || DEFAULT_SETTINGS.mapEmbedUrl,
             facebookUrl: data.facebookUrl || DEFAULT_SETTINGS.facebookUrl,
-            twitterUrl: data.twitterUrl || DEFAULT_SETTINGS.twitterUrl,
+            xUrl: data.xUrl || DEFAULT_SETTINGS.xUrl,
             linkedinUrl: data.linkedinUrl || DEFAULT_SETTINGS.linkedinUrl,
             instagramUrl: data.instagramUrl || DEFAULT_SETTINGS.instagramUrl,
             youtubeUrl: data.youtubeUrl || DEFAULT_SETTINGS.youtubeUrl,
+            threadsUrl: data.threadsUrl || DEFAULT_SETTINGS.threadsUrl,
           })
           setIsDatabaseEmpty(false)
           console.log('Database NOT empty - ID:', data.id)
@@ -550,12 +552,12 @@ export function SiteSettingsTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="twitterUrl">Twitter URL</Label>
+              <Label htmlFor="xUrl">X (Twitter) URL</Label>
               <Input
-                id="twitterUrl"
-                value={formData.twitterUrl}
-                onChange={(e) => setFormData(prev => ({ ...prev, twitterUrl: e.target.value }))}
-                placeholder="https://twitter.com/..."
+                id="xUrl"
+                value={formData.xUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, xUrl: e.target.value }))}
+                placeholder="https://x.com/..."
               />
             </div>
           </div>
@@ -581,14 +583,25 @@ export function SiteSettingsTab() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="youtubeUrl">YouTube URL</Label>
-            <Input
-              id="youtubeUrl"
-              value={formData.youtubeUrl}
-              onChange={(e) => setFormData(prev => ({ ...prev, youtubeUrl: e.target.value }))}
-              placeholder="https://youtube.com/channel/..."
-            />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="youtubeUrl">YouTube URL</Label>
+              <Input
+                id="youtubeUrl"
+                value={formData.youtubeUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, youtubeUrl: e.target.value }))}
+                placeholder="https://youtube.com/channel/..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="threadsUrl">Threads URL</Label>
+              <Input
+                id="threadsUrl"
+                value={formData.threadsUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, threadsUrl: e.target.value }))}
+                placeholder="https://threads.net/@..."
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -615,9 +628,9 @@ export function SiteSettingsTab() {
           
           <Button 
             onClick={saveDefaultsToDatabase} 
-            disabled={isSavingDefaults}
+            disabled={!isDatabaseEmpty || isSavingDefaults}
             variant="default"
-            className={`bg-blue-600 hover:bg-blue-700 ${!isDatabaseEmpty ? 'opacity-50' : ''}`}
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
           >
             {isSavingDefaults ? (
               <>
@@ -627,7 +640,7 @@ export function SiteSettingsTab() {
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Varsayılan Değerleri Veritabanına Kaydet {!isDatabaseEmpty && '(Zaten kayıtlı)'}
+                Varsayılan Değerleri Veritabanına Kaydet
               </>
             )}
           </Button>

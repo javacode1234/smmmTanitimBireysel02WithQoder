@@ -149,16 +149,17 @@ export async function POST(request: NextRequest) {
       featuresString = JSON.stringify([])
     }
     
-    console.log('POST /api/content/services - Creating service WITHOUT color field')
+    console.log('POST /api/content/services - Creating service with icon and color')
     console.log('Features:', featuresString)
     
-    // IMPORTANT: Do NOT include color field - it doesn't exist in database
+    // Include color field - it now exists in database
     const service = await prisma.service.create({
       data: {
-        icon: String(data.icon),
+        icon: String(data.icon || 'FileText'),
         title: String(data.title),
         description: String(data.description),
         features: featuresString,
+        color: String(data.color || 'from-blue-500 to-blue-600'),
         isActive: Boolean(data.isActive ?? true),
         order: Number(data.order ?? 0)
       }
@@ -206,10 +207,11 @@ export async function PATCH(request: NextRequest) {
     const service = await prisma.service.update({
       where: { id },
       data: {
-        icon: data.icon,
+        icon: data.icon || 'FileText',
         title: data.title,
         description: data.description,
         features: features,
+        color: data.color || 'from-blue-500 to-blue-600',
         isActive: data.isActive,
         order: data.order
       }
