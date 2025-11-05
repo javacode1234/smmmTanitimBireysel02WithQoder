@@ -559,13 +559,51 @@ enum LegalDocumentType {
 // Customer model for customer management
 model Customer {
   id              String           @id @default(cuid())
+  
+  // Company Information
+  logo            String?          @db.LongText // Base64
   companyName     String
-  contactPerson   String?
-  email           String?
+  taxNumber       String?          // VKN/TCKN
   phone           String?
-  taxNumber       String?
+  email           String?
   address         String?          @db.Text
   city            String?
+  
+  // Social Media
+  facebookUrl     String?
+  xUrl            String?
+  linkedinUrl     String?
+  instagramUrl    String?
+  threadsUrl      String?
+  
+  // Business Details
+  ledgerType      String?          // Defter Tipi
+  subscriptionFee String?          // Aidat
+  
+  // Authorized Person
+  authorizedName  String?
+  authorizedTCKN  String?
+  authorizedEmail String?
+  authorizedPhone String?
+  authorizedAddress String?        @db.Text
+  authorizedFacebookUrl  String?
+  authorizedXUrl         String?
+  authorizedLinkedinUrl  String?
+  authorizedInstagramUrl String?
+  authorizedThreadsUrl   String?
+  
+  authorizationDate DateTime?      // Yetkilendirilme Tarihi
+  authorizationPeriod String?      // Yetki Süresi
+  
+  // Declarations
+  declarations    String?          @db.Text // JSON array of declarations
+  
+  // Documents
+  documents       String?          @db.Text // JSON array of documents
+  
+  // Institutional Passwords
+  passwords       String?          @db.Text // JSON array of passwords
+  
   notes           String?          @db.Text
   status          CustomerStatus   @default(ACTIVE)
   onboardingStage OnboardingStage  @default(LEAD)

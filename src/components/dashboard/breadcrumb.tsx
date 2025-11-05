@@ -24,6 +24,7 @@ export function Breadcrumb({ userType }: BreadcrumbProps) {
     dashboard: "Dashboard",
     content: "İçerik Yönetimi",
     clients: "Müşteriler",
+    customers: "Müşteriler",
     declarations: "Beyannameler",
     announcements: "Duyurular",
     collections: "Tahsilat",

@@ -19,17 +19,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, RefreshCw, UserPlus, Edit, Trash2 } from "lucide-react"
+import { Search, RefreshCw, UserPlus, Edit, Trash2, Eye, Building2 } from "lucide-react"
 import { toast } from "sonner"
+import { CustomerModal } from "@/components/admin/customer-modal"
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
+import Image from "next/image"
 
 type Customer = {
   id: string
+  logo: string | null
   companyName: string
-  contactPerson: string | null
-  email: string | null
-  phone: string | null
   taxNumber: string | null
+  phone: string | null
+  email: string | null
+  address: string | null
   city: string | null
+  facebookUrl: string | null
+  xUrl: string | null
+  linkedinUrl: string | null
+  instagramUrl: string | null
+  threadsUrl: string | null
+  ledgerType: string | null
+  subscriptionFee: string | null
+  authorizedName: string | null
+  authorizedTCKN: string | null
+  authorizedEmail: string | null
+  authorizedPhone: string | null
+  authorizedAddress: string | null
+  authorizedFacebookUrl: string | null
+  authorizedXUrl: string | null
+  authorizedLinkedinUrl: string | null
+  authorizedInstagramUrl: string | null
+  authorizedThreadsUrl: string | null
+  authorizationDate: string | null
+  authorizationPeriod: string | null
+  declarations: string | null
+  documents: string | null
+  passwords: string | null
+  notes: string | null
   status: "ACTIVE" | "INACTIVE"
   onboardingStage: "LEAD" | "PROSPECT" | "CUSTOMER"
   createdAt: string
@@ -43,8 +70,14 @@ export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [stageFilter, setStageFilter] = useState("all")
-  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [itemsPerPage, setItemsPerPage] = useState(5)
   const [currentPage, setCurrentPage] = useState(1)
+
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
 
   useEffect(() => {
     setIsMounted(true)
@@ -65,7 +98,9 @@ export default function CustomersPage() {
         const data = await res.json()
         setCustomers(data)
       } else {
-        toast.error("Müşteriler yüklenirken hata oluştu")
+        const errorData = await res.json().catch(() => ({ error: 'Bilinmeyen hata' }))
+        console.error('API Error:', errorData)
+        toast.error(errorData.error || "Müşteriler yüklenirken hata oluştu")
       }
     } catch (e) {
       console.error(e)
@@ -85,6 +120,50 @@ export default function CustomersPage() {
   const filteredCount = customers.length
   const startIndex = (currentPage - 1) * itemsPerPage
   const totalPages = Math.max(1, Math.ceil(filteredCount / itemsPerPage))
+
+  const handleAddCustomer = () => {
+    setSelectedCustomer(null)
+    setIsModalOpen(true)
+  }
+
+  const handleEditCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer)
+    setIsModalOpen(true)
+  }
+
+  const confirmDelete = (customer: Customer) => {
+    setCustomerToDelete(customer)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleDelete = async (customerId: string) => {
+    try {
+      const response = await fetch(`/api/customers?id=${customerId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setCustomers((prev) => prev.filter((c) => c.id !== customerId))
+        setIsDeleteDialogOpen(false)
+        setCustomerToDelete(null)
+        toast.success('Müşteri silindi')
+      } else {
+        toast.error('Müşteri silinemedi')
+      }
+    } catch (error) {
+      console.error('Error deleting customer:', error)
+      toast.error('Müşteri silinemedi')
+    }
+  }
+
+  const handleModalClose = () => {
+    setIsModalOpen(false)
+    setSelectedCustomer(null)
+  }
+
+  const handleModalSave = () => {
+    fetchCustomers()
+  }
 
   return (
     <div>
@@ -181,6 +260,7 @@ export default function CustomersPage() {
           </Button>
           <Button
             className="bg-green-600 hover:bg-green-700"
+            onClick={handleAddCustomer}
             title="Yeni Müşteri"
           >
             <UserPlus className="h-4 w-4 mr-2" />
@@ -198,8 +278,9 @@ export default function CustomersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">Logo</TableHead>
                   <TableHead>Şirket</TableHead>
-                  <TableHead>Kişi</TableHead>
+                  <TableHead>VKN/TCKN</TableHead>
                   <TableHead>İletişim</TableHead>
                   <TableHead>Durum</TableHead>
                   <TableHead>Aşama</TableHead>
@@ -210,13 +291,13 @@ export default function CustomersPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       Yükleniyor...
                     </TableCell>
                   </TableRow>
                 ) : customers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       Kayıt bulunamadı
                     </TableCell>
                   </TableRow>
@@ -225,8 +306,19 @@ export default function CustomersPage() {
                     .slice(startIndex, startIndex + itemsPerPage)
                     .map((c) => (
                       <TableRow key={c.id}>
+                        <TableCell>
+                          {c.logo ? (
+                            <div className="relative w-10 h-10 border rounded overflow-hidden">
+                              <Image src={c.logo} alt={c.companyName} fill className="object-contain" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 border rounded bg-muted flex items-center justify-center">
+                              <Building2 className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="font-medium">{c.companyName}</TableCell>
-                        <TableCell>{c.contactPerson || "-"}</TableCell>
+                        <TableCell>{c.taxNumber || "-"}</TableCell>
                         <TableCell>
                           <div className="text-sm">
                             <div>{c.email || "-"}</div>
@@ -254,12 +346,18 @@ export default function CustomersPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="outline" size="icon" title="Düzenle">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleEditCustomer(c)}
+                              title="Düzenle"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="outline"
                               size="icon"
+                              onClick={() => confirmDelete(c)}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               title="Sil"
                             >
@@ -315,6 +413,26 @@ export default function CustomersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Customer Modal */}
+      <CustomerModal
+        customer={selectedCustomer}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSave={handleModalSave}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false)
+          setCustomerToDelete(null)
+        }}
+        onConfirm={() => customerToDelete && handleDelete(customerToDelete.id)}
+        title="Müşteriyi Sil"
+        description={customerToDelete ? `"${customerToDelete.companyName}" şirketini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.` : undefined}
+      />
     </div>
   )
 }
