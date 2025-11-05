@@ -555,3 +555,31 @@ enum LegalDocumentType {
   TERMS_OF_USE
   KVKK
 }
+
+// Customer model for customer management
+model Customer {
+  id              String           @id @default(cuid())
+  companyName     String
+  contactPerson   String?
+  email           String?
+  phone           String?
+  taxNumber       String?
+  address         String?          @db.Text
+  city            String?
+  notes           String?          @db.Text
+  status          CustomerStatus   @default(ACTIVE)
+  onboardingStage OnboardingStage  @default(LEAD)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum OnboardingStage {
+  LEAD
+  PROSPECT
+  CUSTOMER
+}

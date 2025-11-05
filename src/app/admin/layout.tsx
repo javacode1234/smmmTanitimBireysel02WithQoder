@@ -22,7 +22,7 @@ import {
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "İçerik Yönetimi", href: "/admin/content", icon: FileEdit },
-  { name: "Müşteriler", href: "/admin/clients", icon: Users },
+  { name: "Müşteriler", href: "/admin/customers", icon: Users },
   { name: "Beyannameler", href: "/admin/declarations", icon: FileText },
   { name: "Duyurular", href: "/admin/announcements", icon: Bell },
   { name: "Tahsilat", href: "/admin/collections", icon: CreditCard },
