@@ -599,7 +599,7 @@ model Customer {
   declarations    String?          @db.Text // JSON array of declarations
   
   // Documents
-  documents       String?          @db.Text // JSON array of documents
+  documents       String?          @db.LongText // JSON array of documents with Base64 files
   
   // Institutional Passwords
   passwords       String?          @db.Text // JSON array of passwords

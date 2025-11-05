@@ -96,6 +96,8 @@ export default function CustomersPage() {
       const res = await fetch(`/api/customers?${params.toString()}`)
       if (res.ok) {
         const data = await res.json()
+        console.log('Fetched customers:', data.length, 'customers')
+        console.log('Search params:', params.toString())
         setCustomers(data)
       } else {
         const errorData = await res.json().catch(() => ({ error: 'Bilinmeyen hata' }))
@@ -162,6 +164,11 @@ export default function CustomersPage() {
   }
 
   const handleModalSave = () => {
+    console.log('Modal saved, fetching customers...')
+    setSearchTerm("") // Clear search to show all customers
+    setStatusFilter("all") // Reset filters
+    setStageFilter("all")
+    setCurrentPage(1) // Go to first page
     fetchCustomers()
   }
 
@@ -239,6 +246,7 @@ export default function CustomersPage() {
                   <SelectValue placeholder="Kayıt Sayısı" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
                   <SelectItem value="10">10</SelectItem>
                   <SelectItem value="25">25</SelectItem>
                   <SelectItem value="50">50</SelectItem>

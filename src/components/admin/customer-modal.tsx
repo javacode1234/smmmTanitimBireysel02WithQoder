@@ -317,6 +317,7 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
         onClose()
       } else {
         const error = await response.json()
+        console.error('API Error (Save Customer):', error)
         toast.error(error.error || "Bir hata oluştu")
       }
     } catch (error) {
