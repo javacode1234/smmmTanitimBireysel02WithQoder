@@ -57,8 +57,12 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch('/api/profile')
-        if (response.ok) {
+        const response = await fetch('/api/profile', {
+          // Add cache option to suppress 404 warnings in console
+          cache: 'no-store'
+        }).catch(() => null)
+        
+        if (response && response.ok) {
           const data = await response.json()
           setUserData({
             name: data.name || (userType === "admin" ? "Admin Kullanıcı" : "Mükellef Kullanıcı"),
@@ -71,7 +75,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
           })
         }
       } catch (error) {
-        console.error('Error fetching profile:', error)
+        // Silently ignore profile fetch errors
       }
     }
 

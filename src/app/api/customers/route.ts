@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
         ledgerType: data.ledgerType || null,
         subscriptionFee: data.subscriptionFee || null,
         establishmentDate: data.establishmentDate ? new Date(data.establishmentDate) : null,
+        taxPeriodType: data.taxPeriodType || null,
         authorizedName: data.authorizedName || null,
         authorizedTCKN: data.authorizedTCKN || null,
         authorizedEmail: data.authorizedEmail || null,
@@ -110,28 +111,6 @@ export async function POST(request: NextRequest) {
     })
     
     console.log('Customer created successfully:', customer.id)
-
-    // Sync declarations to DefinedDeclaration if provided
-    try {
-      if (data.declarations) {
-        const decls = Array.isArray(data.declarations)
-          ? data.declarations
-          : JSON.parse(data.declarations || '[]')
-        if (Array.isArray(decls)) {
-          for (const t of decls) {
-            if (typeof t === 'string' && t.trim()) {
-              await (prisma as any).definedDeclaration.upsert({
-                where: { customerId_type: { customerId: customer.id, type: t } },
-                update: {},
-                create: { customerId: customer.id, type: t },
-              })
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.error('Declaration sync failed (POST):', e)
-    }
 
     return NextResponse.json(customer)
   } catch (error: any) {
@@ -169,7 +148,8 @@ export async function PATCH(request: NextRequest) {
         threadsUrl: data.threadsUrl,
         ledgerType: data.ledgerType,
         subscriptionFee: data.subscriptionFee,
-        establishmentDate: data.establishmentDate ? new Date(data.establishmentDate) : null,
+        establishmentDate: data.establishmentDate ? new Date(data.establishmentDate) : undefined,
+        taxPeriodType: data.taxPeriodType !== undefined ? data.taxPeriodType : undefined,
         authorizedName: data.authorizedName,
         authorizedTCKN: data.authorizedTCKN,
         authorizedEmail: data.authorizedEmail,
@@ -187,37 +167,6 @@ export async function PATCH(request: NextRequest) {
         onboardingStage: data.onboardingStage,
       },
     })
-
-    // Sync declarations to DefinedDeclaration (replace existing set)
-    try {
-      if (data.declarations) {
-        const decls = Array.isArray(data.declarations)
-          ? data.declarations
-          : JSON.parse(data.declarations || '[]')
-        if (Array.isArray(decls)) {
-          const existing = await (prisma as any).definedDeclaration.findMany({
-            where: { customerId: id },
-            select: { type: true },
-          })
-          const existingSet = new Set(existing.map((e: any) => e.type))
-          const desired = decls.filter((t: any) => typeof t === 'string' && t.trim())
-          const desiredSet = new Set(desired)
-
-          for (const t of desiredSet) {
-            if (!existingSet.has(t)) {
-              await (prisma as any).definedDeclaration.create({ data: { customerId: id, type: t as string } })
-            }
-          }
-          for (const t of existingSet) {
-            if (!desiredSet.has(t)) {
-              await (prisma as any).definedDeclaration.delete({ where: { customerId_type: { customerId: id, type: t as string } } })
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.error('Declaration sync failed (PATCH):', e)
-    }
 
     return NextResponse.json(customer)
   } catch (error) {

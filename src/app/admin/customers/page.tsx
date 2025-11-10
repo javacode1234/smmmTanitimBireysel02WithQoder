@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, RefreshCw, UserPlus, Edit, Trash2, Eye, Building2 } from "lucide-react"
+import { Search, RefreshCw, UserPlus, Edit, Trash2, Eye, Building2, Copy } from "lucide-react"
 import { toast } from "sonner"
 import { CustomerModal } from "@/components/admin/customer-modal"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
@@ -116,11 +116,41 @@ export default function CustomersPage() {
       } else {
         const errorData = await res.json().catch(() => ({ error: 'Bilinmeyen hata' }))
         console.error('API Error:', errorData)
-        toast.error(errorData.error || "Müşteriler yüklenirken hata oluştu")
+        let errorMessage = errorData.error || "Müşteriler yüklenirken hata oluştu"
+        
+        // If errorData is empty object, try to get more info
+        if (!errorData.error && Object.keys(errorData).length === 0) {
+          try {
+            const errorText = await res.text()
+            if (errorText) errorMessage = errorText
+          } catch {}
+        }
+        
+        console.error('Final error message:', errorMessage)
+        toast.error(errorMessage, {
+          action: {
+            label: <div className="flex items-center gap-1"><Copy className="h-3 w-3" /> Kopyala</div>,
+            onClick: () => {
+              navigator.clipboard.writeText(errorMessage)
+              toast.success('Hata mesajı kopyalandı')
+            }
+          },
+          duration: 10000
+        })
       }
     } catch (e) {
       console.error(e)
-      toast.error("Müşteriler yüklenirken hata oluştu")
+      const errorMessage = e instanceof Error ? e.message : "Müşteriler yüklenirken hata oluştu"
+      toast.error(errorMessage, {
+        action: {
+          label: <div className="flex items-center gap-1"><Copy className="h-3 w-3" /> Kopyala</div>,
+          onClick: () => {
+            navigator.clipboard.writeText(errorMessage)
+            toast.success('Hata mesajı kopyalandı')
+          }
+        },
+        duration: 10000
+      })
     } finally {
       setLoading(false)
     }
@@ -155,13 +185,17 @@ export default function CustomersPage() {
     // Close all modals before navigation
     setIsModalOpen(false)
     setIsDeleteDialogOpen(false)
-    setSelectedCustomer(null)
-    setCustomerToDelete(null)
     
-    // Small delay to ensure modals are closed before navigation
+    // Delay to ensure modals are fully closed before navigation
+    setTimeout(() => {
+      setSelectedCustomer(null)
+      setCustomerToDelete(null)
+    }, 50)
+    
+    // Navigate after modal cleanup
     setTimeout(() => {
       window.location.href = `/admin/customers/${customerId}`
-    }, 50)
+    }, 100)
   }
 
   const handleRowDoubleClick = (customerId: string) => {
@@ -172,13 +206,17 @@ export default function CustomersPage() {
     // Close all modals before navigation
     setIsModalOpen(false)
     setIsDeleteDialogOpen(false)
-    setSelectedCustomer(null)
-    setCustomerToDelete(null)
     
-    // Small delay to ensure modals are closed and state is settled
+    // Delay to ensure modals are fully closed
+    setTimeout(() => {
+      setSelectedCustomer(null)
+      setCustomerToDelete(null)
+    }, 50)
+    
+    // Navigate after modal cleanup
     setTimeout(() => {
       window.location.href = `/admin/customers/${customerId}`
-    }, 50)
+    }, 100)
   }
 
   const confirmDelete = (customer: Customer) => {
@@ -195,7 +233,10 @@ export default function CustomersPage() {
       if (response.ok) {
         setCustomers((prev) => prev.filter((c) => c.id !== customerId))
         setIsDeleteDialogOpen(false)
-        setCustomerToDelete(null)
+        // Delay clearing state
+        setTimeout(() => {
+          setCustomerToDelete(null)
+        }, 150)
         toast.success('Müşteri silindi')
       } else {
         toast.error('Müşteri silinemedi')
@@ -207,14 +248,22 @@ export default function CustomersPage() {
   }
 
   const handleModalClose = () => {
+    // Prevent any state updates if component is unmounting or navigating
+    if (isNavigating) return
+    
     setIsModalOpen(false)
-    // Small delay before clearing customer to allow modal to close
+    // Small delay before clearing customer to allow modal to close properly
     setTimeout(() => {
-      setSelectedCustomer(null)
-    }, 100)
+      if (!isNavigating) {
+        setSelectedCustomer(null)
+      }
+    }, 150)
   }
 
   const handleModalSave = () => {
+    // Prevent any state updates if component is unmounting or navigating
+    if (isNavigating) return
+    
     console.log('Modal saved, fetching customers...')
     setIsModalOpen(false)
     setSelectedCustomer(null)
@@ -224,12 +273,14 @@ export default function CustomersPage() {
     setCurrentPage(1) // Go to first page
     // Small delay before fetching to ensure modal is fully closed
     setTimeout(() => {
-      fetchCustomers()
-    }, 100)
+      if (!isNavigating) {
+        fetchCustomers()
+      }
+    }, 150)
   }
 
   return (
-    <div>
+    <div suppressHydrationWarning>
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Müşteriler</h1>
         <p className="text-muted-foreground mt-2">
@@ -520,7 +571,10 @@ export default function CustomersPage() {
             isOpen={isDeleteDialogOpen}
             onClose={() => {
               setIsDeleteDialogOpen(false)
-              setCustomerToDelete(null)
+              // Delay clearing state to prevent DOM errors
+              setTimeout(() => {
+                setCustomerToDelete(null)
+              }, 150)
             }}
             onConfirm={() => customerToDelete && handleDelete(customerToDelete.id)}
             title="Müşteriyi Sil"

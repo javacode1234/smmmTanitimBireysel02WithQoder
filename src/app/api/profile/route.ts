@@ -1,80 +1,68 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/db"
 
-export async function GET(request: NextRequest) {
+// GET /api/profile - Get current user profile
+export async function GET(req: NextRequest) {
   try {
-    // TODO: Get user ID from session
-    // For now, using the first admin user from database
-    const users = await prisma.user.findMany({
-      where: { role: 'ADMIN' },
-      take: 1,
-      include: { client: true }
+    // TODO: Get user ID from session/auth
+    // For now, return admin user as default
+    const user = await prisma.user.findFirst({
+      where: { role: "ADMIN" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        role: true,
+      }
     })
-    
-    const user = users[0]
+
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     return NextResponse.json(user)
   } catch (error) {
-    console.error('Error fetching profile:', error)
-    return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 })
+    console.error("Error fetching profile:", error)
+    return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 })
   }
 }
 
-export async function PATCH(request: NextRequest) {
+// PATCH /api/profile - Update current user profile
+export async function PATCH(req: NextRequest) {
   try {
-    const body = await request.json()
-    const { name, email, phone, image, clientData } = body
-    
-    // TODO: Get user ID from session
-    // For now, using the first admin user from database
-    const users = await prisma.user.findMany({
-      where: { role: 'ADMIN' },
-      take: 1
+    const body = await req.json()
+    const { name, email, image } = body
+
+    // TODO: Get user ID from session/auth
+    // For now, update admin user as default
+    const currentUser = await prisma.user.findFirst({
+      where: { role: "ADMIN" }
     })
-    
-    const userId = users[0]?.id
-    if (!userId) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+    if (!currentUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Update user data
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
+      where: { id: currentUser.id },
       data: {
-        name,
-        email,
-        image,
+        name: name || currentUser.name,
+        email: email || currentUser.email,
+        image: image !== undefined ? image : currentUser.image,
       },
-      include: {
-        client: true
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        role: true,
       }
     })
 
-    // If client data is provided, update client info
-    if (clientData && updatedUser.client) {
-      await prisma.client.update({
-        where: { id: updatedUser.client.id },
-        data: {
-          companyName: clientData.companyName,
-          taxNumber: clientData.taxNumber,
-          phone: clientData.phone,
-          address: clientData.address,
-        }
-      })
-    }
-
-    return NextResponse.json({
-      message: 'Profile updated successfully',
-      user: updatedUser
-    })
+    return NextResponse.json(updatedUser)
   } catch (error) {
-    console.error('Error updating profile:', error)
-    return NextResponse.json(
-      { error: 'Failed to update profile' },
-      { status: 500 }
-    )
+    console.error("Error updating profile:", error)
+    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
   }
 }

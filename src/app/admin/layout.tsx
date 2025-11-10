@@ -17,7 +17,8 @@ import {
   CreditCard,
   FileEdit,
   LogOut,
-  Receipt
+  Receipt,
+  UserCog
 } from "lucide-react"
 
 const navigation = [
@@ -28,6 +29,7 @@ const navigation = [
   { name: "Beyannameler", href: "/admin/declarations", icon: FileText },
   { name: "Duyurular", href: "/admin/announcements", icon: Bell },
   { name: "Tahsilat", href: "/admin/collections", icon: CreditCard },
+  { name: "Kullanıcılar", href: "/admin/users", icon: UserCog },
   { name: "Ayarlar", href: "/admin/settings", icon: Settings },
 ]
 

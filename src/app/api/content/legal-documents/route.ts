@@ -183,10 +183,18 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.legalDocument.delete({
+    // Check if document exists first
+    const existing = await prisma.legalDocument.findUnique({
       where: { type }
     })
 
+    if (existing) {
+      await prisma.legalDocument.delete({
+        where: { type }
+      })
+    }
+
+    // Always return success, even if document didn't exist
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting legal document:', error)

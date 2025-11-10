@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
       type: i.type,
       enabled: i.enabled,
       frequency: String(i.frequency).toLowerCase(),
+      taxPeriodType: i.taxPeriodType ? String(i.taxPeriodType).toLowerCase() : undefined,
       dueDay: i.dueDay,
       dueHour: i.dueHour,
       dueMinute: i.dueMinute,
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
       quarterOffset: i.quarterOffset ?? undefined,
       yearlyCount: i.yearlyCount ?? undefined,
       skipQuarter: i.skipQuarter ?? undefined,
+      quarters: i.quarters ? JSON.parse(i.quarters) : undefined,
     }))
 
     return NextResponse.json(mapped)
@@ -56,13 +58,15 @@ export async function POST(req: NextRequest) {
           type: s.type,
           enabled: !!s.enabled,
           frequency: String(s.frequency).toUpperCase(),
+          taxPeriodType: s.taxPeriodType ? String(s.taxPeriodType).toUpperCase() : null,
           dueDay: Number(s.dueDay),
           dueHour: Number(s.dueHour),
           dueMinute: Number(s.dueMinute),
           dueMonth: s.dueMonth != null ? Number(s.dueMonth) : null,
           quarterOffset: s.quarterOffset != null ? Number(s.quarterOffset) : null,
           yearlyCount: s.yearlyCount != null ? Number(s.yearlyCount) : null,
-          skipQuarter: s.skipQuarter != null ? Number(s.skipQuarter) : null,
+          skipQuarter: s.skipQuarter != null ? !!s.skipQuarter : null,
+          quarters: s.quarters && Array.isArray(s.quarters) ? JSON.stringify(s.quarters) : null,
         })),
       })
     }

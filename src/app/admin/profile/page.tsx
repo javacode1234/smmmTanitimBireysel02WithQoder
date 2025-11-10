@@ -36,8 +36,11 @@ export default function AdminProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch('/api/profile')
-        if (response.ok) {
+        const response = await fetch('/api/profile', {
+          cache: 'no-store'
+        }).catch(() => null)
+        
+        if (response && response.ok) {
           const data = await response.json()
           const userData = {
             name: data.name || "Admin Kullanıcı",
@@ -54,7 +57,7 @@ export default function AdminProfilePage() {
           setPreviewAvatar(userData.avatar)
         }
       } catch (error) {
-        console.error('Error fetching profile:', error)
+        // Silently ignore profile fetch errors
       } finally {
         setIsLoading(false)
       }
@@ -125,22 +128,20 @@ export default function AdminProfilePage() {
         // Update both profileData and formData with fresh data from API
         const updatedData = {
           ...formData,
-          name: result.user.name,
-          email: result.user.email,
-          avatar: result.user.image || formData.avatar,
+          name: result.name,
+          email: result.email,
+          avatar: result.image || formData.avatar,
         }
         setProfileData(updatedData)
         setFormData(updatedData)
-        setPreviewAvatar(result.user.image || formData.avatar)
+        setPreviewAvatar(result.image || formData.avatar)
         setIsEditing(false)
         toast.success('Profil bilgileri başarıyla güncellendi!')
       } else {
-        const errorData = await response.json()
-        console.error('Profile update error:', errorData)
+        const errorData = await response.json().catch(() => ({ error: 'Profil güncellenirken bir hata oluştu' }))
         toast.error(errorData.error || 'Profil güncellenirken bir hata oluştu')
       }
     } catch (error) {
-      console.error('Profile update error:', error)
       toast.error('Profil güncellenirken bir hata oluştu. Lütfen tekrar deneyin.')
     } finally {
       setIsSaving(false)

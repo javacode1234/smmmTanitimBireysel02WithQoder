@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React from "react"
+import { useEffect, useState, Fragment } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -22,26 +23,11 @@ import {
 import { 
   Search, 
   RefreshCw, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  FileText,
   CheckCircle2,
   XCircle,
   Calendar
 } from "lucide-react"
 import { toast } from "sonner"
-import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 
 type TaxReturn = {
@@ -90,27 +76,18 @@ export default function TaxReturnsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [customerFilter, setCustomerFilter] = useState("all")
   const [periodFilter, setPeriodFilter] = useState("current") // current, all, custom
   const [customYear, setCustomYear] = useState(new Date().getFullYear().toString())
   const [customMonth, setCustomMonth] = useState((new Date().getMonth() + 1).toString())
-  const [customMonthEnd, setCustomMonthEnd] = useState((new Date().getMonth() + 1).toString())
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(5)
 
   // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedTaxReturn, setSelectedTaxReturn] = useState<TaxReturn | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [taxReturnToDelete, setTaxReturnToDelete] = useState<TaxReturn | null>(null)
-
-  // Form states
-  const [formData, setFormData] = useState({
-    customerId: "",
-    type: "",
-    period: "",
-    dueDate: "",
-    submittedDate: "",
-    isSubmitted: false,
-    notes: ""
-  })
 
   useEffect(() => {
     setIsMounted(true)
@@ -120,6 +97,7 @@ export default function TaxReturnsPage() {
   useEffect(() => {
     if (isMounted) {
       fetchTaxReturns()
+      setCurrentPage(1) // Reset to first page when filters change
     }
   }, [isMounted, periodFilter, customYear, customMonth, typeFilter, statusFilter])
 
@@ -140,17 +118,17 @@ export default function TaxReturnsPage() {
     try {
       const params = new URLSearchParams()
       
-      // Period filtering based on due date
+      // Period filtering based on due date (when the return should be submitted)
       if (periodFilter === "current") {
         // Show tax returns due this month
-        params.set("currentPeriod", "true")
+        params.set("dueDateYear", new Date().getFullYear().toString())
+        params.set("dueDateMonth", (new Date().getMonth() + 1).toString())
       } else if (periodFilter === "custom") {
-        params.set("currentPeriod", "false")
-        // Custom date range filtering can be added here if needed
-        // For now, we'll show all and filter on client side
-      } else {
-        params.set("currentPeriod", "false")
+        // Custom month selection - show returns due in selected month
+        params.set("dueDateYear", customYear)
+        params.set("dueDateMonth", customMonth)
       }
+      // If "all", no date filter
 
       if (typeFilter !== "all") {
         params.set("type", typeFilter)
@@ -173,34 +151,6 @@ export default function TaxReturnsPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleAddTaxReturn = () => {
-    setSelectedTaxReturn(null)
-    setFormData({
-      customerId: "",
-      type: "",
-      period: "",
-      dueDate: "",
-      submittedDate: "",
-      isSubmitted: false,
-      notes: ""
-    })
-    setIsModalOpen(true)
-  }
-
-  const handleEditTaxReturn = (taxReturn: TaxReturn) => {
-    setSelectedTaxReturn(taxReturn)
-    setFormData({
-      customerId: taxReturn.customerId,
-      type: taxReturn.type,
-      period: taxReturn.period,
-      dueDate: taxReturn.dueDate.split('T')[0],
-      submittedDate: taxReturn.submittedDate ? taxReturn.submittedDate.split('T')[0] : "",
-      isSubmitted: taxReturn.isSubmitted,
-      notes: taxReturn.notes || ""
-    })
-    setIsModalOpen(true)
   }
 
   const handleToggleSubmitted = async (taxReturn: TaxReturn) => {
@@ -230,92 +180,33 @@ export default function TaxReturnsPage() {
     }
   }
 
-  const handleSave = async () => {
-    try {
-      if (!formData.customerId || !formData.type || !formData.period || !formData.dueDate) {
-        toast.error("Lütfen tüm zorunlu alanları doldurun")
-        return
-      }
-
-      const url = selectedTaxReturn 
-        ? `/api/tax-returns?id=${selectedTaxReturn.id}`
-        : '/api/tax-returns'
-      
-      const method = selectedTaxReturn ? 'PATCH' : 'POST'
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
-
-      if (res.ok) {
-        toast.success(selectedTaxReturn ? "Beyanname güncellendi" : "Beyanname eklendi")
-        setIsModalOpen(false)
-        fetchTaxReturns()
-      } else {
-        const error = await res.json()
-        toast.error(error.error || "İşlem başarısız")
-      }
-    } catch (e) {
-      console.error(e)
-      toast.error("İşlem başarısız")
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    try {
-      const res = await fetch(`/api/tax-returns?id=${id}`, { method: 'DELETE' })
-      if (res.ok) {
-        toast.success("Beyanname silindi")
-        setIsDeleteDialogOpen(false)
-        setTaxReturnToDelete(null)
-        fetchTaxReturns()
-      } else {
-        toast.error("Silme işlemi başarısız")
-      }
-    } catch (e) {
-      console.error(e)
-      toast.error("Silme işlemi başarısız")
-    }
-  }
-
   const filteredTaxReturns = taxReturns.filter(tr => {
     const matchesSearch = searchTerm === "" || 
       tr.customer.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tr.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (tr.customer.taxNumber && tr.customer.taxNumber.includes(searchTerm))
     
-    // Custom date range filtering
-    if (periodFilter === "custom") {
-      const dueDate = new Date(tr.dueDate)
-      const startMonth = parseInt(customMonth)
-      const endMonth = parseInt(customMonthEnd)
-      const year = parseInt(customYear)
-      
-      const dueDateMonth = dueDate.getMonth() + 1 // 1-12
-      const dueDateYear = dueDate.getFullYear()
-      
-      // Check if year matches
-      if (dueDateYear !== year) {
-        return false
-      }
-      
-      // Check if month is in range
-      if (dueDateMonth < startMonth || dueDateMonth > endMonth) {
-        return false
-      }
-    }
+    const matchesCustomer = customerFilter === "all" || tr.customerId === customerFilter
     
-    return matchesSearch
+    return matchesSearch && matchesCustomer
   })
+
+  // Pagination
+  const totalPages = Math.ceil(filteredTaxReturns.length / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedTaxReturns = filteredTaxReturns.slice(startIndex, endIndex)
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)))
+  }
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Beyanname Takibi</h1>
         <p className="text-muted-foreground mt-2">
-          Bu ay verilmesi gereken beyannameleri görüntüleyin ve yönetin (son tarih bazlı)
+          Belirtilen ayda verilmesi gereken beyannameleri görüntüleyin ve yönetin
         </p>
       </div>
 
@@ -343,14 +234,6 @@ export default function TaxReturnsPage() {
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
               Yenile
             </Button>
-            <Button
-              className="bg-green-600 hover:bg-green-700"
-              onClick={handleAddTaxReturn}
-              title="Yeni Beyanname"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Yeni Beyanname
-            </Button>
           </div>
         </div>
 
@@ -364,7 +247,7 @@ export default function TaxReturnsPage() {
               <SelectContent>
                 <SelectItem value="current">Bu Ay Verilecekler</SelectItem>
                 <SelectItem value="all">Tüm Beyannameler</SelectItem>
-                <SelectItem value="custom">Özel Tarih Aralığı</SelectItem>
+                <SelectItem value="custom">Özel Ay Seç</SelectItem>
               </SelectContent>
             </Select>
 
@@ -379,26 +262,7 @@ export default function TaxReturnsPage() {
                 />
                 <Select value={customMonth} onValueChange={setCustomMonth}>
                   <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Başlangıç Ay" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Ocak</SelectItem>
-                    <SelectItem value="2">Şubat</SelectItem>
-                    <SelectItem value="3">Mart</SelectItem>
-                    <SelectItem value="4">Nisan</SelectItem>
-                    <SelectItem value="5">Mayıs</SelectItem>
-                    <SelectItem value="6">Haziran</SelectItem>
-                    <SelectItem value="7">Temmuz</SelectItem>
-                    <SelectItem value="8">Ağustos</SelectItem>
-                    <SelectItem value="9">Eylül</SelectItem>
-                    <SelectItem value="10">Ekim</SelectItem>
-                    <SelectItem value="11">Kasım</SelectItem>
-                    <SelectItem value="12">Aralık</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={customMonthEnd} onValueChange={setCustomMonthEnd}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Bitiş Ay" />
+                    <SelectValue placeholder="Ay" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">Ocak</SelectItem>
@@ -440,6 +304,20 @@ export default function TaxReturnsPage() {
                 <SelectItem value="false">Verilmedi</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={customerFilter} onValueChange={setCustomerFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Müşteri" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Müşteriler</SelectItem>
+                {customers.map(customer => (
+                  <SelectItem key={customer.id} value={customer.id}>
+                    {customer.companyName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
       </div>
@@ -469,14 +347,14 @@ export default function TaxReturnsPage() {
                       Yükleniyor...
                     </TableCell>
                   </TableRow>
-                ) : filteredTaxReturns.length === 0 ? (
+                ) : paginatedTaxReturns.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       Kayıt bulunamadı
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredTaxReturns.map((tr) => (
+                  paginatedTaxReturns.map((tr) => (
                     <TableRow key={tr.id}>
                       <TableCell>
                         <div>
@@ -517,28 +395,24 @@ export default function TaxReturnsPage() {
                         </Button>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleEditTaxReturn(tr)}
-                            title="Düzenle"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => {
-                              setTaxReturnToDelete(tr)
-                              setIsDeleteDialogOpen(true)
-                            }}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            title="Sil"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleSubmitted(tr)}
+                          className={tr.isSubmitted ? '' : 'bg-green-50 hover:bg-green-100'}
+                        >
+                          {tr.isSubmitted ? (
+                            <>
+                              <XCircle className="h-4 w-4 mr-1 text-red-600" />
+                              İptal Et
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="h-4 w-4 mr-1 text-green-600" />
+                              Verildi
+                            </>
+                          )}
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -546,136 +420,79 @@ export default function TaxReturnsPage() {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Tax Return Modal */}
-      {isMounted && (
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {selectedTaxReturn ? "Beyanname Düzenle" : "Yeni Beyanname"}
-              </DialogTitle>
-              <DialogDescription>
-                Beyanname bilgilerini girin
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="customer">Müşteri *</Label>
-                <Select 
-                  value={formData.customerId} 
-                  onValueChange={(value) => setFormData({...formData, customerId: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Müşteri seçin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.companyName} {c.taxNumber ? `(${c.taxNumber})` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {/* Pagination */}
+          {filteredTaxReturns.length > 0 && (
+            <div className="flex items-center justify-between px-2 py-4">
+              <div className="text-sm text-muted-foreground">
+                Toplam {filteredTaxReturns.length} kayıttan {startIndex + 1}-{Math.min(endIndex, filteredTaxReturns.length)} arası gösteriliyor
               </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="type">Beyanname Tipi *</Label>
-                <Select 
-                  value={formData.type} 
-                  onValueChange={(value) => setFormData({...formData, type: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tip seçin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TAX_RETURN_TYPES.map(type => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="period">Dönem *</Label>
-                <Input
-                  id="period"
-                  placeholder="Örn: 2024-11 veya 2024"
-                  value={formData.period}
-                  onChange={(e) => setFormData({...formData, period: e.target.value})}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="dueDate">Son Tarih *</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="submittedDate">Verildiği Tarih</Label>
-                <Input
-                  id="submittedDate"
-                  type="date"
-                  value={formData.submittedDate}
-                  onChange={(e) => setFormData({...formData, submittedDate: e.target.value})}
-                />
-              </div>
-
               <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isSubmitted"
-                  checked={formData.isSubmitted}
-                  onChange={(e) => setFormData({...formData, isSubmitted: e.target.checked})}
-                  className="w-4 h-4"
-                />
-                <Label htmlFor="isSubmitted">Verildi</Label>
-              </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  İlk
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Önceki
+                </Button>
+                
+                {/* Page numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      // Show first, last, current, and adjacent pages
+                      if (page === 1 || page === totalPages) return true
+                      if (Math.abs(page - currentPage) <= 1) return true
+                      return false
+                    })
+                    .map((page, idx, arr) => (
+                      <Fragment key={page}>
+                        {idx > 0 && arr[idx - 1] !== page - 1 && (
+                          <span key={`ellipsis-${page}`} className="px-2 text-muted-foreground">...</span>
+                        )}
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => goToPage(page)}
+                          className="w-9"
+                        >
+                          {page}
+                        </Button>
+                      </Fragment>
+                    ))}
+                </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="notes">Notlar</Label>
-                <Textarea
-                  id="notes"
-                  rows={3}
-                  value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Sonraki
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Son
+                </Button>
               </div>
             </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                İptal
-              </Button>
-              <Button onClick={handleSave}>
-                Kaydet
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      {isMounted && (
-        <DeleteConfirmationDialog
-          isOpen={isDeleteDialogOpen}
-          onClose={() => {
-            setIsDeleteDialogOpen(false)
-            setTaxReturnToDelete(null)
-          }}
-          onConfirm={() => taxReturnToDelete && handleDelete(taxReturnToDelete.id)}
-          title="Beyanname Sil"
-          description={taxReturnToDelete ? `"${taxReturnToDelete.customer.companyName}" müşterisinin ${taxReturnToDelete.type} beyannamesi silinecek. Emin misiniz?` : undefined}
-        />
-      )}
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

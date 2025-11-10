@@ -81,7 +81,6 @@ model Client {
   updatedAt    DateTime      @updatedAt
   
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  declarations Declaration[]
   collections  Collection[]
   announcements AnnouncementClient[]
 }
@@ -116,19 +115,6 @@ model AnnouncementClient {
   client         Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
   
   @@unique([announcementId, clientId])
-}
-
-// Declaration model (Tax Returns)
-model Declaration {
-  id         String   @id @default(cuid())
-  clientId   String
-  period     String   // e.g., "2024-01" or "Q1-2024"
-  title      String?
-  pdfUrl     String
-  uploadedAt DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  
-  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 }
 
 // Reminder model
@@ -577,8 +563,10 @@ model Customer {
   threadsUrl      String?
   
   // Business Details
-  ledgerType      String?          // Defter Tipi
-  subscriptionFee String?          // Aidat
+  ledgerType        String?          // Defter Tipi
+  subscriptionFee   String?          // Aidat
+  establishmentDate DateTime?        // Kuruluş Tarihi
+  taxPeriodType     TaxPeriodType?   // Vergi Dönemi (Normal/Özel)
   
   // Authorized Person
   authorizedName  String?
@@ -595,9 +583,6 @@ model Customer {
   authorizationDate DateTime?      // Yetkilendirilme Tarihi
   authorizationPeriod String?      // Yetki Süresi
   
-  // Declarations
-  declarations    String?          @db.Text // JSON array of declarations
-  
   // Documents
   documents       String?          @db.LongText // JSON array of documents with Base64 files
   
@@ -609,6 +594,10 @@ model Customer {
   onboardingStage OnboardingStage  @default(LEAD)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  
+  // Relations
+  declarationSettings     CustomerDeclarationSetting[]
+  taxReturns              TaxReturn[]
 }
 
 enum CustomerStatus {
@@ -628,12 +617,18 @@ enum DeclarationFrequency {
   YEARLY
 }
 
+enum TaxPeriodType {
+  NORMAL    // Normal dönem (Ocak-Aralık)
+  SPECIAL   // Özel dönem
+}
+
 model DeclarationConfig {
   id            String               @id @default(cuid())
   type          String               @unique
   enabled       Boolean              @default(true)
   optional      Boolean              @default(false)
   frequency     DeclarationFrequency
+  taxPeriodType TaxPeriodType?       // Sadece Kurumlar/Gelir Vergisi için
   dueDay        Int?
   dueHour       Int?
   dueMinute     Int?
@@ -641,6 +636,56 @@ model DeclarationConfig {
   quarterOffset Int?
   yearlyCount   Int?
   skipQuarter   Boolean?             @default(false)
+  quarters      String?              @db.Text // JSON array of quarter numbers [1,2,3,4]
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
+}
+
+// Customer declaration settings - which declarations are enabled for each customer
+model CustomerDeclarationSetting {
+  id            String               @id @default(cuid())
+  customerId    String
+  type          String               // Declaration type name (from DeclarationConfig)
+  enabled       Boolean              @default(true)
+  frequency     DeclarationFrequency
+  taxPeriodType TaxPeriodType?       // Sadece Kurumlar/Gelir Vergisi için
+  dueDay        Int?
+  dueHour       Int?
+  dueMinute     Int?
+  dueMonth      Int?
+  quarterOffset Int?
+  yearlyCount   Int?
+  skipQuarter   Boolean?             @default(false)
+  quarters      String?              @db.Text // JSON array
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  
+  customer      Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  @@unique([customerId, type])
+  @@index([customerId])
+}
+
+// Tax Return Tracking
+model TaxReturn {
+  id            String         @id @default(cuid())
+  customerId    String
+  type          String         // Declaration type
+  period        String         // e.g., "2025-01" or "2025-Q1"
+  year          Int
+  month         Int?
+  taxPeriodType TaxPeriodType? // Normal veya Özel dönem
+  dueDate       DateTime
+  submittedDate DateTime?
+  isSubmitted   Boolean        @default(false)
+  notes         String?        @db.Text
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  customer      Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  @@index([customerId])
+  @@index([period])
+  @@index([year, month])
+  @@index([dueDate])
 }

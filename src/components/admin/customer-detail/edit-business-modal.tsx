@@ -30,6 +30,7 @@ interface EditBusinessModalProps {
     ledgerType: string | null
     subscriptionFee: string | null
     establishmentDate: string | null
+    taxPeriodType: string | null
     status: "ACTIVE" | "INACTIVE"
     onboardingStage: "LEAD" | "PROSPECT" | "CUSTOMER"
   }
@@ -39,6 +40,7 @@ export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initial
   const [ledgerType, setLedgerType] = useState("")
   const [subscriptionFee, setSubscriptionFee] = useState("")
   const [establishmentDate, setEstablishmentDate] = useState("")
+  const [taxPeriodType, setTaxPeriodType] = useState("")
   const [status, setStatus] = useState("ACTIVE")
   const [onboardingStage, setOnboardingStage] = useState("LEAD")
   const [saving, setSaving] = useState(false)
@@ -48,6 +50,7 @@ export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initial
       setLedgerType(initialData.ledgerType || "")
       setSubscriptionFee(initialData.subscriptionFee || "")
       setEstablishmentDate(initialData.establishmentDate ? initialData.establishmentDate.split('T')[0] : "")
+      setTaxPeriodType(initialData.taxPeriodType || "")
       setStatus(initialData.status || "ACTIVE")
       setOnboardingStage(initialData.onboardingStage || "LEAD")
     }
@@ -59,12 +62,19 @@ export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initial
       const response = await fetch(`/api/customers?id=${customerId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ledgerType, subscriptionFee, establishmentDate: establishmentDate || null, status, onboardingStage }),
+        body: JSON.stringify({ 
+          ledgerType, 
+          subscriptionFee, 
+          establishmentDate: establishmentDate || null, 
+          taxPeriodType: taxPeriodType || null,
+          status, 
+          onboardingStage 
+        }),
       })
 
       if (response.ok) {
         toast.success("İş bilgileri güncellendi")
-        onSave({ ledgerType, subscriptionFee, establishmentDate, status, onboardingStage })
+        onSave({ ledgerType, subscriptionFee, establishmentDate, taxPeriodType, status, onboardingStage })
         onClose()
       } else {
         toast.error("Güncelleme başarısız")
@@ -120,6 +130,19 @@ export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initial
               value={establishmentDate}
               onChange={(e) => setEstablishmentDate(e.target.value)}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="taxPeriodType">Vergi Dönemi</Label>
+            <Select value={taxPeriodType} onValueChange={setTaxPeriodType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seçiniz" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NORMAL">Normal Dönem (Ocak-Aralık)</SelectItem>
+                <SelectItem value="SPECIAL">Özel Dönem</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

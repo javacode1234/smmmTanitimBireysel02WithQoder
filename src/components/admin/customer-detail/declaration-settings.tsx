@@ -11,16 +11,18 @@ import { FileText, Save, Edit2, X, Check, Plus, Calendar } from "lucide-react"
 import { toast } from "sonner"
 
 interface DeclarationSetting {
+  id?: string
   type: string
   enabled: boolean
-  frequency: 'monthly' | 'quarterly' | 'yearly' // Aylık, 3 Aylık, Yıllık
-  dueDay: number // Ayın kaçında verilir (örn: 26)
-  dueHour: number // Saat (23)
-  dueMinute: number // Dakika (59)
-  dueMonth?: number // Yıllık beyannameler için ay (örn: 3 = Mart, 4 = Nisan)
-  quarterOffset?: number // 3 aylık beyannameler için kaç ay sonra (örn: 2 = 2. ay)
-  yearlyCount?: number // Yılda kaç kere verilir (örn: 3)
-  skipQuarter?: number // Hangi çeyreği atla (örn: 4 = 4. çeyrek yok)
+  frequency: 'monthly' | 'quarterly' | 'yearly'
+  dueDay: number
+  dueHour: number
+  dueMinute: number
+  dueMonth?: number
+  quarterOffset?: number
+  yearlyCount?: number
+  skipQuarter?: number
+  quarters?: number[] // Seçili çeyrekler
 }
 
 interface DeclarationSettingsProps {
@@ -30,131 +32,75 @@ interface DeclarationSettingsProps {
   onUpdate: (settings: DeclarationSetting[]) => void
 }
 
-// Varsayılan beyanname türleri ve ayarları
-const defaultDeclarations: DeclarationSetting[] = [
-  // KDV Beyannameleri
-  { 
-    type: "KDV1 Beyannamesi", 
-    enabled: false, 
-    frequency: 'monthly', 
-    dueDay: 28, 
-    dueHour: 23, 
-    dueMinute: 59 
-  },
-  { 
-    type: "KDV2 Beyannamesi", 
-    enabled: false, 
-    frequency: 'monthly', 
-    dueDay: 23, 
-    dueHour: 23, 
-    dueMinute: 59 
-  },
-  { 
-    type: "KDV3 Beyannamesi", 
-    enabled: false, 
-    frequency: 'monthly', 
-    dueDay: 26, 
-    dueHour: 23, 
-    dueMinute: 59 
-  },
-  { 
-    type: "KDV4 Beyannamesi", 
-    enabled: false, 
-    frequency: 'monthly', 
-    dueDay: 26, 
-    dueHour: 23, 
-    dueMinute: 59 
-  },
-  
-  // Muhtasar Prim Hizmet Beyannamesi
-  { 
-    type: "Muhtasar Prim Hizmet Beyannamesi (Aylık)", 
-    enabled: false, 
-    frequency: 'monthly', 
-    dueDay: 26, 
-    dueHour: 23, 
-    dueMinute: 59 
-  },
-  { 
-    type: "Muhtasar Prim Hizmet Beyannamesi (3 Aylık)", 
-    enabled: false, 
-    frequency: 'quarterly', 
-    dueDay: 26, 
-    dueHour: 23, 
-    dueMinute: 59,
-    quarterOffset: 1 // Dönemi takip eden ayın 26'sı
-  },
-  
-  // Gelir Vergisi Beyannameleri
-  { 
-    type: "Gelir Geçici Vergi Beyannamesi", 
-    enabled: false, 
-    frequency: 'quarterly', 
-    dueDay: 17, 
-    dueHour: 23, 
-    dueMinute: 59,
-    quarterOffset: 2, // Dönemi takip eden 2. ayın 17'si
-    yearlyCount: 3, // Yılda 3 kere
-    skipQuarter: 4 // 4. çeyrek yok
-  },
-  { 
-    type: "Yıllık Gelir Vergisi Beyannamesi", 
-    enabled: false, 
-    frequency: 'yearly', 
-    dueDay: 31, // Son gün (dinamik)
-    dueHour: 23, 
-    dueMinute: 59,
-    dueMonth: 3 // Mart ayı
-  },
-  
-  // Kurumlar Vergisi Beyannameleri
-  { 
-    type: "Kurum Geçici Vergi Beyannamesi", 
-    enabled: false, 
-    frequency: 'quarterly', 
-    dueDay: 17, 
-    dueHour: 23, 
-    dueMinute: 59,
-    quarterOffset: 2, // Dönemi takip eden 2. ayın 17'si
-    yearlyCount: 3, // Yılda 3 kere
-    skipQuarter: 4 // 4. çeyrek yok
-  },
-  { 
-    type: "Yıllık Kurumlar Vergisi Beyannamesi", 
-    enabled: false, 
-    frequency: 'yearly', 
-    dueDay: 30, // Nisan 30 (sabit)
-    dueHour: 23, 
-    dueMinute: 59,
-    dueMonth: 4 // Nisan ayı
-  },
-  
-  // Diğer Beyannameler
-  { 
-    type: "Ba-Bs Formu", 
-    enabled: false, 
-    frequency: 'monthly', 
-    dueDay: 23, 
-    dueHour: 23, 
-    dueMinute: 59 
-  },
-]
-
 export function DeclarationSettings({ settings, customerId, establishmentDate, onUpdate }: DeclarationSettingsProps) {
   const [localSettings, setLocalSettings] = useState<DeclarationSetting[]>(settings)
+  const [availableDeclarations, setAvailableDeclarations] = useState<DeclarationSetting[]>([])
+  const [loading, setLoading] = useState(true)
   const [hasChanges, setHasChanges] = useState(false)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editForm, setEditForm] = useState<DeclarationSetting | null>(null)
   const [generating, setGenerating] = useState(false)
 
+  // Tanımlı beyannameleri çek
   useEffect(() => {
-    // Eğer settings boş ise varsayılan değerleri kullan
-    if (settings.length === 0) {
-      setLocalSettings(defaultDeclarations)
-    } else {
-      setLocalSettings(settings)
+    const fetchDeclarations = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/declarations-config')
+        if (res.ok) {
+          const data = await res.json()
+          // API'den gelen beyannameleri dönüştür
+          const declarations = data.map((d: any) => ({
+            id: d.id,
+            type: d.type,
+            enabled: false, // Varsayılan olarak kapalı
+            frequency: d.frequency.toLowerCase(),
+            dueDay: d.dueDay || 26,
+            dueHour: d.dueHour || 23,
+            dueMinute: d.dueMinute || 59,
+            dueMonth: d.dueMonth,
+            quarterOffset: d.quarterOffset,
+            yearlyCount: d.yearlyCount,
+            skipQuarter: d.skipQuarter,
+            quarters: d.quarters ? JSON.parse(d.quarters) : undefined
+          }))
+          
+          setAvailableDeclarations(declarations)
+          
+          // Eğer müşteri için ayar varsa, enabled durumlarını güncelle
+          if (settings.length > 0) {
+            const merged = declarations.map((decl: DeclarationSetting) => {
+              const existing = settings.find(s => s.type === decl.type)
+              return existing ? { ...decl, enabled: existing.enabled } : decl
+            })
+            setLocalSettings(merged)
+          } else {
+            setLocalSettings(declarations)
+          }
+        } else {
+          toast.error("Beyanname listesi yüklenemedi")
+        }
+      } catch (error) {
+        console.error('Error fetching declarations:', error)
+        toast.error("Beyanname listesi yüklenemedi")
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [settings])
+
+    fetchDeclarations()
+  }, [])
+
+  // settings değiştiğinde enabled durumlarını güncelle
+  useEffect(() => {
+    if (availableDeclarations.length > 0 && settings.length > 0) {
+      const merged = availableDeclarations.map(decl => {
+        const existing = settings.find(s => s.type === decl.type)
+        return existing ? { ...decl, enabled: existing.enabled } : decl
+      })
+      setLocalSettings(merged)
+    }
+  }, [settings, availableDeclarations])
 
   const toggleDeclaration = (type: string) => {
     const updated = localSettings.map(d =>
@@ -192,10 +138,34 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
     }
   }
 
-  const handleSave = () => {
-    onUpdate(localSettings)
-    setHasChanges(false)
-    toast.success("Beyanname ayarları kaydedildi")
+  const handleSave = async () => {
+    try {
+      const res = await fetch('/api/customer-declaration-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId,
+          settings: localSettings
+        })
+      })
+
+      if (res.ok) {
+        onUpdate(localSettings)
+        setHasChanges(false)
+        toast.success("Beyanname ayarları kaydedildi")
+        
+        // Kaydettikten sonra kullanıcıya beyannameleri oluşturmasını öner
+        const enabledCount = localSettings.filter(d => d.enabled).length
+        if (enabledCount > 0) {
+          toast.info("Şimdi 'Beyannameleri Oluştur' butonuna tıklayarak takip kayıtlarını oluşturabilirsiniz")
+        }
+      } else {
+        toast.error("Kaydetme başarısız")
+      }
+    } catch (error) {
+      console.error('Error saving declaration settings:', error)
+      toast.error("Kaydetme başarısız")
+    }
   }
 
   const generateTaxReturns = async () => {
@@ -212,77 +182,212 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
 
     setGenerating(true)
     try {
-      // Her enabled beyanname için 2025 yılı beyannamelerini oluştur
+      // Kuruluş tarihini parse et
+      const estDate = new Date(establishmentDate)
       const currentYear = new Date().getFullYear()
+      const currentMonth = new Date().getMonth() + 1
+      
       const taxReturns = []
 
       for (const declaration of enabledDeclarations) {
         if (declaration.frequency === 'monthly') {
-          // Aylık beyannameler - 12 tane
-          for (let month = 1; month <= 12; month++) {
-            const dueDate = new Date(currentYear, month, declaration.dueDay, declaration.dueHour, declaration.dueMinute)
-            const period = `${currentYear}-${String(month).padStart(2, '0')}`
+          // Aylık beyannameler - kuruluş tarihinden itibaren
+          const estYear = estDate.getFullYear()
+          const estMonth = estDate.getMonth() + 1
+          
+          // Kuruluş yılından başla
+          for (let year = estYear; year <= currentYear; year++) {
+            const startMonth = year === estYear ? estMonth : 1
+            const endMonth = year === currentYear ? currentMonth : 12
             
-            taxReturns.push({
-              customerId,
-              type: declaration.type,
-              period,
-              dueDate: dueDate.toISOString(),
-              submittedDate: null,
-              isSubmitted: false,
-              notes: "Otomatik oluşturuldu"
-            })
+            for (let month = startMonth; month <= endMonth; month++) {
+              const dueDate = new Date(year, month, declaration.dueDay, declaration.dueHour, declaration.dueMinute)
+              const period = `${year}-${String(month).padStart(2, '0')}`
+              
+              taxReturns.push({
+                customerId,
+                type: declaration.type,
+                period,
+                year,
+                month,
+                dueDate: dueDate.toISOString(),
+                submittedDate: null,
+                isSubmitted: false,
+                notes: "Otomatik oluşturuldu"
+              })
+            }
           }
         } else if (declaration.frequency === 'quarterly') {
           // 3 aylık beyannameler
-          const quarters = declaration.yearlyCount || 4
-          for (let q = 1; q <= quarters; q++) {
+          const selectedQuarters = declaration.quarters && declaration.quarters.length > 0 
+            ? declaration.quarters 
+            : [1, 2, 3, 4]
+          
+          for (const q of selectedQuarters) {
+            // Eğer bu çeyrek atlanacaksa devam et
             if (declaration.skipQuarter && q === declaration.skipQuarter) continue
             
-            const quarterEndMonth = q * 3
-            const dueMonth = quarterEndMonth + (declaration.quarterOffset || 1)
-            const dueDate = new Date(currentYear, dueMonth - 1, declaration.dueDay, declaration.dueHour, declaration.dueMinute)
+            const quarterEndMonth = q * 3 // 3, 6, 9, 12
+            const dueMonth = quarterEndMonth + (declaration.quarterOffset || 1) // +1 veya +2
+            
+            // Duedate ayı yılı aşarsa sonraki yıla geç
+            const dueYear = dueMonth > 12 ? currentYear + 1 : currentYear
+            const actualDueMonth = dueMonth > 12 ? dueMonth - 12 : dueMonth
+            
+            const dueDate = new Date(dueYear, actualDueMonth - 1, declaration.dueDay, declaration.dueHour, declaration.dueMinute)
+            
+            // Şirket kuruluş tarihinden önceki tarihler için beyanname oluşturma
+            if (dueDate < estDate) continue
+            
             const period = `${currentYear}-Q${q}`
             
             taxReturns.push({
               customerId,
               type: declaration.type,
               period,
+              year: currentYear,
+              month: null,
               dueDate: dueDate.toISOString(),
               submittedDate: null,
               isSubmitted: false,
-              notes: "Otomatik oluşturuldu"
+              notes: `Otomatik oluşturuldu (${q}. Çeyrek)`
             })
           }
         } else if (declaration.frequency === 'yearly') {
           // Yıllık beyannameler
           const month = declaration.dueMonth || 3
-          const dueDate = new Date(currentYear, month, declaration.dueDay, declaration.dueHour, declaration.dueMinute)
+          const dueDate = new Date(currentYear + 1, month - 1, declaration.dueDay, declaration.dueHour, declaration.dueMinute)
           const period = `${currentYear}`
           
-          taxReturns.push({
-            customerId,
-            type: declaration.type,
-            period,
-            dueDate: dueDate.toISOString(),
-            submittedDate: null,
-            isSubmitted: false,
-            notes: "Otomatik oluşturuldu"
-          })
+          // Şirket kuruluş tarihinden önceki tarihler için beyanname oluşturma
+          if (dueDate < estDate) {
+            // Kuruluş yılından sonraki ilk yıl için
+            const estYear = estDate.getFullYear()
+            const yearlyDueDate = new Date(estYear + 1, month - 1, declaration.dueDay, declaration.dueHour, declaration.dueMinute)
+            if (yearlyDueDate >= estDate) {
+              taxReturns.push({
+                customerId,
+                type: declaration.type,
+                period: `${estYear}`,
+                year: estYear,
+                month: null,
+                dueDate: yearlyDueDate.toISOString(),
+                submittedDate: null,
+                isSubmitted: false,
+                notes: `Otomatik oluşturuldu (${estYear} yılı)`
+              })
+            }
+          } else {
+            taxReturns.push({
+              customerId,
+              type: declaration.type,
+              period,
+              year: currentYear,
+              month: null,
+              dueDate: dueDate.toISOString(),
+              submittedDate: null,
+              isSubmitted: false,
+              notes: `Otomatik oluşturuldu (${currentYear} yılı)`
+            })
+          }
         }
       }
 
-      // API'ye toplu ekleme isteği gönder
-      const promises = taxReturns.map(tr => 
-        fetch('/api/tax-returns', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(tr)
-        })
-      )
+      // Önce mevcut beyannameleri kontrol et
+      let existingTaxReturns: any[] = []
+      try {
+        const checkRes = await fetch(`/api/tax-returns?customerId=${customerId}&currentPeriod=false`)
+        if (checkRes.ok) {
+          existingTaxReturns = await checkRes.json()
+        }
+      } catch (e) {
+        // Hata olursa devam et, duplicate check API'de yapılacak
+      }
 
-      await Promise.all(promises)
-      toast.success(`${taxReturns.length} adet beyanname oluşturuldu`)
+      // Sadece mevcut olmayan beyannameleri filtrele
+      const newTaxReturns = taxReturns.filter(tr => {
+        return !existingTaxReturns.some(existing => 
+          existing.customerId === tr.customerId &&
+          existing.type === tr.type &&
+          existing.period === tr.period
+        )
+      })
+
+      if (newTaxReturns.length === 0) {
+        toast.info("Tüm beyannameler zaten mevcut")
+        return
+      }
+
+      // API'ye toplu ekleme isteği gönder
+      let successCount = 0
+      let duplicateCount = 0
+      let errorCount = 0
+      
+      // Debug için ilk birkaç tax return'i logla
+      console.log('Creating tax returns (first 3):', JSON.stringify(newTaxReturns.slice(0, 3), null, 2))
+      
+      for (const tr of newTaxReturns) {
+        try {
+          const res = await fetch('/api/tax-returns', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tr)
+          })
+          
+          if (res.ok) {
+            successCount++
+          } else if (res.status === 409) {
+            // Duplicate - zaten var (bu beklenen bir durum)
+            duplicateCount++
+          } else {
+            // Diğer hatalar
+            errorCount++
+            
+            // Response'u text olarak oku önce
+            const responseText = await res.text()
+            console.log('Raw response text:', responseText)
+            
+            // JSON parse etmeyi dene
+            let errorData: any = {}
+            try {
+              errorData = JSON.parse(responseText)
+            } catch (parseError) {
+              console.log('Failed to parse response as JSON:', parseError)
+              errorData = { error: `HTTP ${res.status}: ${res.statusText}`, rawResponse: responseText }
+            }
+            
+            // Şirket kuruluş tarihi hatası için özel mesaj (artık oluşmayacak)
+            if (errorData?.error && typeof errorData.error === 'string' && errorData.error.includes('kuruluş tarihinden')) {
+              // Bu hata artık oluşmayacak çünkü frontend'de filtreleniyor
+              console.log('Unexpected establishment date error:', errorData.error)
+            } else {
+              console.error('Tax return creation failed:', {
+                status: res.status,
+                statusText: res.statusText,
+                errorData,
+                requestData: tr
+              })
+              toast.error(`Beyanname oluşturulamadı (${res.status}): ${errorData?.error || 'Bilinmeyen hata'}`)
+            }
+          }
+        } catch (err) {
+          errorCount++
+          console.error('Network error:', err)
+        }
+      }
+      
+      if (successCount > 0) {
+        toast.success(`${successCount} adet beyanname oluşturuldu`)
+      }
+      if (duplicateCount > 0) {
+        toast.info(`${duplicateCount} beyanname zaten mevcut`)
+      }
+      if (errorCount > 0) {
+        toast.warning(`${errorCount} beyanname oluşturulamadı. Detaylar için konsolu kontrol edin.`)
+      }
+      if (successCount === 0 && duplicateCount === 0 && errorCount === 0) {
+        toast.info("Hiç beyanname oluşturulmadı")
+      }
     } catch (error) {
       console.error('Error generating tax returns:', error)
       toast.error("Beyannameler oluşturulurken hata oluştu")
@@ -324,7 +429,41 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
     return months[monthNum]
   }
 
+  const handleReset = async () => {
+    // Reset to default settings from available declarations
+    const resetSettings = availableDeclarations.map(decl => ({
+      ...decl,
+      enabled: false
+    }))
+    setLocalSettings(resetSettings)
+    setHasChanges(true)
+    
+    // Also delete all customer's tax returns
+    try {
+      const res = await fetch(`/api/tax-returns?customerId=${customerId}`, { method: 'DELETE' })
+      if (res.ok) {
+        toast.success("Ayarlar sıfırlandı ve müşteri beyannameleri silindi")
+      } else {
+        toast.success("Ayarlar sıfırlandı")
+        toast.info("Müşteri beyannameleri silinemedi")
+      }
+    } catch (e) {
+      console.error(e)
+      toast.success("Ayarlar sıfırlandı")
+      toast.info("Müşteri beyannameleri silinemedi")
+    }
+  }
+
   const enabledCount = localSettings.filter(d => d.enabled).length
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
+        <p className="text-sm text-muted-foreground mt-3">Beyannameler yükleniyor...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -354,6 +493,13 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
               Kaydet
             </Button>
           )}
+          <Button 
+            onClick={handleReset} 
+            variant="outline" 
+            className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+          >
+            Ayarları Sıfırla
+          </Button>
         </div>
       </div>
 
@@ -426,8 +572,8 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
               {editingIndex === index && editForm ? (
                 // Edit Mode
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
+                  <div className="flex gap-2">
+                    <div className="w-20">
                       <Label className="text-xs">Gün</Label>
                       <Input
                         type="number"
@@ -438,25 +584,25 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
                         className="h-8"
                       />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <Label className="text-xs">Saat</Label>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
                         <Input
                           type="number"
                           min="0"
                           max="23"
                           value={editForm.dueHour}
                           onChange={(e) => updateEditForm('dueHour', parseInt(e.target.value))}
-                          className="h-8 w-14"
+                          className="h-8 w-16"
                         />
-                        <span className="self-center">:</span>
+                        <span className="text-lg">:</span>
                         <Input
                           type="number"
                           min="0"
                           max="59"
                           value={editForm.dueMinute}
                           onChange={(e) => updateEditForm('dueMinute', parseInt(e.target.value))}
-                          className="h-8 w-14"
+                          className="h-8 w-16"
                         />
                       </div>
                     </div>

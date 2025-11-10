@@ -7,12 +7,24 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { toast } from "sonner"
+import { Pencil, Trash2 } from "lucide-react"
 
 export default function DeclarationsPage() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Frequency mapping
+  const getFrequencyLabel = (frequency: string) => {
+    const map: Record<string, string> = {
+      'MONTHLY': 'Aylık',
+      'QUARTERLY': '3 Aylık',
+      'YEARLY': 'Yıllık'
+    }
+    return map[frequency] || frequency
+  }
 
   // form state
   const [type, setType] = useState("")
@@ -26,6 +38,8 @@ export default function DeclarationsPage() {
   const [yearlyCount, setYearlyCount] = useState<string>("")
   const [skipQuarter, setSkipQuarter] = useState(false)
   const [optional, setOptional] = useState(false)
+  const [quarters, setQuarters] = useState<number[]>([])
+  const [taxPeriodType, setTaxPeriodType] = useState<string>("")
 
   // modal + edit state
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -72,6 +86,8 @@ export default function DeclarationsPage() {
     setYearlyCount("")
     setSkipQuarter(false)
     setOptional(false)
+    setQuarters([])
+    setTaxPeriodType("")
   }
 
   const handleSaveConfig = async () => {
@@ -94,6 +110,8 @@ export default function DeclarationsPage() {
             yearlyCount: yearlyCount ? Number(yearlyCount) : undefined,
             skipQuarter,
             optional,
+            quarters: quarters.length > 0 ? JSON.stringify(quarters) : undefined,
+            taxPeriodType: taxPeriodType || undefined,
           })
         })
         if (!res.ok) {
@@ -118,6 +136,8 @@ export default function DeclarationsPage() {
             yearlyCount: yearlyCount ? Number(yearlyCount) : undefined,
             skipQuarter,
             optional,
+            quarters: quarters.length > 0 ? JSON.stringify(quarters) : undefined,
+            taxPeriodType: taxPeriodType || undefined,
           })
         })
         if (!res.ok) {
@@ -171,12 +191,12 @@ export default function DeclarationsPage() {
 
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[700px] p-6 md:p-8">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
             <DialogTitle>{editingId ? "Beyannameyi Düzenle" : "Yeni Beyanname Tanımı"}</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="space-y-6 py-4 px-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="space-y-2">
                 <label className="text-sm">Tür *</label>
@@ -192,6 +212,17 @@ export default function DeclarationsPage() {
                     <SelectItem value="YEARLY">Yıllık</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm">Dönem Tipi (Kurumlar/Gelir Vergisi)</label>
+                <Select value={taxPeriodType} onValueChange={setTaxPeriodType}>
+                  <SelectTrigger><SelectValue placeholder="Seçiniz" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NORMAL">Normal Dönem (Ocak-Aralık)</SelectItem>
+                    <SelectItem value="SPECIAL">Özel Dönem</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Sadece Kurumlar Vergisi ve Gelir Vergisi için</p>
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={enabled} onCheckedChange={setEnabled} />
@@ -222,20 +253,53 @@ export default function DeclarationsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {frequency === "QUARTERLY" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="space-y-2">
+                  <label className="text-sm">Çeyrek Offset (Ay)</label>
+                  <Input value={quarterOffset} onChange={e => setQuarterOffset(e.target.value)} placeholder="Örn: 1" />
+                  <p className="text-xs text-muted-foreground">Muhtasar için 1, Geçici Vergi için 2</p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm">Yıllık Adet</label>
+                  <Input value={yearlyCount} onChange={e => setYearlyCount(e.target.value)} placeholder="Örn: 1" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={skipQuarter} onCheckedChange={setSkipQuarter} />
+                  <span className="text-sm">Çeyrek Atlama</span>
+                </div>
+              </div>
+            )}
+
+            {frequency === "QUARTERLY" && (
               <div className="space-y-2">
-                <label className="text-sm">Çeyrek Offset (Ay)</label>
-                <Input value={quarterOffset} onChange={e => setQuarterOffset(e.target.value)} placeholder="Örn: 1" />
+                <label className="text-sm font-medium">Çeyrekler</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[1, 2, 3, 4].map(q => (
+                    <div key={q} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`quarter-${q}`}
+                        checked={quarters.includes(q)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setQuarters([...quarters, q].sort())
+                          } else {
+                            setQuarters(quarters.filter(qtr => qtr !== q))
+                          }
+                        }}
+                      />
+                      <label htmlFor={`quarter-${q}`} className="text-sm cursor-pointer">
+                        {q}. Çeyrek
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Muhtasar (offset=1): Nisan, Temmuz, Ekim, Ocak (26. gün 23:59)<br />
+                  Geçici Vergi (offset=2): Mayıs, Ağustos, Kasım (17. gün 23:59)
+                </p>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm">Yıllık Adet</label>
-                <Input value={yearlyCount} onChange={e => setYearlyCount(e.target.value)} placeholder="Örn: 1" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={skipQuarter} onCheckedChange={setSkipQuarter} />
-                <span className="text-sm">Çeyrek Atlama</span>
-              </div>
-            </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -292,7 +356,7 @@ export default function DeclarationsPage() {
                   return pageItems.map(item => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.type}</TableCell>
-                      <TableCell>{item.frequency}</TableCell>
+                      <TableCell>{getFrequencyLabel(item.frequency)}</TableCell>
                       <TableCell>{[item.dueDay ?? "-", item.dueHour ?? "-", item.dueMinute ?? "-"].join("/")}</TableCell>
                       <TableCell>{item.dueMonth ?? "-"}</TableCell>
                       <TableCell>{item.quarterOffset ?? "-"}</TableCell>
@@ -301,7 +365,7 @@ export default function DeclarationsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => {
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => {
                             setEditingId(item.id)
                             setType(item.type || "")
                             setFrequency(item.frequency || "MONTHLY")
@@ -314,9 +378,21 @@ export default function DeclarationsPage() {
                             setYearlyCount(String(item.yearlyCount ?? ""))
                             setSkipQuarter(!!item.skipQuarter)
                             setOptional(!!item.optional)
+                            // Parse quarters from JSON string
+                            try {
+                              const q = item.quarters ? JSON.parse(item.quarters) : []
+                              setQuarters(Array.isArray(q) ? q : [])
+                            } catch {
+                              setQuarters([])
+                            }
+                            setTaxPeriodType(item.taxPeriodType || "")
                             setIsModalOpen(true)
-                          }}>Düzenle</Button>
-                          <Button variant="outline" size="sm" className="text-red-600" onClick={() => removeItem(item.id)}>Sil</Button>
+                          }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50" onClick={() => removeItem(item.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>

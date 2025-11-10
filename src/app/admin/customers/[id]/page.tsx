@@ -74,6 +74,7 @@ type Customer = {
   ledgerType: string | null
   subscriptionFee: string | null
   establishmentDate: string | null
+  taxPeriodType: string | null
   authorizedName: string | null
   authorizedTCKN: string | null
   authorizedEmail: string | null
@@ -483,6 +484,17 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     <div>
                       <p className="text-xs text-muted-foreground">Şirket Kuruluş Tarihi</p>
                       <p className="font-medium">{new Date(customer.establishmentDate).toLocaleDateString("tr-TR")}</p>
+                    </div>
+                  </div>
+                )}
+                {customer.taxPeriodType && (
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Vergi Dönemi</p>
+                      <p className="font-medium">
+                        {customer.taxPeriodType === 'NORMAL' ? 'Normal Dönem (Ocak-Aralık)' : 'Özel Dönem'}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -1030,6 +1042,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           ledgerType: customer.ledgerType,
           subscriptionFee: customer.subscriptionFee,
           establishmentDate: customer.establishmentDate,
+          taxPeriodType: customer.taxPeriodType,
           status: customer.status,
           onboardingStage: customer.onboardingStage,
         }}

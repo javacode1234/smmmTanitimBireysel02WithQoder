@@ -24,9 +24,9 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get('period')
     const type = searchParams.get('type')
     const isSubmitted = searchParams.get('isSubmitted')
-    
-    // Default to current period if no filter specified
-    const currentPeriod = searchParams.get('currentPeriod') !== 'false'
+    const year = searchParams.get('year')
+    const dueDateYear = searchParams.get('dueDateYear')
+    const dueDateMonth = searchParams.get('dueDateMonth')
 
     // If ID is provided, return single tax return
     if (id) {
@@ -69,15 +69,27 @@ export async function GET(request: NextRequest) {
       where.isSubmitted = isSubmitted === 'true'
     }
 
-    // Default filter: current month's due dates
-    if (currentPeriod && !period) {
-      const { startDate, endDate } = getCurrentMonthDueDateRange()
+    // Filter by year (period year)
+    if (year) {
+      where.year = parseInt(year)
+    }
+
+    // Filter by due date year and month
+    if (dueDateYear && dueDateMonth) {
+      const yearNum = parseInt(dueDateYear)
+      const month = parseInt(dueDateMonth)
+      
+      // Filter returns where dueDate falls in the specified month
+      const startDate = new Date(yearNum, month - 1, 1)
+      const endDate = new Date(yearNum, month, 1)
+      
       where.dueDate = {
         gte: startDate,
         lt: endDate
       }
     }
 
+    // Fetch tax returns
     const taxReturns = await prisma.taxReturn.findMany({
       where,
       include: {
@@ -86,6 +98,7 @@ export async function GET(request: NextRequest) {
             id: true,
             companyName: true,
             taxNumber: true,
+            establishmentDate: true,
           }
         }
       },
@@ -95,7 +108,27 @@ export async function GET(request: NextRequest) {
       ],
     })
 
-    return NextResponse.json(taxReturns)
+    // Filter out tax returns that are before establishment date
+    const filteredTaxReturns = taxReturns.filter(tr => {
+      if (tr.customer.establishmentDate) {
+        const estDate = new Date(tr.customer.establishmentDate)
+        const dueDate = new Date(tr.dueDate)
+        return dueDate >= estDate
+      }
+      return true
+    })
+
+    // Remove establishmentDate from response
+    const response = filteredTaxReturns.map(tr => ({
+      ...tr,
+      customer: {
+        id: tr.customer.id,
+        companyName: tr.customer.companyName,
+        taxNumber: tr.customer.taxNumber,
+      }
+    }))
+
+    return NextResponse.json(response)
   } catch (error: any) {
     console.error('Error fetching tax returns:', error)
     return NextResponse.json({ error: 'Beyannameler alınamadı: ' + error.message }, { status: 500 })
@@ -105,11 +138,75 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
+    
+    // Debug log
+    console.log('=== Tax Return Creation Request ===')
+    console.log('Raw data:', JSON.stringify(data, null, 2))
+    console.log('Request headers:', Object.fromEntries(request.headers))
 
     if (!data.customerId || !data.type || !data.period || !data.dueDate) {
+      console.log('Missing required fields:', {
+        customerId: data.customerId,
+        type: data.type,
+        period: data.period,
+        dueDate: data.dueDate
+      })
       return NextResponse.json({ 
-        error: 'Müşteri, beyanname tipi, dönem ve son tarih zorunludur' 
+        error: 'Müşteri, beyanname tipi, dönem ve son tarih zorunludur',
+        missingFields: {
+          customerId: !data.customerId,
+          type: !data.type,
+          period: !data.period,
+          dueDate: !data.dueDate
+        }
       }, { status: 400 })
+    }
+    
+    // Log successful validation
+    console.log('Required fields validated successfully')
+    
+    // Check customer establishment date
+    console.log('Checking customer establishment date for:', data.customerId)
+    const customer = await prisma.customer.findUnique({
+      where: { id: data.customerId },
+      select: { establishmentDate: true, companyName: true }
+    })
+    console.log('Customer data:', JSON.stringify(customer, null, 2))
+
+    if (customer?.establishmentDate) {
+      const estDate = new Date(customer.establishmentDate)
+      const dueDate = new Date(data.dueDate)
+      
+      // Validate dates are valid
+      if (isNaN(estDate.getTime()) || isNaN(dueDate.getTime())) {
+        return NextResponse.json({ 
+          error: 'Geçersiz tarih formatı',
+          establishmentDate: customer.establishmentDate,
+          dueDate: data.dueDate
+        }, { status: 400 })
+      }
+      
+      if (dueDate < estDate) {
+        return NextResponse.json({ 
+          error: `Şirket kuruluş tarihinden (${estDate.toLocaleDateString('tr-TR')}) önce beyanname oluşturulamaz` 
+        }, { status: 400 })
+      }
+    }
+
+    // Check for duplicate (same customer, type, and period)
+    const existing = await prisma.taxReturn.findFirst({
+      where: {
+        customerId: data.customerId,
+        type: data.type,
+        period: data.period,
+      }
+    })
+
+    if (existing) {
+      return NextResponse.json({ 
+        error: 'Bu beyanname zaten mevcut',
+        duplicate: true 
+      }, { status: 409 })
     }
 
     // Parse period to extract year and month
@@ -143,7 +240,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(taxReturn)
   } catch (error: any) {
     console.error('Error creating tax return:', error)
-    return NextResponse.json({ error: 'Beyanname oluşturulamadı: ' + error.message }, { status: 500 })
+    // Detaylı hata logu
+    console.error('Request data:', JSON.stringify(data, null, 2))
+    return NextResponse.json({ error: 'Beyanname oluşturulamadı: ' + error.message, details: error }, { status: 500 })
   }
 }
 
@@ -201,13 +300,21 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
+    const customerId = searchParams.get('customerId')
     
-    if (!id) {
-      return NextResponse.json({ error: 'ID gerekli' }, { status: 400 })
+    // If ID provided, delete single tax return
+    if (id) {
+      await prisma.taxReturn.delete({ where: { id } })
+      return NextResponse.json({ success: true })
     }
-
-    await prisma.taxReturn.delete({ where: { id } })
-    return NextResponse.json({ success: true })
+    
+    // If customerId provided, delete all tax returns for customer
+    if (customerId) {
+      await prisma.taxReturn.deleteMany({ where: { customerId } })
+      return NextResponse.json({ success: true })
+    }
+    
+    return NextResponse.json({ error: 'ID veya müşteri ID gerekli' }, { status: 400 })
   } catch (error: any) {
     console.error('Error deleting tax return:', error)
     return NextResponse.json({ error: 'Beyanname silinemedi: ' + error.message }, { status: 500 })
