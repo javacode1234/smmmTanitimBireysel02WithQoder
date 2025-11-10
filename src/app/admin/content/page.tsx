@@ -1,7 +1,5 @@
 "use client"
 
-"use client"
-
 import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,6 +31,7 @@ import { LegalDocumentsTab } from "@/components/admin/content-tabs/legal-documen
 export default function ContentManagementPage() {
   const [activeTab, setActiveTab] = useState("site-settings")
   const [isChangingTab, setIsChangingTab] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
   // Handle tab changes safely
   const handleTabChange = (newTab: string) => {
@@ -49,12 +48,27 @@ export default function ContentManagementPage() {
     }, 100)
   }
 
-  // Ensure proper cleanup on unmount
+  // Wait for client-side hydration to complete
   useEffect(() => {
-    return () => {
-      // Cleanup function if needed
-    }
+    setIsMounted(true)
   }, [])
+
+  // Don't render tabs until mounted to avoid hydration mismatch
+  if (!isMounted) {
+    return (
+      <div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">İçerik Yönetimi</h1>
+          <p className="text-muted-foreground mt-2">
+            Anasayfa içeriklerini düzenleyin ve yönetin
+          </p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-pulse text-muted-foreground">Yükleniyor...</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>

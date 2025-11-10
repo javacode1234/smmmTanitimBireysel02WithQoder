@@ -4,6 +4,9 @@ import { JobApplicationStatus } from '@prisma/client'
 
 export async function GET() {
   try {
+    console.log('job-applications GET: prisma =', prisma)
+    console.log('job-applications GET: prisma.jobApplication =', prisma?.jobApplication)
+    
     const applications = await prisma.jobApplication.findMany({
       orderBy: {
         createdAt: 'desc'

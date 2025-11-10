@@ -203,6 +203,24 @@ async function main() {
     ],
   })
 
+  // Seed Declaration Configs
+  console.log('🧾 Seeding declaration configs...')
+  const defaults = [
+    { type: 'KDV', frequency: 'MONTHLY', enabled: true, dueDay: 26 },
+    { type: 'Muhtasar SGK (Aylık)', frequency: 'MONTHLY', enabled: true, dueDay: 26 },
+    { type: 'Muhtasar SGK (3 Aylık)', frequency: 'QUARTERLY', enabled: true, quarterOffset: 1 },
+    { type: 'GGV/KGV', frequency: 'MONTHLY', enabled: true, dueDay: 26 },
+    { type: 'Yıllık GV/KV', frequency: 'YEARLY', enabled: true, dueMonth: 3, dueDay: 25 },
+    { type: 'Damga Vergisi', frequency: 'MONTHLY', enabled: true, dueDay: 26 },
+  ]
+  for (const d of defaults) {
+    await (prisma as any).declarationConfig.upsert({
+      where: { type: d.type },
+      update: {},
+      create: d as any,
+    })
+  }
+
   console.log('✅ Database seeding completed successfully!')
   console.log('')
   console.log('🔑 Login Credentials:')

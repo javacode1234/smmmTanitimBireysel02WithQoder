@@ -4,10 +4,25 @@ import { prisma } from '@/lib/db'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status')
     const stage = searchParams.get('stage')
 
+    // If ID is provided, return single customer
+    if (id) {
+      const customer = await prisma.customer.findUnique({
+        where: { id },
+      })
+
+      if (!customer) {
+        return NextResponse.json({ error: 'Müşteri bulunamadı' }, { status: 404 })
+      }
+
+      return NextResponse.json(customer)
+    }
+
+    // Otherwise, return list of customers
     console.log('GET /api/customers - search:', search, 'status:', status, 'stage:', stage)
 
     const where: any = {}
@@ -75,6 +90,7 @@ export async function POST(request: NextRequest) {
         threadsUrl: data.threadsUrl || null,
         ledgerType: data.ledgerType || null,
         subscriptionFee: data.subscriptionFee || null,
+        establishmentDate: data.establishmentDate ? new Date(data.establishmentDate) : null,
         authorizedName: data.authorizedName || null,
         authorizedTCKN: data.authorizedTCKN || null,
         authorizedEmail: data.authorizedEmail || null,
@@ -87,9 +103,6 @@ export async function POST(request: NextRequest) {
         authorizedThreadsUrl: data.authorizedThreadsUrl || null,
         authorizationDate: data.authorizationDate ? new Date(data.authorizationDate) : null,
         authorizationPeriod: data.authorizationPeriod || null,
-        declarations: data.declarations || null,
-        documents: data.documents || null,
-        passwords: data.passwords || null,
         notes: data.notes || null,
         status: data.status || 'ACTIVE',
         onboardingStage: data.onboardingStage || 'LEAD',
@@ -97,6 +110,28 @@ export async function POST(request: NextRequest) {
     })
     
     console.log('Customer created successfully:', customer.id)
+
+    // Sync declarations to DefinedDeclaration if provided
+    try {
+      if (data.declarations) {
+        const decls = Array.isArray(data.declarations)
+          ? data.declarations
+          : JSON.parse(data.declarations || '[]')
+        if (Array.isArray(decls)) {
+          for (const t of decls) {
+            if (typeof t === 'string' && t.trim()) {
+              await (prisma as any).definedDeclaration.upsert({
+                where: { customerId_type: { customerId: customer.id, type: t } },
+                update: {},
+                create: { customerId: customer.id, type: t },
+              })
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Declaration sync failed (POST):', e)
+    }
 
     return NextResponse.json(customer)
   } catch (error: any) {
@@ -134,6 +169,7 @@ export async function PATCH(request: NextRequest) {
         threadsUrl: data.threadsUrl,
         ledgerType: data.ledgerType,
         subscriptionFee: data.subscriptionFee,
+        establishmentDate: data.establishmentDate ? new Date(data.establishmentDate) : null,
         authorizedName: data.authorizedName,
         authorizedTCKN: data.authorizedTCKN,
         authorizedEmail: data.authorizedEmail,
@@ -146,14 +182,42 @@ export async function PATCH(request: NextRequest) {
         authorizedThreadsUrl: data.authorizedThreadsUrl,
         authorizationDate: data.authorizationDate ? new Date(data.authorizationDate) : null,
         authorizationPeriod: data.authorizationPeriod,
-        declarations: data.declarations,
-        documents: data.documents,
-        passwords: data.passwords,
         notes: data.notes,
         status: data.status,
         onboardingStage: data.onboardingStage,
       },
     })
+
+    // Sync declarations to DefinedDeclaration (replace existing set)
+    try {
+      if (data.declarations) {
+        const decls = Array.isArray(data.declarations)
+          ? data.declarations
+          : JSON.parse(data.declarations || '[]')
+        if (Array.isArray(decls)) {
+          const existing = await (prisma as any).definedDeclaration.findMany({
+            where: { customerId: id },
+            select: { type: true },
+          })
+          const existingSet = new Set(existing.map((e: any) => e.type))
+          const desired = decls.filter((t: any) => typeof t === 'string' && t.trim())
+          const desiredSet = new Set(desired)
+
+          for (const t of desiredSet) {
+            if (!existingSet.has(t)) {
+              await (prisma as any).definedDeclaration.create({ data: { customerId: id, type: t as string } })
+            }
+          }
+          for (const t of existingSet) {
+            if (!desiredSet.has(t)) {
+              await (prisma as any).definedDeclaration.delete({ where: { customerId_type: { customerId: id, type: t as string } } })
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Declaration sync failed (PATCH):', e)
+    }
 
     return NextResponse.json(customer)
   } catch (error) {

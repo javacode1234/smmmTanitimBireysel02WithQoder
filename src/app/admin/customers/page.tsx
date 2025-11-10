@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -41,6 +42,7 @@ type Customer = {
   threadsUrl: string | null
   ledgerType: string | null
   subscriptionFee: string | null
+  establishmentDate: string | null
   authorizedName: string | null
   authorizedTCKN: string | null
   authorizedEmail: string | null
@@ -63,7 +65,10 @@ type Customer = {
 }
 
 export default function CustomersPage() {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
   const [isMounted, setIsMounted] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -81,6 +86,15 @@ export default function CustomersPage() {
 
   useEffect(() => {
     setIsMounted(true)
+    
+    // Cleanup: Close all modals and reset navigation on unmount to prevent DOM errors
+    return () => {
+      setIsNavigating(false)
+      setIsModalOpen(false)
+      setIsDeleteDialogOpen(false)
+      setSelectedCustomer(null)
+      setCustomerToDelete(null)
+    }
   }, [])
 
   const fetchCustomers = async () => {
@@ -133,6 +147,40 @@ export default function CustomersPage() {
     setIsModalOpen(true)
   }
 
+  const handleViewCustomer = (customerId: string) => {
+    if (isNavigating) return // Prevent multiple navigation attempts
+    
+    setIsNavigating(true)
+    
+    // Close all modals before navigation
+    setIsModalOpen(false)
+    setIsDeleteDialogOpen(false)
+    setSelectedCustomer(null)
+    setCustomerToDelete(null)
+    
+    // Small delay to ensure modals are closed before navigation
+    setTimeout(() => {
+      window.location.href = `/admin/customers/${customerId}`
+    }, 50)
+  }
+
+  const handleRowDoubleClick = (customerId: string) => {
+    if (isNavigating) return // Prevent multiple navigation attempts
+    
+    setIsNavigating(true)
+    
+    // Close all modals before navigation
+    setIsModalOpen(false)
+    setIsDeleteDialogOpen(false)
+    setSelectedCustomer(null)
+    setCustomerToDelete(null)
+    
+    // Small delay to ensure modals are closed and state is settled
+    setTimeout(() => {
+      window.location.href = `/admin/customers/${customerId}`
+    }, 50)
+  }
+
   const confirmDelete = (customer: Customer) => {
     setCustomerToDelete(customer)
     setIsDeleteDialogOpen(true)
@@ -160,16 +208,24 @@ export default function CustomersPage() {
 
   const handleModalClose = () => {
     setIsModalOpen(false)
-    setSelectedCustomer(null)
+    // Small delay before clearing customer to allow modal to close
+    setTimeout(() => {
+      setSelectedCustomer(null)
+    }, 100)
   }
 
   const handleModalSave = () => {
     console.log('Modal saved, fetching customers...')
+    setIsModalOpen(false)
+    setSelectedCustomer(null)
     setSearchTerm("") // Clear search to show all customers
     setStatusFilter("all") // Reset filters
     setStageFilter("all")
     setCurrentPage(1) // Go to first page
-    fetchCustomers()
+    // Small delay before fetching to ensure modal is fully closed
+    setTimeout(() => {
+      fetchCustomers()
+    }, 100)
   }
 
   return (
@@ -313,7 +369,13 @@ export default function CustomersPage() {
                   customers
                     .slice(startIndex, startIndex + itemsPerPage)
                     .map((c) => (
-                      <TableRow key={c.id}>
+                      <TableRow 
+                        key={c.id}
+                        onDoubleClick={() => !isNavigating && handleRowDoubleClick(c.id)}
+                        className={`cursor-pointer hover:bg-muted/50 transition-colors ${
+                          isNavigating ? 'pointer-events-none opacity-50' : ''
+                        }`}
+                      >
                         <TableCell>
                           {c.logo ? (
                             <div className="relative w-10 h-10 border rounded overflow-hidden">
@@ -357,7 +419,23 @@ export default function CustomersPage() {
                             <Button
                               variant="outline"
                               size="icon"
-                              onClick={() => handleEditCustomer(c)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (!isNavigating) handleViewCustomer(c.id)
+                              }}
+                              disabled={isNavigating}
+                              title="Görüntüle"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (!isNavigating) handleEditCustomer(c)
+                              }}
+                              disabled={isNavigating}
                               title="Düzenle"
                             >
                               <Edit className="h-4 w-4" />
@@ -365,7 +443,11 @@ export default function CustomersPage() {
                             <Button
                               variant="outline"
                               size="icon"
-                              onClick={() => confirmDelete(c)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (!isNavigating) confirmDelete(c)
+                              }}
+                              disabled={isNavigating}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               title="Sil"
                             >
@@ -422,25 +504,30 @@ export default function CustomersPage() {
         </CardContent>
       </Card>
 
-      {/* Customer Modal */}
-      <CustomerModal
-        customer={selectedCustomer}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        onSave={handleModalSave}
-      />
+      {/* Modals - Only render when mounted and not navigating */}
+      {isMounted && !isNavigating && (
+        <>
+          {/* Customer Modal */}
+          <CustomerModal
+            customer={selectedCustomer}
+            isOpen={isModalOpen}
+            onClose={handleModalClose}
+            onSave={handleModalSave}
+          />
 
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmationDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => {
-          setIsDeleteDialogOpen(false)
-          setCustomerToDelete(null)
-        }}
-        onConfirm={() => customerToDelete && handleDelete(customerToDelete.id)}
-        title="Müşteriyi Sil"
-        description={customerToDelete ? `"${customerToDelete.companyName}" şirketini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.` : undefined}
-      />
+          {/* Delete Confirmation Dialog */}
+          <DeleteConfirmationDialog
+            isOpen={isDeleteDialogOpen}
+            onClose={() => {
+              setIsDeleteDialogOpen(false)
+              setCustomerToDelete(null)
+            }}
+            onConfirm={() => customerToDelete && handleDelete(customerToDelete.id)}
+            title="Müşteriyi Sil"
+            description={customerToDelete ? `"${customerToDelete.companyName}" şirketini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.` : undefined}
+          />
+        </>
+      )}
     </div>
   )
 }

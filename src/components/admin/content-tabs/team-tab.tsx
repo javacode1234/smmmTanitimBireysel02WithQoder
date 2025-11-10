@@ -413,7 +413,10 @@ export function TeamTab() {
       return
     }
 
-    const payload = { ...editingMember }
+    const payload = {
+      ...editingMember,
+      isActive: editingMember.isActive === true
+    }
 
     if (editingMember.id && !editingMember.id.startsWith('default-')) {
       setMembers(members.map(m => m.id === editingMember.id ? payload : m))

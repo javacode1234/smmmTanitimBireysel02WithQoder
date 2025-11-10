@@ -594,12 +594,12 @@ export function SiteSettingsTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="threadsUrl">Threads URL</Label>
+              <Label htmlFor="threadsUrl">Nsosyal URL</Label>
               <Input
                 id="threadsUrl"
                 value={formData.threadsUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, threadsUrl: e.target.value }))}
-                placeholder="https://threads.net/@..."
+                placeholder="https://www.nsosyal.com/..."
               />
             </div>
           </div>

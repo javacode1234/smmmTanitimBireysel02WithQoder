@@ -621,3 +621,26 @@ enum OnboardingStage {
   PROSPECT
   CUSTOMER
 }
+
+enum DeclarationFrequency {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model DeclarationConfig {
+  id            String               @id @default(cuid())
+  type          String               @unique
+  enabled       Boolean              @default(true)
+  optional      Boolean              @default(false)
+  frequency     DeclarationFrequency
+  dueDay        Int?
+  dueHour       Int?
+  dueMinute     Int?
+  dueMonth      Int?
+  quarterOffset Int?
+  yearlyCount   Int?
+  skipQuarter   Boolean?             @default(false)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+}

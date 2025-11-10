@@ -1,5 +1,4 @@
 "use client"
-"use client"
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -7,6 +6,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { DashboardNavbar } from "@/components/dashboard/navbar"
 import { Breadcrumb } from "@/components/dashboard/breadcrumb"
+import { BreadcrumbProvider } from "@/contexts/breadcrumb-context"
 import Image from "next/image"
 import { 
   LayoutDashboard, 
@@ -16,13 +16,15 @@ import {
   Settings,
   CreditCard,
   FileEdit,
-  LogOut
+  LogOut,
+  Receipt
 } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "İçerik Yönetimi", href: "/admin/content", icon: FileEdit },
   { name: "Müşteriler", href: "/admin/customers", icon: Users },
+  { name: "Beyanname Takibi", href: "/admin/tax-returns", icon: Receipt },
   { name: "Beyannameler", href: "/admin/declarations", icon: FileText },
   { name: "Duyurular", href: "/admin/announcements", icon: Bell },
   { name: "Tahsilat", href: "/admin/collections", icon: CreditCard },
@@ -76,7 +78,8 @@ export default function AdminLayout({
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50" suppressHydrationWarning>
+    <BreadcrumbProvider>
+      <div className="min-h-screen bg-gray-50" suppressHydrationWarning>
       {/* Sidebar */}
       <aside 
         className={`fixed left-0 top-0 z-40 h-screen ${sidebarWidth} bg-white border-r transition-all duration-300 overflow-hidden`}
@@ -142,6 +145,7 @@ export default function AdminLayout({
           {children}
         </div>
       </main>
-    </div>
+      </div>
+    </BreadcrumbProvider>
   )
 }

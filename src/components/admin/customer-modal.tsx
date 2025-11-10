@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { PhoneInput } from "@/components/ui/phone-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -35,6 +36,15 @@ interface CustomerModalProps {
 
 export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerModalProps) {
   const isEdit = !!customer
+  const isMountedRef = useRef(true)
+
+  // Track mount status
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   // Company Information
   const [logo, setLogo] = useState("")
@@ -55,6 +65,7 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
   // Business Details
   const [ledgerType, setLedgerType] = useState("")
   const [subscriptionFee, setSubscriptionFee] = useState("")
+  const [establishmentDate, setEstablishmentDate] = useState("")
   const [status, setStatus] = useState("ACTIVE")
   const [onboardingStage, setOnboardingStage] = useState("LEAD")
   
@@ -74,6 +85,7 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
   
   // Declarations
   const [declarations, setDeclarations] = useState<string[]>([])
+  const [availableDeclarations, setAvailableDeclarations] = useState<Array<{id:string,type:string,enabled:boolean}>>([])
   const [notes, setNotes] = useState("")
   
   // Documents
@@ -103,6 +115,7 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
       setThreadsUrl(customer.threadsUrl || "")
       setLedgerType(customer.ledgerType || "")
       setSubscriptionFee(customer.subscriptionFee || "")
+      setEstablishmentDate(customer.establishmentDate ? customer.establishmentDate.split('T')[0] : "")
       setStatus(customer.status || "ACTIVE")
       setOnboardingStage(customer.onboardingStage || "LEAD")
       setAuthorizedName(customer.authorizedName || "")
@@ -149,6 +162,22 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
     }
   }, [customer, isOpen])
 
+  // Load available declaration configs once
+  useEffect(() => {
+    const loadConfigs = async () => {
+      try {
+        const res = await fetch('/api/declarations-config')
+        if (res.ok) {
+          const data = await res.json()
+          setAvailableDeclarations(Array.isArray(data) ? data.filter((d:any)=>d.enabled) : [])
+        }
+      } catch(e) {
+        console.error('Failed to load declarations config', e)
+      }
+    }
+    loadConfigs()
+  }, [])
+
   const resetForm = () => {
     setLogo("")
     setCompanyName("")
@@ -164,6 +193,7 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
     setThreadsUrl("")
     setLedgerType("")
     setSubscriptionFee("")
+    setEstablishmentDate("")
     setStatus("ACTIVE")
     setOnboardingStage("LEAD")
     setAuthorizedName("")
@@ -282,6 +312,7 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
         threadsUrl,
         ledgerType,
         subscriptionFee,
+        establishmentDate: establishmentDate || null,
         status,
         onboardingStage,
         authorizedName,
@@ -324,7 +355,10 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
       console.error('Error saving customer:', error)
       toast.error("Müşteri kaydedilemedi")
     } finally {
-      setSaving(false)
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setSaving(false)
+      }
     }
   }
 
@@ -434,11 +468,10 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="phone">Telefon</Label>
-                  <Input
+                  <PhoneInput
                     id="phone"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="0555 123 4567"
+                    onChange={setPhone}
                   />
                 </div>
                 <div>
@@ -474,13 +507,12 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                       <SelectItem value="Bilanço Esası">Bilanço Esası</SelectItem>
                       <SelectItem value="İşletme Hesabı Esası">İşletme Hesabı Esası</SelectItem>
                       <SelectItem value="Serbest Meslek Kazanç Defteri">Serbest Meslek Kazanç Defteri</SelectItem>
-                      <SelectItem value="Sermaye Şirketi">Sermaye Şirketi</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              {/* Row 4: Subscription Fee, Status */}
+              {/* Row 4: Subscription Fee, Establishment Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="subscriptionFee">Aidat</Label>
@@ -491,6 +523,19 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                     placeholder="₺5.000"
                   />
                 </div>
+                <div>
+                  <Label htmlFor="establishmentDate">Şirket Kuruluş Tarihi</Label>
+                  <Input
+                    id="establishmentDate"
+                    type="date"
+                    value={establishmentDate}
+                    onChange={(e) => setEstablishmentDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Row 5: Status, Onboarding Stage */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="status">Durum</Label>
                   <Select value={status} onValueChange={setStatus}>
@@ -503,10 +548,6 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              {/* Row 5: Onboarding Stage */}
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="onboardingStage">Müşteri Aşaması</Label>
                   <Select value={onboardingStage} onValueChange={setOnboardingStage}>
@@ -637,11 +678,10 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                 </div>
                 <div>
                   <Label htmlFor="authorizedPhone">Yetkili Telefon</Label>
-                  <Input
+                  <PhoneInput
                     id="authorizedPhone"
                     value={authorizedPhone}
-                    onChange={(e) => setAuthorizedPhone(e.target.value)}
-                    placeholder="0555 123 4567"
+                    onChange={setAuthorizedPhone}
                   />
                 </div>
               </div>
@@ -741,89 +781,25 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                   Müşteri için geçerli olan beyannametleri seçin
                 </p>
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                    <Checkbox
-                      id="kdv"
-                      checked={declarations.includes("KDV Beyannamesi")}
-                      onCheckedChange={() => toggleDeclaration("KDV Beyannamesi")}
-                    />
-                    <label
-                      htmlFor="kdv"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                    >
-                      KDV Beyannamesi
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                    <Checkbox
-                      id="muhtasar-aylik"
-                      checked={declarations.includes("Muhtasar SGK Beyannamesi (Aylık)")}
-                      onCheckedChange={() => toggleDeclaration("Muhtasar SGK Beyannamesi (Aylık)")}
-                    />
-                    <label
-                      htmlFor="muhtasar-aylik"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                    >
-                      Muhtasar SGK Beyannamesi (Aylık)
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                    <Checkbox
-                      id="muhtasar-3aylik"
-                      checked={declarations.includes("Muhtasar SGK Beyannamesi (3 Aylık)")}
-                      onCheckedChange={() => toggleDeclaration("Muhtasar SGK Beyannamesi (3 Aylık)")}
-                    />
-                    <label
-                      htmlFor="muhtasar-3aylik"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                    >
-                      Muhtasar SGK Beyannamesi (3 Aylık)
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                    <Checkbox
-                      id="ggv-kgv"
-                      checked={declarations.includes("GGV/KGV Beyannamesi")}
-                      onCheckedChange={() => toggleDeclaration("GGV/KGV Beyannamesi")}
-                    />
-                    <label
-                      htmlFor="ggv-kgv"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                    >
-                      GGV/KGV Beyannamesi
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                    <Checkbox
-                      id="yillik"
-                      checked={declarations.includes("Yıllık Gelir Vergisi/Kurumlar Vergisi Beyannamesi")}
-                      onCheckedChange={() => toggleDeclaration("Yıllık Gelir Vergisi/Kurumlar Vergisi Beyannamesi")}
-                    />
-                    <label
-                      htmlFor="yillik"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                    >
-                      Yıllık Gelir Vergisi/Kurumlar Vergisi Beyannamesi
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                    <Checkbox
-                      id="damga"
-                      checked={declarations.includes("Damga Vergisi Beyannamesi")}
-                      onCheckedChange={() => toggleDeclaration("Damga Vergisi Beyannamesi")}
-                    />
-                    <label
-                      htmlFor="damga"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
-                    >
-                      Damga Vergisi Beyannamesi
-                    </label>
-                  </div>
+                  {availableDeclarations.length > 0 ? (
+                    availableDeclarations.map((cfg) => (
+                      <div key={cfg.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                        <Checkbox
+                          id={`decl-${cfg.id}`}
+                          checked={declarations.includes(cfg.type)}
+                          onCheckedChange={() => toggleDeclaration(cfg.type)}
+                        />
+                        <label
+                          htmlFor={`decl-${cfg.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                        >
+                          {cfg.type}
+                        </label>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-muted-foreground">Tanımlı aktif beyanname yok. Lütfen Beyannameler sayfasından ekleyin.</div>
+                  )}
                 </div>
                 
                 {declarations.length > 0 && (

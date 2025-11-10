@@ -29,14 +29,7 @@ const iconMap: { [key: string]: any } = {
   'TrendingUp': TrendingUp
 }
 
-const colorMap: { [key: string]: string } = {
-  'blue': 'from-blue-500 to-blue-600',
-  'purple': 'from-purple-500 to-purple-600',
-  'orange': 'from-orange-500 to-orange-600',
-  'green': 'from-green-500 to-green-600',
-  'red': 'from-red-500 to-red-600',
-  'cyan': 'from-cyan-500 to-cyan-600'
-}
+
 
 export function WorkflowSection() {
   const [steps, setSteps] = useState<WorkflowStep[]>([])
@@ -98,7 +91,7 @@ export function WorkflowSection() {
           <div className="flex items-center justify-center gap-4">
             {steps.map((step, index) => {
               const IconComponent = iconMap[step.icon] || Phone
-              const colorClass = colorMap[step.color] || 'from-blue-500 to-blue-600'
+              const colorClass = step.color || 'from-blue-500 to-blue-600'
               
               return (
               <div key={step.id} className="flex items-center">
@@ -136,7 +129,7 @@ export function WorkflowSection() {
         <div className="lg:hidden space-y-6">
           {steps.map((step, index) => {
             const IconComponent = iconMap[step.icon] || Phone
-            const colorClass = colorMap[step.color] || 'from-blue-500 to-blue-600'
+            const colorClass = step.color || 'from-blue-500 to-blue-600'
             
             return (
             <div key={step.id}>

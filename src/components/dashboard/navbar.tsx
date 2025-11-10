@@ -31,6 +31,12 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
   const [newQuoteRequestsCount, setNewQuoteRequestsCount] = useState(0)
   const [newContactMessagesCount, setNewContactMessagesCount] = useState(0)
   const [newJobApplicationsCount, setNewJobApplicationsCount] = useState(0)
+  const [newQuoteRequests, setNewQuoteRequests] = useState<any[]>([])
+  const [newContactMessages, setNewContactMessages] = useState<any[]>([])
+  const [newJobApplications, setNewJobApplications] = useState<any[]>([])
+  const [isQuoteOpen, setIsQuoteOpen] = useState(false)
+  const [isContactOpen, setIsContactOpen] = useState(false)
+  const [isJobOpen, setIsJobOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   
   // User data state
@@ -81,24 +87,27 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
           const quoteResponse = await fetch('/api/quote-requests')
           if (quoteResponse.ok) {
             const quoteData = await quoteResponse.json()
-            const newQuoteCount = quoteData.filter((req: any) => req.status === 'NEW').length
-            setNewQuoteRequestsCount(newQuoteCount)
+            const newQuoteList = quoteData.filter((req: any) => req.status === 'NEW')
+            setNewQuoteRequestsCount(newQuoteList.length)
+            setNewQuoteRequests(newQuoteList)
           }
 
           // Fetch contact messages count
           const contactResponse = await fetch('/api/contact-messages')
           if (contactResponse.ok) {
             const contactData = await contactResponse.json()
-            const newContactCount = contactData.filter((msg: any) => msg.status === 'NEW').length
-            setNewContactMessagesCount(newContactCount)
+            const newContactList = contactData.filter((msg: any) => msg.status === 'NEW')
+            setNewContactMessagesCount(newContactList.length)
+            setNewContactMessages(newContactList)
           }
 
           // Fetch job applications count
           const jobResponse = await fetch('/api/job-applications')
           if (jobResponse.ok) {
             const jobData = await jobResponse.json()
-            const newJobCount = jobData.filter((app: any) => app.status === 'NEW').length
-            setNewJobApplicationsCount(newJobCount)
+            const newJobList = jobData.filter((app: any) => app.status === 'NEW')
+            setNewJobApplicationsCount(newJobList.length)
+            setNewJobApplications(newJobList)
           }
         } catch (error) {
           console.error('Error fetching counts:', error)
@@ -167,51 +176,104 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
         {/* Quick Links for Admin */}
         {userType === "admin" && (
           <div className="flex items-center gap-4">
-            <Link 
-              href="/admin/quote-requests"
-              prefetch={false}
-              scroll={false}
-              onClick={(e) => handleNavigation(e, '/admin/quote-requests')}
-              className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
-              title="Teklif Talepleri"
-            >
-              <FileText className="h-5 w-5" />
-              {newQuoteRequestsCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                  {newQuoteRequestsCount}
-                </span>
-              )}
-            </Link>
-            <Link 
-              href="/admin/contact-messages"
-              prefetch={false}
-              scroll={false}
-              onClick={(e) => handleNavigation(e, '/admin/contact-messages')}
-              className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
-              title="İletişim Mesajları"
-            >
-              <MessageSquare className="h-5 w-5" />
-              {newContactMessagesCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                  {newContactMessagesCount}
-                </span>
-              )}
-            </Link>
-            <Link 
-              href="/admin/job-applications"
-              prefetch={false}
-              scroll={false}
-              onClick={(e) => handleNavigation(e, '/admin/job-applications')}
-              className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors"
-              title="İş Müracaatları"
-            >
-              <Briefcase className="h-5 w-5" />
-              {newJobApplicationsCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                  {newJobApplicationsCount}
-                </span>
-              )}
-            </Link>
+            <DropdownMenu open={isQuoteOpen} onOpenChange={setIsQuoteOpen}>
+              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="Teklif Talepleri">
+                <FileText className="h-5 w-5" />
+                {newQuoteRequestsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                    {newQuoteRequestsCount}
+                  </span>
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 p-0">
+                <div className="p-3 border-b flex items-center justify-between">
+                  <span className="text-sm font-semibold">Teklif Talepleri (Yeni)</span>
+                  <Link href="/admin/quote-requests" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsQuoteOpen(false); handleNavigation(e as any, '/admin/quote-requests') }} className="text-xs text-blue-600 hover:underline">Tümünü Gör</Link>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {newQuoteRequests.length > 0 ? (
+                    newQuoteRequests.slice(0, 8).map((req: any) => (
+                      <div key={req.id} className="px-3 py-2 border-b last:border-b-0">
+                        <div className="text-sm font-medium">{req.name} • {req.company}</div>
+                        <div className="text-xs text-muted-foreground">{req.serviceType}</div>
+                        <div className="text-xs text-gray-500">{new Date(req.createdAt).toLocaleString()}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-3 py-6 text-sm text-muted-foreground">Yeni kayıt yok</div>
+                  )}
+                </div>
+                <div className="p-3 border-t text-right">
+                  <Link href="/admin/quote-requests" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsQuoteOpen(false); handleNavigation(e as any, '/admin/quote-requests') }} className="text-xs text-blue-600 hover:underline">Sayfaya Git</Link>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu open={isContactOpen} onOpenChange={setIsContactOpen}>
+              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="İletişim Mesajları">
+                <MessageSquare className="h-5 w-5" />
+                {newContactMessagesCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                    {newContactMessagesCount}
+                  </span>
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 p-0">
+                <div className="p-3 border-b flex items-center justify-between">
+                  <span className="text-sm font-semibold">İletişim Mesajları (Yeni)</span>
+                  <Link href="/admin/contact-messages" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsContactOpen(false); handleNavigation(e as any, '/admin/contact-messages') }} className="text-xs text-blue-600 hover:underline">Tümünü Gör</Link>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {newContactMessages.length > 0 ? (
+                    newContactMessages.slice(0, 8).map((msg: any) => (
+                      <div key={msg.id} className="px-3 py-2 border-b last:border-b-0">
+                        <div className="text-sm font-medium">{msg.name} • {msg.subject}</div>
+                        <div className="text-xs text-muted-foreground">{msg.email} • {msg.phone}</div>
+                        <div className="text-xs text-gray-500">{new Date(msg.createdAt).toLocaleString()}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-3 py-6 text-sm text-muted-foreground">Yeni kayıt yok</div>
+                  )}
+                </div>
+                <div className="p-3 border-t text-right">
+                  <Link href="/admin/contact-messages" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsContactOpen(false); handleNavigation(e as any, '/admin/contact-messages') }} className="text-xs text-blue-600 hover:underline">Sayfaya Git</Link>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu open={isJobOpen} onOpenChange={setIsJobOpen}>
+              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="İş Müracaatları">
+                <Briefcase className="h-5 w-5" />
+                {newJobApplicationsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                    {newJobApplicationsCount}
+                  </span>
+                )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 p-0">
+                <div className="p-3 border-b flex items-center justify-between">
+                  <span className="text-sm font-semibold">İş Müracaatları (Yeni)</span>
+                  <Link href="/admin/job-applications" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsJobOpen(false); handleNavigation(e as any, '/admin/job-applications') }} className="text-xs text-blue-600 hover:underline">Tümünü Gör</Link>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {newJobApplications.length > 0 ? (
+                    newJobApplications.slice(0, 8).map((app: any) => (
+                      <div key={app.id} className="px-3 py-2 border-b last:border-b-0">
+                        <div className="text-sm font-medium">{app.name} • {app.position}</div>
+                        <div className="text-xs text-muted-foreground">{app.email} • {app.phone}</div>
+                        <div className="text-xs text-gray-500">{new Date(app.createdAt).toLocaleString()}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-3 py-6 text-sm text-muted-foreground">Yeni kayıt yok</div>
+                  )}
+                </div>
+                <div className="p-3 border-t text-right">
+                  <Link href="/admin/job-applications" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsJobOpen(false); handleNavigation(e as any, '/admin/job-applications') }} className="text-xs text-blue-600 hover:underline">Sayfaya Git</Link>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
 

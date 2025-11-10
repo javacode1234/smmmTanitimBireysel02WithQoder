@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ChevronRight, Home } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { Fragment, useState } from "react"
+import { useBreadcrumb } from "@/contexts/breadcrumb-context"
 
 interface BreadcrumbProps {
   userType: "admin" | "client"
@@ -13,6 +14,7 @@ export function Breadcrumb({ userType }: BreadcrumbProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [isNavigating, setIsNavigating] = useState(false)
+  const { customLabel } = useBreadcrumb()
   
   // Create breadcrumb items from pathname
   const pathSegments = pathname.split("/").filter(Boolean)
@@ -39,8 +41,13 @@ export function Breadcrumb({ userType }: BreadcrumbProps) {
 
   const breadcrumbItems = pathSegments.map((segment, index) => {
     const path = `/${pathSegments.slice(0, index + 1).join("/")}`
-    const name = routeNames[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
+    let name = routeNames[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
+    
+    // Use custom label for last segment if it's an ID (UUID or CUID) and we have a custom label
     const isLast = index === pathSegments.length - 1
+    if (isLast && customLabel && (segment.match(/^[a-f0-9-]{36}$/i) || segment.match(/^c[a-z0-9]{24}$/i))) {
+      name = customLabel
+    }
 
     return {
       name,

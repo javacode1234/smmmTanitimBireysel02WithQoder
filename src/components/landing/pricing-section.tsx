@@ -12,9 +12,11 @@ import { QuoteRequestModal } from "@/components/modals/quote-request-modal"
 interface PricingPlan {
   id: string
   name: string
+  icon: string
   price: string
   period: string
   description: string
+  color: string
   features: string[]
   isPopular: boolean
   isActive: boolean
@@ -43,14 +45,7 @@ const iconMap: { [key: string]: any } = {
   'Sparkles': Sparkles
 }
 
-const colorMap: { [key: string]: string } = {
-  'blue': 'from-blue-500 to-blue-600',
-  'purple': 'from-purple-500 to-purple-600',
-  'orange': 'from-orange-500 to-orange-600',
-  'green': 'from-green-500 to-green-600',
-  'red': 'from-red-500 to-red-600',
-  'cyan': 'from-cyan-500 to-cyan-600'
-}
+
 
 export function PricingSection() {
   const [quoteModalOpen, setQuoteModalOpen] = useState(false)
@@ -156,8 +151,8 @@ export function PricingSection() {
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           {plans.map((plan, index) => {
-            const IconComponent = Star // Default icon
-            const colorClass = 'from-blue-500 to-blue-600' // Default color
+            const IconComponent = iconMap[plan.icon] || Star
+            const colorClass = plan.color || 'from-blue-500 to-blue-600'
             
             return (
             <motion.div
