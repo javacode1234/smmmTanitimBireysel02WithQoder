@@ -25,8 +25,10 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type')
     const isSubmitted = searchParams.get('isSubmitted')
     const year = searchParams.get('year')
+    const month = searchParams.get('month') // Yeni eklenen ay parametresi
     const dueDateYear = searchParams.get('dueDateYear')
     const dueDateMonth = searchParams.get('dueDateMonth')
+    const periodFilter = searchParams.get('periodFilter')
 
     // If ID is provided, return single tax return
     if (id) {
@@ -57,8 +59,14 @@ export async function GET(request: NextRequest) {
       where.customerId = customerId
     }
 
-    if (period) {
+    // Use period filter if provided, otherwise use the old dueDateYear/dueDateMonth logic
+    if (periodFilter && periodFilter !== 'all') {
+      where.period = periodFilter
+    } else if (period) {
       where.period = period
+    } else if (year && month) {
+      // Yıl ve ay parametrelerine göre filtreleme
+      where.period = `${year}-${month.toString().padStart(2, '0')}`
     }
 
     if (type) {
@@ -69,24 +77,56 @@ export async function GET(request: NextRequest) {
       where.isSubmitted = isSubmitted === 'true'
     }
 
-    // Filter by year (period year)
-    if (year) {
+    // Filter by year (period year) - sadece ay parametresi yoksa
+    if (year && !(month) && !(periodFilter && periodFilter !== 'all')) {
       where.year = parseInt(year)
     }
 
-    // Filter by due date year and month
-    if (dueDateYear && dueDateMonth) {
+    // Filter by due date year and month (old method - keep for backward compatibility)
+    if (dueDateYear && dueDateMonth && !(periodFilter && periodFilter !== 'all') && !(year && month)) {
       const yearNum = parseInt(dueDateYear)
-      const month = parseInt(dueDateMonth)
+      const monthNum = parseInt(dueDateMonth)
       
       // Filter returns where dueDate falls in the specified month
-      const startDate = new Date(yearNum, month - 1, 1)
-      const endDate = new Date(yearNum, month, 1)
+      const startDate = new Date(yearNum, monthNum - 1, 1)
+      const endDate = new Date(yearNum, monthNum, 1)
       
-      where.dueDate = {
-        gte: startDate,
-        lt: endDate
-      }
+      // For Turkish tax system, some declarations for previous month are due in current month
+      // For example, December declarations are due in January
+      // So we also need to include declarations from previous month that are due in current month
+      const prevMonthStartDate = new Date(yearNum, monthNum - 2, 1);
+      const prevMonthEndDate = new Date(yearNum, monthNum - 1, 1);
+      
+      where.OR = [
+        {
+          dueDate: {
+            gte: startDate,
+            lt: endDate
+          }
+        },
+        {
+          // Include declarations from previous month that are due in current month
+          // Specifically for KDV and Muhtasar declarations which have this pattern
+          dueDate: {
+            gte: prevMonthStartDate,
+            lt: prevMonthEndDate
+          },
+          type: {
+            contains: 'KDV'
+          }
+        },
+        {
+          // Include declarations from previous month that are due in current month
+          // Specifically for KDV and Muhtasar declarations which have this pattern
+          dueDate: {
+            gte: prevMonthStartDate,
+            lt: prevMonthEndDate
+          },
+          type: {
+            contains: 'Muhtasar'
+          }
+        }
+      ];
     }
 
     // Fetch tax returns
@@ -241,7 +281,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error creating tax return:', error)
     // Detaylı hata logu
-    console.error('Request data:', JSON.stringify(data, null, 2))
+    console.error('Request data:', JSON.stringify(request.body, null, 2))
     return NextResponse.json({ error: 'Beyanname oluşturulamadı: ' + error.message, details: error }, { status: 500 })
   }
 }

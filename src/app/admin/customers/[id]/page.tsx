@@ -122,16 +122,16 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
     params.then(p => setCustomerId(p.id))
   }, [params])
 
-  // Wait for tabs to be ready after customer data is loaded
+  // Wait for tabs to be ready after customer data is loaded AND component is mounted
   useEffect(() => {
-    if (customer && !loading) {
-      // Small delay to ensure DOM is ready
+    if (isMounted && customer && !loading) {
+      // Small delay to ensure DOM is ready and avoid hydration issues
       const timer = setTimeout(() => {
         setTabsReady(true)
-      }, 100)
+      }, 150) // Increased delay to ensure full hydration
       return () => clearTimeout(timer)
     }
-  }, [customer, loading])
+  }, [isMounted, customer, loading])
 
   const fetchCustomer = async (id: string) => {
     setLoading(true)
@@ -401,7 +401,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           <div className="animate-pulse text-muted-foreground">İçerik yükleniyor...</div>
         </div>
       ) : (
-        <Tabs defaultValue="company" className="space-y-6">
+        <Tabs defaultValue="company" className="space-y-6" key="customer-detail-tabs">
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="company">Şirket Bilgileri</TabsTrigger>
             <TabsTrigger value="authorized">Yetkili Bilgileri</TabsTrigger>

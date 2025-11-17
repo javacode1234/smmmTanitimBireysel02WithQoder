@@ -50,10 +50,10 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
   const [logo, setLogo] = useState("")
   const [companyName, setCompanyName] = useState("")
   const [taxNumber, setTaxNumber] = useState("")
+  const [taxOffice, setTaxOffice] = useState("") // Add tax office state
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
   const [address, setAddress] = useState("")
-  const [city, setCity] = useState("")
   
   // Social Media
   const [facebookUrl, setFacebookUrl] = useState("")
@@ -64,6 +64,7 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
   
   // Business Details
   const [ledgerType, setLedgerType] = useState("")
+  const [hasEmployees, setHasEmployees] = useState(false) // Yeni state
   const [subscriptionFee, setSubscriptionFee] = useState("")
   const [establishmentDate, setEstablishmentDate] = useState("")
   const [status, setStatus] = useState("ACTIVE")
@@ -97,25 +98,31 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
   const [newUsername, setNewUsername] = useState("")
   const [newPassword, setNewPassword] = useState("")
   
+  // Tax offices
+  const [taxOffices, setTaxOffices] = useState<Array<{id: string, name: string}>>([])
+  const [taxOfficeSearch, setTaxOfficeSearch] = useState("")
+  
   const [saving, setSaving] = useState(false)
 
+  // Initialize form with customer data
   useEffect(() => {
-    if (customer && isOpen) {
+    if (customer) {
       setLogo(customer.logo || "")
       setCompanyName(customer.companyName || "")
       setTaxNumber(customer.taxNumber || "")
+      setTaxOffice(customer.taxOffice || "")
       setPhone(customer.phone || "")
       setEmail(customer.email || "")
       setAddress(customer.address || "")
-      setCity(customer.city || "")
       setFacebookUrl(customer.facebookUrl || "")
       setXUrl(customer.xUrl || "")
       setLinkedinUrl(customer.linkedinUrl || "")
       setInstagramUrl(customer.instagramUrl || "")
       setThreadsUrl(customer.threadsUrl || "")
       setLedgerType(customer.ledgerType || "")
+      setHasEmployees(customer.hasEmployees || false)
       setSubscriptionFee(customer.subscriptionFee || "")
-      setEstablishmentDate(customer.establishmentDate ? customer.establishmentDate.split('T')[0] : "")
+      setEstablishmentDate(customer.establishmentDate ? new Date(customer.establishmentDate).toISOString().split('T')[0] : "")
       setStatus(customer.status || "ACTIVE")
       setOnboardingStage(customer.onboardingStage || "LEAD")
       setAuthorizedName(customer.authorizedName || "")
@@ -128,91 +135,92 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
       setAuthorizedLinkedinUrl(customer.authorizedLinkedinUrl || "")
       setAuthorizedInstagramUrl(customer.authorizedInstagramUrl || "")
       setAuthorizedThreadsUrl(customer.authorizedThreadsUrl || "")
-      setAuthorizationDate(customer.authorizationDate ? customer.authorizationDate.split('T')[0] : "")
+      setAuthorizationDate(customer.authorizationDate ? new Date(customer.authorizationDate).toISOString().split('T')[0] : "")
       setAuthorizationPeriod(customer.authorizationPeriod || "")
-      
-      // Parse declarations JSON
-      try {
-        const decls = customer.declarations ? JSON.parse(customer.declarations) : []
-        setDeclarations(Array.isArray(decls) ? decls : [])
-      } catch {
-        setDeclarations([])
-      }
-      
-      // Parse documents JSON
-      try {
-        const docs = customer.documents ? JSON.parse(customer.documents) : []
-        setDocuments(Array.isArray(docs) ? docs : [])
-      } catch {
-        setDocuments([])
-      }
-      
-      // Parse passwords JSON
-      try {
-        const pwds = customer.passwords ? JSON.parse(customer.passwords) : []
-        setPasswords(Array.isArray(pwds) ? pwds : [])
-      } catch {
-        setPasswords([])
-      }
-      
+      setDeclarations(customer.declarations ? JSON.parse(customer.declarations) : [])
+      setDocuments(customer.documents ? JSON.parse(customer.documents) : [])
+      setPasswords(customer.passwords ? JSON.parse(customer.passwords) : [])
       setNotes(customer.notes || "")
-    } else if (!isOpen) {
-      // Reset form when closing
-      resetForm()
+    } else {
+      // Reset form for new customer
+      setLogo("")
+      setCompanyName("")
+      setTaxNumber("")
+      setTaxOffice("")
+      setPhone("")
+      setEmail("")
+      setAddress("")
+      setFacebookUrl("")
+      setXUrl("")
+      setLinkedinUrl("")
+      setInstagramUrl("")
+      setThreadsUrl("")
+      setLedgerType("")
+      setHasEmployees(false)
+      setSubscriptionFee("")
+      setEstablishmentDate("")
+      setStatus("ACTIVE")
+      setOnboardingStage("LEAD")
+      setAuthorizedName("")
+      setAuthorizedTCKN("")
+      setAuthorizedEmail("")
+      setAuthorizedPhone("")
+      setAuthorizedAddress("")
+      setAuthorizedFacebookUrl("")
+      setAuthorizedXUrl("")
+      setAuthorizedLinkedinUrl("")
+      setAuthorizedInstagramUrl("")
+      setAuthorizedThreadsUrl("")
+      setAuthorizationDate("")
+      setAuthorizationPeriod("")
+      setDeclarations([])
+      setDocuments([])
+      setPasswords([])
+      setNotes("")
     }
   }, [customer, isOpen])
 
-  // Load available declaration configs once
+  // Cleanup effect
   useEffect(() => {
-    const loadConfigs = async () => {
+    return () => {
+      // Cleanup any ongoing operations when component unmounts
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Load tax offices
+  useEffect(() => {
+    const loadTaxOffices = async () => {
+      try {
+        const res = await fetch('/api/tax-offices')
+        if (res.ok) {
+          const data = await res.json()
+          setTaxOffices(data.taxOffices || [])
+        }
+      } catch (e) {
+        console.error('Failed to load tax offices', e)
+      }
+    }
+    loadTaxOffices()
+  }, [])
+
+  // Load available declarations from system configs
+  useEffect(() => {
+    const loadDeclarations = async () => {
       try {
         const res = await fetch('/api/declarations-config')
         if (res.ok) {
           const data = await res.json()
-          setAvailableDeclarations(Array.isArray(data) ? data.filter((d:any)=>d.enabled) : [])
+          const items = (Array.isArray(data) ? data : []).filter((d: any) => d.enabled)
+          .map((d: any) => ({ id: d.id, type: d.type, enabled: true }))
+          setAvailableDeclarations(items)
         }
-      } catch(e) {
-        console.error('Failed to load declarations config', e)
+      } catch (e) {
+        console.error('Failed to load declarations', e)
       }
     }
-    loadConfigs()
+    loadDeclarations()
   }, [])
-
-  const resetForm = () => {
-    setLogo("")
-    setCompanyName("")
-    setTaxNumber("")
-    setPhone("")
-    setEmail("")
-    setAddress("")
-    setCity("")
-    setFacebookUrl("")
-    setXUrl("")
-    setLinkedinUrl("")
-    setInstagramUrl("")
-    setThreadsUrl("")
-    setLedgerType("")
-    setSubscriptionFee("")
-    setEstablishmentDate("")
-    setStatus("ACTIVE")
-    setOnboardingStage("LEAD")
-    setAuthorizedName("")
-    setAuthorizedTCKN("")
-    setAuthorizedEmail("")
-    setAuthorizedPhone("")
-    setAuthorizedAddress("")
-    setAuthorizedFacebookUrl("")
-    setAuthorizedXUrl("")
-    setAuthorizedLinkedinUrl("")
-    setAuthorizedInstagramUrl("")
-    setAuthorizedThreadsUrl("")
-    setAuthorizationDate("")
-    setAuthorizationPeriod("")
-    setDeclarations([])
-    setDocuments([])
-    setPasswords([])
-    setNotes("")
-  }
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -290,27 +298,23 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
   }
 
   const handleSave = async () => {
-    if (!companyName.trim()) {
-      toast.error("Şirket ünvanı zorunludur")
-      return
-    }
-
     setSaving(true)
     try {
       const customerData = {
         logo,
         companyName,
         taxNumber,
+        taxOffice,
         phone,
         email,
         address,
-        city,
         facebookUrl,
         xUrl,
         linkedinUrl,
         instagramUrl,
         threadsUrl,
         ledgerType,
+        hasEmployees, // Bu alanı ekliyoruz
         subscriptionFee,
         establishmentDate: establishmentDate || null,
         status,
@@ -333,23 +337,55 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
         notes,
       }
 
+      console.log('Saving customer data:', JSON.stringify(customerData, null, 2))
+
       const url = isEdit ? `/api/customers?id=${customer.id}` : '/api/customers'
       const method = isEdit ? 'PATCH' : 'POST'
+      
+      console.log('Sending request to:', url, 'method:', method)
 
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(customerData),
       })
+      
+      console.log('Response status:', response.status)
+      console.log('Response headers:', Object.fromEntries(response.headers))
 
       if (response.ok) {
         toast.success(isEdit ? "Müşteri güncellendi" : "Müşteri eklendi")
         onSave()
         onClose()
       } else {
-        const error = await response.json()
-        console.error('API Error (Save Customer):', error)
-        toast.error(error.error || "Bir hata oluştu")
+        // Önce response text olarak al
+        const responseText = await response.text()
+        console.log('Raw API response:', responseText)
+        console.log('Response status:', response.status)
+        console.log('Response headers:', Object.fromEntries(response.headers))
+        
+        // JSON parse etmeyi dene
+        let errorData: any = {}
+        try {
+          errorData = JSON.parse(responseText)
+        } catch (parseError) {
+          console.log('Failed to parse response as JSON:', parseError)
+          errorData = { 
+            error: `HTTP ${response.status}: ${response.statusText}`, 
+            rawResponse: responseText,
+            details: 'Sunucudan gelen yanıt JSON formatında değil'
+          }
+        }
+        
+        console.error('API Error (Save Customer):', errorData)
+        
+        // Daha ayrıntılı hata mesajı göster
+        let errorMessage = errorData.error || "Bir hata oluştu"
+        if (errorData.details) {
+          errorMessage += `: ${errorData.details}`
+        }
+        
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error('Error saving customer:', error)
@@ -363,10 +399,14 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[99vw] w-[99vw] max-h-[98vh] h-[98vh] flex flex-col p-0">
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      }
+    }}>
+      <DialogContent className="max-w-[99.5vw] w-[99.5vw] max-h-[99vh] h-[99vh] flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle className="text-2xl">
+          <DialogTitle className="text-3xl">
             {isEdit ? "Müşteri Düzenle" : "Yeni Müşteri Ekle"}
           </DialogTitle>
           <DialogDescription>
@@ -375,7 +415,7 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
         </DialogHeader>
 
         <Tabs defaultValue="company" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-3 grid-rows-2 gap-y-2 h-auto">
+          <TabsList className="grid w-full grid-cols-5 gap-2 h-auto">
             <TabsTrigger value="company" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Şirket Bilgileri
@@ -394,11 +434,11 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
             </TabsTrigger>
             <TabsTrigger value="passwords" className="flex items-center gap-2">
               <KeyRound className="h-4 w-4" />
-              Kurum Şifreleri
+              Şifreler
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-y-auto mt-4 px-6">
+          <div className="flex-1 overflow-y-auto mt-4 px-6 pb-6">
             {/* Company Information Tab */}
             <TabsContent value="company" className="space-y-6 mt-0">
               {/* Logo */}
@@ -407,8 +447,18 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                 <div className="mt-2">
                   {logo && (
                     <div className="mb-4 flex items-center gap-4">
-                      <div className="relative w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50">
-                        <Image src={logo} alt="Logo" fill className="object-contain p-2" />
+                      <div className="relative w-40 h-40 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                        <Image 
+                          src={logo || "/placeholder.svg"} 
+                          alt="Logo" 
+                          fill 
+                          className="object-contain p-2" 
+                          onError={(e) => {
+                            // Handle image loading errors
+                            const target = e.target as HTMLImageElement;
+                            target.src = "/placeholder.svg";
+                          }}
+                        />
                       </div>
                       <Button
                         type="button"
@@ -441,8 +491,8 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                 </div>
               </div>
 
-              {/* Row 1: Company Name, Tax Number */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Row 1: Company Name, Tax Number, Tax Office, Ledger Type */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="companyName" className="text-red-600">Şirket Ünvanı *</Label>
                   <Input
@@ -462,10 +512,38 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                     placeholder="1234567890"
                   />
                 </div>
+                <div>
+                  <Label htmlFor="taxOffice">Vergi Dairesi</Label>
+                  <Select value={taxOffice} onValueChange={setTaxOffice}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vergi Dairesi Seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {taxOffices.map((office: {id: string, name: string}) => (
+                        <SelectItem key={office.id} value={office.name}>
+                          {office.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="ledgerType">Defter Tipi</Label>
+                  <Select value={ledgerType} onValueChange={setLedgerType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seçiniz" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Bilanço Esası">Bilanço Esası</SelectItem>
+                      <SelectItem value="İşletme Hesabı Esası">İşletme Hesabı Esası</SelectItem>
+                      <SelectItem value="Serbest Meslek Kazanç Defteri">Serbest Meslek Kazanç Defteri</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              {/* Row 2: Phone, Email */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Row 2: Phone, Email, Status, Onboarding */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="phone">Telefon</Label>
                   <PhoneInput
@@ -484,58 +562,6 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                     placeholder="info@firma.com"
                   />
                 </div>
-              </div>
-
-              {/* Row 3: City, Ledger Type */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="city">Şehir</Label>
-                  <Input
-                    id="city"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="İstanbul"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="ledgerType">Defter Tipi</Label>
-                  <Select value={ledgerType} onValueChange={setLedgerType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seçiniz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Bilanço Esası">Bilanço Esası</SelectItem>
-                      <SelectItem value="İşletme Hesabı Esası">İşletme Hesabı Esası</SelectItem>
-                      <SelectItem value="Serbest Meslek Kazanç Defteri">Serbest Meslek Kazanç Defteri</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Row 4: Subscription Fee, Establishment Date */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="subscriptionFee">Aidat</Label>
-                  <Input
-                    id="subscriptionFee"
-                    value={subscriptionFee}
-                    onChange={(e) => setSubscriptionFee(e.target.value)}
-                    placeholder="₺5.000"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="establishmentDate">Şirket Kuruluş Tarihi</Label>
-                  <Input
-                    id="establishmentDate"
-                    type="date"
-                    value={establishmentDate}
-                    onChange={(e) => setEstablishmentDate(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Row 5: Status, Onboarding Stage */}
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="status">Durum</Label>
                   <Select value={status} onValueChange={setStatus}>
@@ -563,22 +589,131 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                 </div>
               </div>
 
-              {/* Address */}
+              {/* Row 3: Address full width */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-4">
+                  <Label htmlFor="address">Adres</Label>
+                  <Textarea
+                    id="address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Tam adres bilgisi"
+                    rows={4}
+                  />
+                </div>
+              </div>
+
+              {/* Row 4: Has Employees, Subscription Fee, Establishment Date */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="hasEmployees">Sigortalı Çalışan</Label>
+                  <div className="flex gap-4 mt-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="hasEmployeesYes"
+                        name="hasEmployees"
+                        checked={hasEmployees === true}
+                        onChange={() => setHasEmployees(true)}
+                        className="h-4 w-4 text-blue-600"
+                      />
+                      <Label htmlFor="hasEmployeesYes" className="cursor-pointer">Var</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="hasEmployeesNo"
+                        name="hasEmployees"
+                        checked={hasEmployees === false}
+                        onChange={() => setHasEmployees(false)}
+                        className="h-4 w-4 text-blue-600"
+                      />
+                      <Label htmlFor="hasEmployeesNo" className="cursor-pointer">Yok</Label>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="subscriptionFee">Aidat</Label>
+                  <Input
+                    id="subscriptionFee"
+                    value={subscriptionFee}
+                    onChange={(e) => setSubscriptionFee(e.target.value)}
+                    placeholder="₺5.000"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="establishmentDate">Şirket Kuruluş Tarihi</Label>
+                  <Input
+                    id="establishmentDate"
+                    type="date"
+                    value={establishmentDate}
+                    onChange={(e) => setEstablishmentDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Row 5: Has Employees, Status */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="hasEmployees">Sigortalı Çalışan</Label>
+                  <div className="flex gap-4 mt-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="hasEmployeesYes"
+                        name="hasEmployees"
+                        checked={hasEmployees === true}
+                        onChange={() => setHasEmployees(true)}
+                        className="h-4 w-4 text-blue-600"
+                      />
+                      <Label htmlFor="hasEmployeesYes" className="cursor-pointer">Var</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="hasEmployeesNo"
+                        name="hasEmployees"
+                        checked={hasEmployees === false}
+                        onChange={() => setHasEmployees(false)}
+                        className="h-4 w-4 text-blue-600"
+                      />
+                      <Label htmlFor="hasEmployeesNo" className="cursor-pointer">Yok</Label>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="status">Durum</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">Aktif</SelectItem>
+                      <SelectItem value="INACTIVE">Pasif</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Row 6: Onboarding Stage */}
               <div>
-                <Label htmlFor="address">Adres</Label>
-                <Textarea
-                  id="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Tam adres bilgisi"
-                  rows={3}
-                />
+                <Label htmlFor="onboardingStage">Müşteri Aşaması</Label>
+                <Select value={onboardingStage} onValueChange={setOnboardingStage}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LEAD">Aday</SelectItem>
+                    <SelectItem value="PROSPECT">Potansiyel</SelectItem>
+                    <SelectItem value="CUSTOMER">Müşteri</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Social Media */}
-              <div>
+              <div className="space-y-2">
                 <Label className="text-base font-semibold">Sosyal Medya Hesapları</Label>
-                <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-2">
                   <div>
                     <Label htmlFor="facebookUrl">Facebook</Label>
                     <Input
@@ -780,10 +915,10 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                 <p className="text-sm text-muted-foreground mb-4">
                   Müşteri için geçerli olan beyannametleri seçin
                 </p>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                   {availableDeclarations.length > 0 ? (
                     availableDeclarations.map((cfg) => (
-                      <div key={cfg.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                      <div key={cfg.id} className={`flex items-center space-x-2 p-3 border rounded-lg transition-colors ${declarations.includes(cfg.type) ? 'bg-blue-50 border-blue-300' : 'hover:bg-gray-50'}`}>
                         <Checkbox
                           id={`decl-${cfg.id}`}
                           checked={declarations.includes(cfg.type)}
@@ -791,7 +926,7 @@ export function CustomerModal({ customer, isOpen, onClose, onSave }: CustomerMod
                         />
                         <label
                           htmlFor={`decl-${cfg.id}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                          className="text-sm font-medium leading-none cursor-pointer flex-1"
                         >
                           {cfg.type}
                         </label>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FileText, Save, Edit2, X, Check, Plus, Calendar } from "lucide-react"
+import { FileText, Save, Edit2, X, Check, Plus, Calendar, Info } from "lucide-react"
 import { toast } from "sonner"
 
 interface DeclarationSetting {
@@ -150,9 +150,10 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
       })
 
       if (res.ok) {
+        // Call onUpdate with the localSettings (UI format) so the parent can update its state
         onUpdate(localSettings)
         setHasChanges(false)
-        toast.success("Beyanname ayarları kaydedildi")
+        toast.success("Beyanname ayarları başarıyla kaydedildi")
         
         // Kaydettikten sonra kullanıcıya beyannameleri oluşturmasını öner
         const enabledCount = localSettings.filter(d => d.enabled).length
@@ -170,7 +171,7 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
 
   const generateTaxReturns = async () => {
     if (!establishmentDate) {
-      toast.error("Lütfen önce şirket kuruluş tarihini girin")
+      toast.error("Lütfen önce şirket kuruluş tarihi girin")
       return
     }
 
@@ -184,6 +185,8 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
     try {
       // Kuruluş tarihini parse et
       const estDate = new Date(establishmentDate)
+      const estYear = estDate.getFullYear()
+      const estMonth = estDate.getMonth() + 1 // 1-12
       const currentYear = new Date().getFullYear()
       const currentMonth = new Date().getMonth() + 1
       
@@ -191,19 +194,20 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
 
       for (const declaration of enabledDeclarations) {
         if (declaration.frequency === 'monthly') {
-          // Aylık beyannameler - kuruluş tarihinden itibaren
-          const estYear = estDate.getFullYear()
-          const estMonth = estDate.getMonth() + 1
-          
-          // Kuruluş yılından başla
+          const startMonth = estYear === currentYear ? estMonth : 1
+          const endMonth = currentYear === estYear ? currentMonth : 12
           for (let year = estYear; year <= currentYear; year++) {
-            const startMonth = year === estYear ? estMonth : 1
-            const endMonth = year === currentYear ? currentMonth : 12
-            
-            for (let month = startMonth; month <= endMonth; month++) {
-              const dueDate = new Date(year, month, declaration.dueDay, declaration.dueHour, declaration.dueMinute)
+            const yearStartMonth = year === estYear ? startMonth : 1
+            const yearEndMonth = year === currentYear ? endMonth : 12
+            for (let month = yearStartMonth; month <= yearEndMonth; month++) {
+              const nextMonth = month + 1
+              const dueYear = nextMonth > 12 ? year + 1 : year
+              const dueMonth = nextMonth > 12 ? 1 : nextMonth
+              const dueHour = declaration.dueHour ?? 23
+              const dueMinute = declaration.dueMinute ?? 59
+              const dueDate = new Date(dueYear, dueMonth - 1, declaration.dueDay, dueHour, dueMinute)
               const period = `${year}-${String(month).padStart(2, '0')}`
-              
+              if (dueDate < estDate) continue
               taxReturns.push({
                 customerId,
                 type: declaration.type,
@@ -218,26 +222,56 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
             }
           }
         } else if (declaration.frequency === 'quarterly') {
-          // 3 aylık beyannameler
+          // 3 aylık beyannameler - Geçici Vergi Beyannamesi için özel kurallar
           const selectedQuarters = declaration.quarters && declaration.quarters.length > 0 
             ? declaration.quarters 
             : [1, 2, 3, 4]
           
+          // Geçici vergi beyannamesi türlerini kontrol et
+          const isProvisionalTax = declaration.type.includes('Geçici') || declaration.type.includes('geçici')
+          
           for (const q of selectedQuarters) {
-            // Eğer bu çeyrek atlanacaksa devam et
-            if (declaration.skipQuarter && q === declaration.skipQuarter) continue
+            // Eğer bu çeyrek atlanacaksa devam et (Yıl sonu çeyreği için geçici vergi beyannamesi verilmez)
+            if (declaration.skipQuarter && q === 4 && isProvisionalTax) continue
             
             const quarterEndMonth = q * 3 // 3, 6, 9, 12
-            const dueMonth = quarterEndMonth + (declaration.quarterOffset || 1) // +1 veya +2
             
-            // Duedate ayı yılı aşarsa sonraki yıla geç
+            // Geçici vergi beyannameleri için özel tarih hesaplama
+            let dueMonth, dueDay, dueHour, dueMinute
+            if (isProvisionalTax) {
+              // Geçici vergi beyannameleri her dönem için takip eden 2. ayın 17.si
+              dueMonth = quarterEndMonth + 2
+              dueDay = 17
+              dueHour = 23
+              dueMinute = 59
+            } else {
+              // Normal çeyreklik beyannameler
+              dueMonth = quarterEndMonth + (declaration.quarterOffset || 1)
+              dueDay = declaration.dueDay
+              dueHour = declaration.dueHour
+              dueMinute = declaration.dueMinute
+            }
+            
+            // Due date ayı yılı aşarsa sonraki yıla geç
             const dueYear = dueMonth > 12 ? currentYear + 1 : currentYear
             const actualDueMonth = dueMonth > 12 ? dueMonth - 12 : dueMonth
             
-            const dueDate = new Date(dueYear, actualDueMonth - 1, declaration.dueDay, declaration.dueHour, declaration.dueMinute)
+            const dueDate = new Date(dueYear, actualDueMonth - 1, dueDay, dueHour, dueMinute)
             
             // Şirket kuruluş tarihinden önceki tarihler için beyanname oluşturma
             if (dueDate < estDate) continue
+            
+            // Yeni kural: Şirket kuruluş tarihi 3 aylık dönemin sonundan sonra ise 
+            // o dönem için geçici vergi beyannamesi verilmez
+            if (isProvisionalTax) {
+              // Çeyrek bitiş tarihi (çeyrek son ayının son günü)
+              const quarterEndDate = new Date(currentYear, quarterEndMonth, 0) // Ayın 0. günü = önceki ayın son günü
+              
+              // Eğer şirket çeyrek bitiş tarihinden sonra kurulduysa geçici vergi verilmez
+              if (estDate > quarterEndDate) {
+                continue
+              }
+            }
             
             const period = `${currentYear}-Q${q}`
             
@@ -262,7 +296,6 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
           // Şirket kuruluş tarihinden önceki tarihler için beyanname oluşturma
           if (dueDate < estDate) {
             // Kuruluş yılından sonraki ilk yıl için
-            const estYear = estDate.getFullYear()
             const yearlyDueDate = new Date(estYear + 1, month - 1, declaration.dueDay, declaration.dueHour, declaration.dueMinute)
             if (yearlyDueDate >= estDate) {
               taxReturns.push({
@@ -315,6 +348,7 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
 
       if (newTaxReturns.length === 0) {
         toast.info("Tüm beyannameler zaten mevcut")
+        setGenerating(false)
         return
       }
 
@@ -360,37 +394,30 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
             if (errorData?.error && typeof errorData.error === 'string' && errorData.error.includes('kuruluş tarihinden')) {
               // Bu hata artık oluşmayacak çünkü frontend'de filtreleniyor
               console.log('Unexpected establishment date error:', errorData.error)
-            } else {
-              console.error('Tax return creation failed:', {
-                status: res.status,
-                statusText: res.statusText,
-                errorData,
-                requestData: tr
-              })
-              toast.error(`Beyanname oluşturulamadı (${res.status}): ${errorData?.error || 'Bilinmeyen hata'}`)
             }
           }
-        } catch (err) {
+        } catch (error) {
+          console.error('Error creating tax return:', error)
           errorCount++
-          console.error('Network error:', err)
         }
       }
-      
+
+      // Sonuçları göster
       if (successCount > 0) {
-        toast.success(`${successCount} adet beyanname oluşturuldu`)
+        toast.success(`${successCount} beyanname başarıyla oluşturuldu`)
       }
       if (duplicateCount > 0) {
-        toast.info(`${duplicateCount} beyanname zaten mevcut`)
+        toast.info(`${duplicateCount} beyanname zaten mevcuttu`)
       }
       if (errorCount > 0) {
-        toast.warning(`${errorCount} beyanname oluşturulamadı. Detaylar için konsolu kontrol edin.`)
+        toast.error(`${errorCount} beyanname oluşturulurken hata oluştu`)
       }
-      if (successCount === 0 && duplicateCount === 0 && errorCount === 0) {
-        toast.info("Hiç beyanname oluşturulmadı")
-      }
+
+      // Yeniden yükle
+      window.location.reload()
     } catch (error) {
       console.error('Error generating tax returns:', error)
-      toast.error("Beyannameler oluşturulurken hata oluştu")
+      toast.error("Beyanname oluşturulurken hata oluştu")
     } finally {
       setGenerating(false)
     }
@@ -430,6 +457,10 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
   }
 
   const handleReset = async () => {
+    if (!confirm("Ayarları sıfırlamak istediğinize emin misiniz? Bu işlem müşteri beyannamelerini de silecektir.")) {
+      return
+    }
+    
     // Reset to default settings from available declarations
     const resetSettings = availableDeclarations.map(decl => ({
       ...decl,
@@ -467,7 +498,7 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">
             Bu müşteri için geçerli olan beyannameleri seçin
@@ -476,7 +507,7 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
             Seçili: <span className="font-semibold text-primary">{enabledCount}</span> beyanname
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {enabledCount > 0 && (
             <Button 
               onClick={generateTaxReturns} 
@@ -529,6 +560,15 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
                         {declaration.type}
                       </CardTitle>
                     </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-muted-foreground">
+                        {getFrequencyLabel(declaration.frequency)}
+                      </span>
+                      <Info className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        Son tarih: {getDueDateInfo(declaration)}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 {editingIndex === index ? (
@@ -572,8 +612,8 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
               {editingIndex === index && editForm ? (
                 // Edit Mode
                 <div className="space-y-3">
-                  <div className="flex gap-2">
-                    <div className="w-20">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
                       <Label className="text-xs">Gün</Label>
                       <Input
                         type="number"
@@ -584,27 +624,27 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
                         className="h-8"
                       />
                     </div>
-                    <div className="flex-1">
+                    <div>
                       <Label className="text-xs">Saat</Label>
-                      <div className="flex gap-1 items-center">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="23"
-                          value={editForm.dueHour}
-                          onChange={(e) => updateEditForm('dueHour', parseInt(e.target.value))}
-                          className="h-8 w-16"
-                        />
-                        <span className="text-lg">:</span>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="59"
-                          value={editForm.dueMinute}
-                          onChange={(e) => updateEditForm('dueMinute', parseInt(e.target.value))}
-                          className="h-8 w-16"
-                        />
-                      </div>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={editForm.dueHour}
+                        onChange={(e) => updateEditForm('dueHour', parseInt(e.target.value))}
+                        className="h-8"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Dakika</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={editForm.dueMinute}
+                        onChange={(e) => updateEditForm('dueMinute', parseInt(e.target.value))}
+                        className="h-8"
+                      />
                     </div>
                   </div>
 
@@ -667,14 +707,10 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
                 </div>
               ) : (
                 // View Mode
-                <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-col gap-1 text-sm">
                   <div className="flex items-center gap-1">
-                    <span className="font-medium">Dönem:</span>
-                    <span>{getFrequencyLabel(declaration.frequency)}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium">Son Tarih:</span>
-                    <span className="text-xs">{getDueDateInfo(declaration)}</span>
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">{getDueDateInfo(declaration)}</span>
                   </div>
                 </div>
               )}

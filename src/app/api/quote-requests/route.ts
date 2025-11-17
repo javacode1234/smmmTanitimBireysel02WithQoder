@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { QuoteStatus } from '@prisma/client'
+import { randomUUID } from 'crypto'
+// import { QuoteStatus } from '@prisma/client' - using string literals instead
 
 export async function GET() {
   try {
-    const requests = await prisma.quoteRequest.findMany({
+    const requests = await prisma.quoterequest.findMany({
       orderBy: {
         createdAt: 'desc'
       }
@@ -27,15 +28,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const quoteRequest = await prisma.quoteRequest.create({
+    const quoteRequest = await prisma.quoterequest.create({
       data: {
+        id: crypto.randomUUID(),
         name,
         email,
         phone,
         company,
         serviceType,
         message,
-        status: 'NEW' as QuoteStatus,
+        status: 'NEW',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     })
 
@@ -56,7 +60,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const { id, status } = await request.json()
 
-    const quoteRequest = await prisma.quoteRequest.update({
+    const quoteRequest = await prisma.quoterequest.update({
       where: { id },
       data: { status },
     })
@@ -83,7 +87,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.quoteRequest.delete({
+    await prisma.quoterequest.delete({
       where: { id },
     })
 

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { JobApplicationStatus } from '@prisma/client'
+import { randomUUID } from 'crypto'
+// import { JobApplicationStatus } from '@prisma/client' - using string literals instead
 
 export async function GET() {
   try {
     console.log('job-applications GET: prisma =', prisma)
-    console.log('job-applications GET: prisma.jobApplication =', prisma?.jobApplication)
+    console.log('job-applications GET: prisma.jobapplication =', prisma?.jobapplication)
     
-    const applications = await prisma.jobApplication.findMany({
+    const applications = await prisma.jobapplication.findMany({
       orderBy: {
         createdAt: 'desc'
       }
@@ -47,8 +48,9 @@ export async function POST(request: NextRequest) {
     const base64Data = buffer.toString('base64')
 
     // Create application in database with base64 CV
-    const application = await prisma.jobApplication.create({
+    const application = await prisma.jobapplication.create({
       data: {
+        id: crypto.randomUUID(),
         name: `${firstName} ${lastName}`,
         email,
         phone,
@@ -59,7 +61,9 @@ export async function POST(request: NextRequest) {
         cvFileName: cvFile.name,
         cvFileData: base64Data,
         cvMimeType: cvFile.type,
-        status: JobApplicationStatus.NEW,
+        status: 'NEW',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       } as any, // TypeScript cache issue workaround - Prisma schema is correct
     })
 
@@ -90,7 +94,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const { id, status } = await request.json()
 
-    const application = await prisma.jobApplication.update({
+    const application = await prisma.jobapplication.update({
       where: { id },
       data: { status },
     })
@@ -117,7 +121,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.jobApplication.delete({
+    await prisma.jobapplication.delete({
       where: { id },
     })
 

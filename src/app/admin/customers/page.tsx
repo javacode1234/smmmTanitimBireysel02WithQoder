@@ -20,9 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, RefreshCw, UserPlus, Edit, Trash2, Eye, Building2, Copy } from "lucide-react"
+import { Search, RefreshCw, UserPlus, /* Edit, */ Trash2, Eye, Building2, Copy } from "lucide-react"
 import { toast } from "sonner"
-import { CustomerModal } from "@/components/admin/customer-modal"
+// Removed CustomerModal import since we're no longer using the modal
+// import { CustomerModal } from "@/components/admin/customer-modal"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import Image from "next/image"
 
@@ -78,9 +79,9 @@ export default function CustomersPage() {
   const [itemsPerPage, setItemsPerPage] = useState(5)
   const [currentPage, setCurrentPage] = useState(1)
 
-  // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  // Removed modal states since we're no longer using the modal
+  // const [isModalOpen, setIsModalOpen] = useState(false)
+  // const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
 
@@ -90,9 +91,9 @@ export default function CustomersPage() {
     // Cleanup: Close all modals and reset navigation on unmount to prevent DOM errors
     return () => {
       setIsNavigating(false)
-      setIsModalOpen(false)
+      // setIsModalOpen(false) - removed since we're no longer using the modal
       setIsDeleteDialogOpen(false)
-      setSelectedCustomer(null)
+      // setSelectedCustomer(null) - removed since we're no longer using the modal
       setCustomerToDelete(null)
     }
   }, [])
@@ -110,9 +111,16 @@ export default function CustomersPage() {
       const res = await fetch(`/api/customers?${params.toString()}`)
       if (res.ok) {
         const data = await res.json()
-        console.log('Fetched customers:', data.length, 'customers')
-        console.log('Search params:', params.toString())
-        setCustomers(data)
+        console.log('Fetched customers:', data)
+        
+        // API returns { items: [...], total, page, pageSize }
+        // Update state with the items array
+        if (data.items && Array.isArray(data.items)) {
+          setCustomers(data.items)
+        } else {
+          // Fallback: if data is directly an array
+          setCustomers(Array.isArray(data) ? data : [])
+        }
       } else {
         const errorData = await res.json().catch(() => ({ error: 'Bilinmeyen hata' }))
         console.error('API Error:', errorData)
@@ -168,14 +176,21 @@ export default function CustomersPage() {
   const totalPages = Math.max(1, Math.ceil(filteredCount / itemsPerPage))
 
   const handleAddCustomer = () => {
-    setSelectedCustomer(null)
-    setIsModalOpen(true)
+    // Close any open dialogs before navigation
+    setIsDeleteDialogOpen(false)
+    setCustomerToDelete(null)
+    
+    // Navigate to new customer page
+    router.push('/admin/customers/new')
   }
 
+  // Removed handleEditCustomer function since we're no longer using the modal
+  /*
   const handleEditCustomer = (customer: Customer) => {
     setSelectedCustomer(customer)
     setIsModalOpen(true)
   }
+  */
 
   const handleViewCustomer = (customerId: string) => {
     if (isNavigating) return // Prevent multiple navigation attempts
@@ -183,12 +198,12 @@ export default function CustomersPage() {
     setIsNavigating(true)
     
     // Close all modals before navigation
-    setIsModalOpen(false)
+    // setIsModalOpen(false) - removed since we're no longer using the modal
     setIsDeleteDialogOpen(false)
     
     // Delay to ensure modals are fully closed before navigation
     setTimeout(() => {
-      setSelectedCustomer(null)
+      // setSelectedCustomer(null) - removed since we're no longer using the modal
       setCustomerToDelete(null)
     }, 50)
     
@@ -204,12 +219,12 @@ export default function CustomersPage() {
     setIsNavigating(true)
     
     // Close all modals before navigation
-    setIsModalOpen(false)
+    // setIsModalOpen(false) - removed since we're no longer using the modal
     setIsDeleteDialogOpen(false)
     
     // Delay to ensure modals are fully closed
     setTimeout(() => {
-      setSelectedCustomer(null)
+      // setSelectedCustomer(null) - removed since we're no longer using the modal
       setCustomerToDelete(null)
     }, 50)
     
@@ -247,6 +262,8 @@ export default function CustomersPage() {
     }
   }
 
+  // Removed handleModalClose function since we're no longer using the modal
+  /*
   const handleModalClose = () => {
     // Prevent any state updates if component is unmounting or navigating
     if (isNavigating) return
@@ -259,7 +276,10 @@ export default function CustomersPage() {
       }
     }, 150)
   }
+  */
 
+  // Removed handleModalSave function since we're no longer using the modal
+  /*
   const handleModalSave = () => {
     // Prevent any state updates if component is unmounting or navigating
     if (isNavigating) return
@@ -278,6 +298,7 @@ export default function CustomersPage() {
       }
     }, 150)
   }
+  */
 
   return (
     <div suppressHydrationWarning>
@@ -479,6 +500,8 @@ export default function CustomersPage() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
+                            {/* Removed Edit button since we're no longer using the modal */}
+                            {/**
                             <Button
                               variant="outline"
                               size="icon"
@@ -491,6 +514,7 @@ export default function CustomersPage() {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
+                            */}
                             <Button
                               variant="outline"
                               size="icon"
@@ -558,13 +582,15 @@ export default function CustomersPage() {
       {/* Modals - Only render when mounted and not navigating */}
       {isMounted && !isNavigating && (
         <>
-          {/* Customer Modal */}
+          {/* Removed CustomerModal since we're no longer using the modal */}
+          {/**
           <CustomerModal
             customer={selectedCustomer}
             isOpen={isModalOpen}
             onClose={handleModalClose}
             onSave={handleModalSave}
           />
+          */}
 
           {/* Delete Confirmation Dialog */}
           <DeleteConfirmationDialog

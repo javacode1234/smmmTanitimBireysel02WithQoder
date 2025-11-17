@@ -1,41 +1,66 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url      = "mysql://root:1234@localhost:3306/smmm_system"
 }
 
-// User model for authentication
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  password      String
-  role          Role      @default(CLIENT)
-  image         String?   @db.LongText
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  client        Client?
-  accounts      Account[]
-  sessions      Session[]
-  messages      Message[]
+model InstitutionsSection {
+  id        String            @id @default(cuid())
+  title     String            @default("İş Birliği Yaptığımız Kurumlar")
+  paragraph String?           @db.Text
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  items     InstitutionItem[]
+
+  @@map("institutions_section")
 }
 
-enum Role {
-  ADMIN
-  CLIENT
+model InstitutionItem {
+  id          String              @id @default(cuid())
+  sectionId   String
+  name        String
+  description String?             @db.Text
+  url         String?
+  logo        String              @db.LongText
+  isActive    Boolean             @default(true)
+  order       Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  section     InstitutionsSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([sectionId], map: "institutions_section_items_sectionId_fkey")
+  @@map("institutions_section_items")
 }
 
-// NextAuth.js required models
-model Account {
-  id                String  @id @default(cuid())
+model aboutfeature {
+  id           String       @id
+  sectionId    String
+  icon         String?
+  title        String
+  description  String       @db.Text
+  isActive     Boolean      @default(true)
+  order        Int          @default(0)
+  aboutsection aboutsection @relation(fields: [sectionId], references: [id], onDelete: Cascade, map: "AboutFeature_sectionId_fkey")
+
+  @@index([sectionId], map: "AboutFeature_sectionId_fkey")
+}
+
+model aboutsection {
+  id           String         @id
+  title        String
+  subtitle     String?        @db.Text
+  description  String         @db.Text
+  image        String?        @db.LongText
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  aboutfeature aboutfeature[]
+}
+
+model account {
+  id                String  @id
   userId            String
   type              String
   provider          String
@@ -47,400 +72,392 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
+  user              user    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Account_userId_fkey")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
+  @@unique([provider, providerAccountId], map: "Account_provider_providerAccountId_key")
+  @@index([userId], map: "Account_userId_fkey")
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model accountingperiod {
+  id                                                                               String                  @id
+  customerId                                                                       String
+  year                                                                             Int
+  startDate                                                                        DateTime
+  endDate                                                                          DateTime
+  status                                                                           accountingperiod_status @default(ACTIVE)
+  createdAt                                                                        DateTime                @default(now())
+  updatedAt                                                                        DateTime
+  customer                                                                         customer                @relation(fields: [customerId], references: [id], onDelete: Cascade, map: "AccountingPeriod_customerId_fkey")
+  subscriptionaccrual_subscriptionaccrual_accountingPeriodIdToaccountingperiod     subscriptionaccrual[]   @relation("subscriptionaccrual_accountingPeriodIdToaccountingperiod")
+  subscriptionaccrual_subscriptionaccrual_carryForwardToPeriodIdToaccountingperiod subscriptionaccrual[]   @relation("subscriptionaccrual_carryForwardToPeriodIdToaccountingperiod")
+
+  @@unique([customerId, year], map: "AccountingPeriod_customerId_year_key")
+  @@index([customerId], map: "AccountingPeriod_customerId_idx")
+  @@index([year], map: "AccountingPeriod_year_idx")
 }
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
+model additionalservice {
+  id        String   @id
+  text      String   @db.Text
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
 }
 
-// Client model
-model Client {
-  id           String        @id @default(cuid())
-  userId       String        @unique
-  companyName  String
-  taxNumber    String        @unique
-  phone        String?
-  address      String?       @db.Text
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  collections  Collection[]
-  announcements AnnouncementClient[]
+model announcement {
+  id                 String               @id
+  title              String
+  message            String               @db.Text
+  type               announcement_type    @default(INFO)
+  targetAll          Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  announcementclient announcementclient[]
 }
 
-// Announcement model
-model Announcement {
-  id          String               @id @default(cuid())
-  title       String
-  message     String               @db.Text
-  type        AnnouncementType     @default(INFO)
-  targetAll   Boolean              @default(true)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  
-  clients     AnnouncementClient[]
-}
-
-enum AnnouncementType {
-  INFO
-  WARNING
-  REMINDER
-  URGENT
-}
-
-model AnnouncementClient {
-  id             String       @id @default(cuid())
+model announcementclient {
+  id             String       @id
   announcementId String
   clientId       String
   read           Boolean      @default(false)
-  
-  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  client         Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  
-  @@unique([announcementId, clientId])
+  announcement   announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade, map: "AnnouncementClient_announcementId_fkey")
+  client         client       @relation(fields: [clientId], references: [id], onDelete: Cascade, map: "AnnouncementClient_clientId_fkey")
+
+  @@unique([announcementId, clientId], map: "AnnouncementClient_announcementId_clientId_key")
+  @@index([clientId], map: "AnnouncementClient_clientId_fkey")
 }
 
-// Reminder model
-model Reminder {
-  id        String   @id @default(cuid())
-  title     String
-  message   String   @db.Text
-  date      DateTime
-  completed Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model client {
+  id                 String               @id
+  userId             String               @unique(map: "Client_userId_key")
+  companyName        String
+  taxNumber          String               @unique(map: "Client_taxNumber_key")
+  phone              String?
+  address            String?              @db.Text
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  announcementclient announcementclient[]
+  user               user                 @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Client_userId_fkey")
+  collection         collection[]
 }
 
-// Collection model (Payment tracking)
-model Collection {
-  id        String         @id @default(cuid())
+model collection {
+  id        String          @id
   clientId  String
-  amount    Decimal        @db.Decimal(10, 2)
-  type      CollectionType @default(INCOME)
+  amount    Decimal         @db.Decimal(10, 2)
+  type      collection_type @default(INCOME)
   date      DateTime
-  note      String?        @db.Text
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  
-  client    Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  note      String?         @db.Text
+  createdAt DateTime        @default(now())
+  updatedAt DateTime
+  client    client          @relation(fields: [clientId], references: [id], onDelete: Cascade, map: "Collection_clientId_fkey")
+
+  @@index([clientId], map: "Collection_clientId_fkey")
 }
 
-enum CollectionType {
-  INCOME
-  EXPENSE
+model contactmessage {
+  id        String                @id
+  name      String
+  email     String
+  phone     String
+  subject   String
+  message   String                @db.Text
+  status    contactmessage_status @default(NEW)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime
 }
 
-// Content Management System for Landing Page
-// Site Settings (Global)
-model SiteSettings {
-  id              String   @id @default(cuid())
-  siteName        String   @default("SMMM Ofisi")
-  siteDescription String?  @db.Text
-  favicon         String?  @db.LongText // Base64
-  brandIcon       String?  @db.LongText // Base64
-  phone           String?
-  email           String?
-  address         String?  @db.Text
-  mapLatitude     String?
-  mapLongitude    String?
-  mapEmbedUrl     String?  @db.Text
-  facebookUrl     String?
-  xUrl            String?
-  linkedinUrl     String?
-  instagramUrl    String?
-  youtubeUrl      String?
-  threadsUrl      String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+model customer {
+  id                         String                       @id @default(cuid())
+  logo                       String?                      @db.LongText
+  companyName                String
+  taxNumber                  String?
+  phone                      String?
+  email                      String?
+  address                    String?
+  city                       String?
+  facebookUrl                String?
+  xUrl                       String?
+  linkedinUrl                String?
+  instagramUrl               String?
+  threadsUrl                 String?
+  ledgerType                 String?
+  subscriptionFee            String?
+  establishmentDate          DateTime?
+  authorizedName             String?
+  authorizedTCKN             String?
+  authorizedEmail            String?
+  authorizedPhone            String?
+  authorizedAddress          String?
+  authorizedFacebookUrl      String?
+  authorizedXUrl             String?
+  authorizedLinkedinUrl      String?
+  authorizedInstagramUrl     String?
+  authorizedThreadsUrl       String?
+  authorizationDate          DateTime?
+  authorizationPeriod        String?
+  notes                      String?                      @db.LongText
+  status                     customer_status              @default(ACTIVE)
+  onboardingStage            customer_onboardingStage     @default(LEAD)
+  createdAt                  DateTime                     @default(now())
+  updatedAt                  DateTime                     @updatedAt
+  documents                  String?                      @db.LongText
+  passwords                  String?                      @db.LongText
+  taxPeriodType              customer_taxPeriodType?
+  declarations               String?                      @db.LongText
+  hasEmployees               Boolean?                     @default(false)
+  employeeCount              Int?                         // New field for insurance employee count
+  taxOfficeId                String? 
+  taxOffice                  TaxOffice? @relation(fields: [taxOfficeId], references: [id])
+  accountingperiod           accountingperiod[]
+  customerdeclarationsetting customerdeclarationsetting[]
+  subscriptionaccrual        subscriptionaccrual[]
+  taxreturn                  taxreturn[]
+
+  @@index([companyName], map: "Customer_companyName_idx")
+  @@index([createdAt], map: "Customer_createdAt_idx")
+  @@index([onboardingStage], map: "Customer_onboardingStage_idx")
+  @@index([status], map: "Customer_status_idx")
+  @@index([taxNumber], map: "Customer_taxNumber_idx")
 }
 
-// Hero Section
-model HeroSection {
-  id          String   @id @default(cuid())
+model customerdeclarationsetting {
+  id            String                                    @id
+  customerId    String
+  type          String
+  enabled       Boolean                                   @default(true)
+  frequency     customerdeclarationsetting_frequency
+  taxPeriodType customerdeclarationsetting_taxPeriodType?
+  dueDay        Int?
+  dueHour       Int?
+  dueMinute     Int?
+  dueMonth      Int?
+  quarterOffset Int?
+  yearlyCount   Int?
+  skipQuarter   Boolean?                                  @default(false)
+  quarters      String?                                   @db.Text
+  createdAt     DateTime                                  @default(now())
+  updatedAt     DateTime
+  customer      customer                                  @relation(fields: [customerId], references: [id], onDelete: Cascade, map: "CustomerDeclarationSetting_customerId_fkey")
+
+  @@unique([customerId, type], map: "CustomerDeclarationSetting_customerId_type_key")
+  @@index([customerId], map: "CustomerDeclarationSetting_customerId_idx")
+}
+
+model declarationconfig {
+  id            String                           @id
+  type          String                           @unique(map: "DeclarationConfig_type_key")
+  enabled       Boolean                          @default(true)
+  frequency     declarationconfig_frequency
+  dueDay        Int?
+  dueHour       Int?
+  dueMinute     Int?
+  dueMonth      Int?
+  quarterOffset Int?
+  yearlyCount   Int?
+  skipQuarter   Boolean?                         @default(false)
+  createdAt     DateTime                         @default(now())
+  updatedAt     DateTime
+  optional      Boolean                          @default(false)
+  quarters      String?                          @db.Text
+  taxPeriodType declarationconfig_taxPeriodType?
+}
+
+model faq {
+  id          String      @id
+  categoryId  String
+  question    String
+  answer      String      @db.Text
+  order       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime
+  isActive    Boolean     @default(true)
+  faqcategory faqcategory @relation(fields: [categoryId], references: [id], onDelete: Cascade, map: "FAQ_categoryId_fkey")
+
+  @@index([categoryId], map: "FAQ_categoryId_fkey")
+}
+
+model faqcategory {
+  id        String   @id
+  name      String   @unique(map: "FAQCategory_name_key")
+  slug      String   @unique(map: "FAQCategory_slug_key")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  faq       faq[]
+}
+
+model faqsection {
+  id        String   @id
+  title     String   @default("Sıkça Sorulan Sorular")
+  paragraph String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model herosection {
+  id          String   @id
   title       String
   subtitle    String   @db.Text
   description String?  @db.Text
   buttonText  String?
   buttonUrl   String?
-  image       String?  @db.LongText // Base64
+  image       String?  @db.LongText
   isActive    Boolean  @default(true)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime
 }
 
-// Institutions Section
-model InstitutionsSection {
-  id          String              @id @default(cuid())
-  title       String              @default("İş Birliği Yaptığımız Kurumlar")
-  paragraph   String?             @db.Text
-  items       InstitutionItem[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-
-  @@map("institutions_section")
-}
-
-model InstitutionItem {
-  id          String              @id @default(cuid())
-  sectionId   String
+model jobapplication {
+  id          String                @id
   name        String
-  description String?             @db.Text
-  url         String?
-  logo        String              @db.LongText // Base64
-  isActive    Boolean             @default(true)
-  order       Int                 @default(0)
-  section     InstitutionsSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-
-  @@map("institutions_section_items")
-}
-
-// About Section
-model AboutSection {
-  id                String          @id @default(cuid())
-  title             String
-  subtitle          String?         @db.Text
-  description       String          @db.Text
-  image             String?         @db.LongText // Base64
-  features          AboutFeature[]
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-}
-
-model AboutFeature {
-  id          String       @id @default(cuid())
-  sectionId   String
-  icon        String? // Lucide icon name
-  title       String
-  description String       @db.Text
-  isActive    Boolean      @default(true)
-  order       Int          @default(0)
-  section     AboutSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-}
-
-// Services Section
-model ServicesSection {
-  id          String          @id @default(cuid())
-  title       String          @default("Hizmetlerimiz")
-  paragraph   String?         @db.Text
-  valuesTitle String?         @default("Hizmet Değerlerimiz")
-  footerText  String?         @db.Text  // Removed default - TEXT columns can't have defaults in MySQL
-  footerSignature String?      @default("SMMM Ekibi")
-  values      ServiceValue[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-}
-
-model ServiceValue {
-  id        String          @id @default(cuid())
-  sectionId String
-  text      String          @db.Text
-  isActive  Boolean         @default(true)
-  order     Int             @default(0)
-  section   ServicesSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-}
-
-model Service {
-  id          String   @id @default(cuid())
-  icon        String   @default("FileText") // Lucide icon name
-  title       String
-  description String   @db.Text
-  features    String?  @db.Text // JSON array of features
-  color       String   @default("from-blue-500 to-blue-600") // Tailwind gradient classes
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-// Workflow Section
-model WorkflowSection {
-  id          String   @id @default(cuid())
-  title       String   @default("Çalışma Sürecimiz")
-  paragraph   String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model WorkflowStep {
-  id          String   @id @default(cuid())
-  number      String   // e.g., "01", "02", etc.
-  icon        String   @default("Phone") // Lucide icon name
-  title       String
-  description String   @db.Text
-  color       String   @default("from-blue-500 to-blue-600") // Tailwind gradient classes
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-// Pricing Section
-model PricingSection {
-  id                    String                @id @default(cuid())
-  title                 String                @default("Fiyatlandırma")
-  paragraph             String?               @db.Text
-  additionalTitle       String                @default("Ek Hizmetler")
-  additionalParagraph   String?               @db.Text
-  footerText            String?               @db.Text
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-}
-
-model PricingPlan {
-  id          String          @id @default(cuid())
-  name        String
-  icon        String          @default("Star") // Lucide icon name
-  price       String
-  period      String          @default("ay")
-  description String?         @db.Text
-  color       String          @default("from-blue-500 to-blue-600") // Tailwind gradient classes
-  features    PricingFeature[]
-  isPopular   Boolean         @default(false)
-  isActive    Boolean         @default(true)
-  order       Int             @default(0)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-}
-
-model PricingFeature {
-  id        String      @id @default(cuid())
-  planId    String
-  text      String
-  isIncluded Boolean    @default(true)
-  order     Int         @default(0)
-  plan      PricingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-}
-
-model AdditionalService {
-  id          String   @id @default(cuid())
-  text        String   @db.Text
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-// Testimonials Section
-model TestimonialsSection {
-  id          String   @id @default(cuid())
-  title       String   @default("İstemcilerimiz Ne Diyor?")
-  paragraph   String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Testimonial {
-  id        String   @id @default(cuid())
-  name      String
-  position  String
-  company   String?
-  content   String   @db.Text
-  avatar    String?  @db.LongText // Base64
-  initials  String   @default("??")
-  color     String   @default("from-blue-500 to-blue-600") // Tailwind gradient classes
-  rating    Int      @default(5)
-  isActive  Boolean  @default(true)
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// Team Section
-model TeamSection {
-  id          String   @id @default(cuid())
-  title       String   @default("Uzman Ekibimiz")
-  paragraph   String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model TeamMember {
-  id          String   @id @default(cuid())
-  name        String
+  email       String
+  phone       String
   position    String
-  bio         String?  @db.Text
-  avatar      String?  @db.LongText
-  initials    String   @default("??")
-  color       String   @default("from-blue-500 to-blue-600")
-  email       String?
-  phone       String?
-  linkedinUrl String?
-  xUrl        String?
-  facebookUrl String?
-  instagramUrl String?
-  threadsUrl  String?
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  experience  String
+  education   String
+  coverLetter String?               @db.Text
+  cvFileName  String?
+  cvFileData  String?               @db.LongText
+  cvMimeType  String?
+  status      jobapplication_status @default(NEW)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime
 }
 
-// FAQ Section
-model FAQSection {
-  id          String   @id @default(cuid())
-  title       String   @default("Sıkça Sorulan Sorular")
-  paragraph   String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model legaldocument {
+  id          String             @id
+  type        legaldocument_type @unique(map: "LegalDocument_type_key")
+  title       String
+  content     String             @db.LongText
+  lastUpdated DateTime           @default(now())
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime
 }
 
-model FAQCategory {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  slug      String   @unique
-  order     Int      @default(0)
-  faqs      FAQ[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model FAQ {
-  id         String      @id @default(cuid())
-  categoryId String
-  question   String
-  answer     String      @db.Text
-  isActive   Boolean     @default(true)
-  order      Int         @default(0)
-  category   FAQCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-}
-
-// Message model for client-admin communication
-model Message {
-  id        String   @id @default(cuid())
+model message {
+  id        String   @id
   userId    String
   subject   String
   message   String   @db.Text
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Message_userId_fkey")
+
+  @@index([userId], map: "Message_userId_fkey")
 }
 
-// Settings model for company information
-model Settings {
-  id          String   @id @default(cuid())
+model pricingfeature {
+  id          String      @id
+  planId      String
+  text        String
+  isIncluded  Boolean     @default(true)
+  order       Int         @default(0)
+  pricingplan pricingplan @relation(fields: [planId], references: [id], onDelete: Cascade, map: "PricingFeature_planId_fkey")
+
+  @@index([planId], map: "PricingFeature_planId_fkey")
+}
+
+model pricingplan {
+  id             String           @id
+  name           String
+  price          String
+  period         String           @default("ay")
+  description    String?          @db.Text
+  isPopular      Boolean          @default(false)
+  isActive       Boolean          @default(true)
+  order          Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  color          String           @default("from-blue-500 to-blue-600")
+  icon           String           @default("Star")
+  pricingfeature pricingfeature[]
+}
+
+model pricingsection {
+  id                  String   @id
+  title               String   @default("Fiyatlandırma")
+  paragraph           String?  @db.Text
+  additionalTitle     String   @default("Ek Hizmetler")
+  additionalParagraph String?  @db.Text
+  footerText          String?  @db.Text
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime
+}
+
+model quoterequest {
+  id          String              @id
+  name        String
+  email       String
+  phone       String
+  company     String
+  serviceType String
+  message     String?             @db.Text
+  status      quoterequest_status @default(NEW)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime
+}
+
+model reminder {
+  id        String   @id
+  title     String
+  message   String   @db.Text
+  date      DateTime
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model service {
+  id          String   @id
+  icon        String   @default("FileText")
+  title       String
+  description String   @db.Text
+  features    String?  @db.Text
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  color       String   @default("from-blue-500 to-blue-600")
+}
+
+model servicessection {
+  id              String         @id
+  title           String         @default("Hizmetlerimiz")
+  paragraph       String?        @db.Text
+  valuesTitle     String?        @default("Hizmet Değerlerimiz")
+  footerText      String?        @db.Text
+  footerSignature String?        @default("SMMM Ekibi")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime
+  servicevalue    servicevalue[]
+}
+
+model servicevalue {
+  id              String          @id
+  sectionId       String
+  text            String          @db.Text
+  isActive        Boolean         @default(true)
+  order           Int             @default(0)
+  servicessection servicessection @relation(fields: [sectionId], references: [id], onDelete: Cascade, map: "ServiceValue_sectionId_fkey")
+
+  @@index([sectionId], map: "ServiceValue_sectionId_fkey")
+}
+
+model session {
+  id           String   @id
+  sessionToken String   @unique(map: "Session_sessionToken_key")
+  userId       String
+  expires      DateTime
+  user         user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Session_userId_fkey")
+
+  @@index([userId], map: "Session_userId_fkey")
+}
+
+model settings {
+  id          String   @id
   companyName String
   logo        String?
   taxNumber   String?
@@ -452,240 +469,292 @@ model Settings {
   smtpUser    String?
   smtpPass    String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime
 }
 
-// JobApplication model for career applications
-model JobApplication {
-  id          String            @id @default(cuid())
-  name        String
-  email       String
-  phone       String
-  position    String
-  experience  String
-  education   String
-  coverLetter String?           @db.Text
-  cvFileName  String?
-  cvFileData  String?           @db.LongText  // Base64 encoded CV file
-  cvMimeType  String?           // MIME type of the file (e.g., "application/pdf")
-  status      JobApplicationStatus @default(NEW)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+model sitesettings {
+  id              String   @id
+  siteName        String   @default("SMMM Ofisi")
+  siteDescription String?  @db.Text
+  favicon         String?  @db.LongText
+  brandIcon       String?  @db.LongText
+  phone           String?
+  email           String?
+  address         String?  @db.Text
+  mapLatitude     String?
+  mapLongitude    String?
+  mapEmbedUrl     String?  @db.Text
+  facebookUrl     String?
+  linkedinUrl     String?
+  instagramUrl    String?
+  youtubeUrl      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime
+  threadsUrl      String?
+  xUrl            String?
 }
 
-enum JobApplicationStatus {
-  NEW         // Yeni
-  REVIEWING   // İnceleniyor
-  INTERVIEWED // Görüşme Yapıldı
-  ACCEPTED    // Kabul Edildi
-  REJECTED    // Reddedildi
+model subscriptionaccrual {
+  id                                                                            String            @id
+  customerId                                                                    String
+  accountingPeriodId                                                            String
+  amount                                                                        Decimal           @db.Decimal(10, 2)
+  currency                                                                      String            @default("TRY")
+  description                                                                   String            @default("Aidat Tahakkuku")
+  dueDate                                                                       DateTime
+  isPaid                                                                        Boolean           @default(false)
+  paymentDate                                                                   DateTime?
+  carryForwardAmount                                                            Decimal           @default(0.00) @db.Decimal(10, 2)
+  carryForwardToPeriodId                                                        String?
+  createdAt                                                                     DateTime          @default(now())
+  updatedAt                                                                     DateTime
+  accountingperiod_subscriptionaccrual_accountingPeriodIdToaccountingperiod     accountingperiod  @relation("subscriptionaccrual_accountingPeriodIdToaccountingperiod", fields: [accountingPeriodId], references: [id], onDelete: Cascade, map: "SubscriptionAccrual_accountingPeriodId_fkey")
+  accountingperiod_subscriptionaccrual_carryForwardToPeriodIdToaccountingperiod accountingperiod? @relation("subscriptionaccrual_carryForwardToPeriodIdToaccountingperiod", fields: [carryForwardToPeriodId], references: [id], map: "SubscriptionAccrual_carryForwardToPeriodId_fkey")
+  customer                                                                      customer          @relation(fields: [customerId], references: [id], onDelete: Cascade, map: "SubscriptionAccrual_customerId_fkey")
+
+  @@index([accountingPeriodId], map: "SubscriptionAccrual_accountingPeriodId_idx")
+  @@index([carryForwardToPeriodId], map: "SubscriptionAccrual_carryForwardToPeriodId_fkey")
+  @@index([customerId], map: "SubscriptionAccrual_customerId_idx")
+  @@index([dueDate], map: "SubscriptionAccrual_dueDate_idx")
+  @@index([isPaid], map: "SubscriptionAccrual_isPaid_idx")
 }
 
-// QuoteRequest model for pricing quote requests
-model QuoteRequest {
-  id          String           @id @default(cuid())
-  name        String
-  email       String
-  phone       String
-  company     String
-  serviceType String
-  message     String?          @db.Text
-  status      QuoteStatus      @default(NEW)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+model taxoffice {
+  id        String   @id
+  name      String   @unique(map: "TaxOffice_name_key")
+  city      String?
+  district  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@index([city], map: "TaxOffice_city_idx")
+  @@index([name], map: "TaxOffice_name_idx")
 }
 
-enum QuoteStatus {
-  NEW         // Yeni
-  PENDING     // Beklemede
-  REVIEWED    // İncelendi
-  CONTACTED   // İletişime Geçildi
-  COMPLETED   // Tamamlandı
+model taxreturn {
+  id            String                   @id
+  customerId    String
+  type          String
+  period        String
+  year          Int
+  month         Int?
+  taxPeriodType taxreturn_taxPeriodType?
+  dueDate       DateTime
+  submittedDate DateTime?
+  isSubmitted   Boolean                  @default(false)
+  notes         String?                  @db.Text
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime
+  customer      customer                 @relation(fields: [customerId], references: [id], onDelete: Cascade, map: "TaxReturn_customerId_fkey")
+
+  @@index([customerId], map: "TaxReturn_customerId_idx")
+  @@index([dueDate], map: "TaxReturn_dueDate_idx")
+  @@index([period], map: "TaxReturn_period_idx")
+  @@index([year, month], map: "TaxReturn_year_month_idx")
 }
 
-// ContactMessage model for contact form submissions
-model ContactMessage {
-  id        String              @id @default(cuid())
+model teammember {
+  id           String   @id
+  name         String
+  position     String
+  bio          String?  @db.Text
+  avatar       String?  @db.LongText
+  email        String?
+  phone        String?
+  linkedinUrl  String?
+  isActive     Boolean  @default(true)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  color        String   @default("from-blue-500 to-blue-600")
+  facebookUrl  String?
+  initials     String   @default("??")
+  instagramUrl String?
+  threadsUrl   String?
+  xUrl         String?
+}
+
+model teamsection {
+  id        String   @id
+  title     String   @default("Uzman Ekibimiz")
+  paragraph String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model testimonial {
+  id        String   @id
   name      String
-  email     String
-  phone     String
-  subject   String
-  message   String              @db.Text
-  status    ContactMessageStatus @default(NEW)
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  position  String
+  company   String?
+  content   String   @db.Text
+  avatar    String?  @db.LongText
+  rating    Int      @default(5)
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  color     String   @default("from-blue-500 to-blue-600")
+  initials  String   @default("??")
 }
 
-enum ContactMessageStatus {
-  NEW       // Yeni
-  PENDING   // Beklemede
-  REPLIED   // Yanıtlandı
-  RESOLVED  // Çözüldü
+model testimonialssection {
+  id        String   @id
+  title     String   @default("İstemcilerimiz Ne Diyor?")
+  paragraph String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime
 }
 
-// LegalDocument model for Privacy Policy, Terms, KVKK
-model LegalDocument {
-  id          String   @id @default(cuid())
-  type        LegalDocumentType
+model user {
+  id            String    @id
+  name          String?
+  email         String    @unique(map: "User_email_key")
+  emailVerified DateTime?
+  password      String
+  role          user_role @default(CLIENT)
+  image         String?   @db.LongText
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  account       account[]
+  client        client?
+  message       message[]
+  session       session[]
+}
+
+model verificationtoken {
+  identifier String
+  token      String   @unique(map: "VerificationToken_token_key")
+  expires    DateTime
+
+  @@unique([identifier, token], map: "VerificationToken_identifier_token_key")
+}
+
+model workflowsection {
+  id        String   @id
+  title     String   @default("Çalışma Sürecimiz")
+  paragraph String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model workflowstep {
+  id          String   @id
+  icon        String   @default("Phone")
   title       String
-  content     String   @db.LongText
-  lastUpdated DateTime @default(now())
+  description String   @db.Text
+  order       Int      @default(0)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([type])
+  updatedAt   DateTime
+  color       String   @default("from-blue-500 to-blue-600")
+  isActive    Boolean  @default(true)
+  number      String
 }
 
-enum LegalDocumentType {
+enum legaldocument_type {
   PRIVACY_POLICY
   TERMS_OF_USE
   KVKK
 }
 
-// Customer model for customer management
-model Customer {
-  id              String           @id @default(cuid())
-  
-  // Company Information
-  logo            String?          @db.LongText // Base64
-  companyName     String
-  taxNumber       String?          // VKN/TCKN
-  phone           String?
-  email           String?
-  address         String?          @db.Text
-  city            String?
-  
-  // Social Media
-  facebookUrl     String?
-  xUrl            String?
-  linkedinUrl     String?
-  instagramUrl    String?
-  threadsUrl      String?
-  
-  // Business Details
-  ledgerType        String?          // Defter Tipi
-  subscriptionFee   String?          // Aidat
-  establishmentDate DateTime?        // Kuruluş Tarihi
-  taxPeriodType     TaxPeriodType?   // Vergi Dönemi (Normal/Özel)
-  
-  // Authorized Person
-  authorizedName  String?
-  authorizedTCKN  String?
-  authorizedEmail String?
-  authorizedPhone String?
-  authorizedAddress String?        @db.Text
-  authorizedFacebookUrl  String?
-  authorizedXUrl         String?
-  authorizedLinkedinUrl  String?
-  authorizedInstagramUrl String?
-  authorizedThreadsUrl   String?
-  
-  authorizationDate DateTime?      // Yetkilendirilme Tarihi
-  authorizationPeriod String?      // Yetki Süresi
-  
-  // Documents
-  documents       String?          @db.LongText // JSON array of documents with Base64 files
-  
-  // Institutional Passwords
-  passwords       String?          @db.Text // JSON array of passwords
-  
-  notes           String?          @db.Text
-  status          CustomerStatus   @default(ACTIVE)
-  onboardingStage OnboardingStage  @default(LEAD)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  
-  // Relations
-  declarationSettings     CustomerDeclarationSetting[]
-  taxReturns              TaxReturn[]
+enum announcement_type {
+  INFO
+  WARNING
+  REMINDER
+  URGENT
 }
 
-enum CustomerStatus {
-  ACTIVE
-  INACTIVE
+enum collection_type {
+  INCOME
+  EXPENSE
 }
 
-enum OnboardingStage {
-  LEAD
-  PROSPECT
-  CUSTOMER
-}
-
-enum DeclarationFrequency {
+enum declarationconfig_frequency {
   MONTHLY
   QUARTERLY
   YEARLY
 }
 
-enum TaxPeriodType {
-  NORMAL    // Normal dönem (Ocak-Aralık)
-  SPECIAL   // Özel dönem
+enum customerdeclarationsetting_frequency {
+  MONTHLY
+  QUARTERLY
+  YEARLY
 }
 
-model DeclarationConfig {
-  id            String               @id @default(cuid())
-  type          String               @unique
-  enabled       Boolean              @default(true)
-  optional      Boolean              @default(false)
-  frequency     DeclarationFrequency
-  taxPeriodType TaxPeriodType?       // Sadece Kurumlar/Gelir Vergisi için
-  dueDay        Int?
-  dueHour       Int?
-  dueMinute     Int?
-  dueMonth      Int?
-  quarterOffset Int?
-  yearlyCount   Int?
-  skipQuarter   Boolean?             @default(false)
-  quarters      String?              @db.Text // JSON array of quarter numbers [1,2,3,4]
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+enum accountingperiod_status {
+  ACTIVE
+  CLOSED
+  ARCHIVED
 }
 
-// Customer declaration settings - which declarations are enabled for each customer
-model CustomerDeclarationSetting {
-  id            String               @id @default(cuid())
-  customerId    String
-  type          String               // Declaration type name (from DeclarationConfig)
-  enabled       Boolean              @default(true)
-  frequency     DeclarationFrequency
-  taxPeriodType TaxPeriodType?       // Sadece Kurumlar/Gelir Vergisi için
-  dueDay        Int?
-  dueHour       Int?
-  dueMinute     Int?
-  dueMonth      Int?
-  quarterOffset Int?
-  yearlyCount   Int?
-  skipQuarter   Boolean?             @default(false)
-  quarters      String?              @db.Text // JSON array
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
-  
-  customer      Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  
-  @@unique([customerId, type])
-  @@index([customerId])
+enum customerdeclarationsetting_taxPeriodType {
+  NORMAL
+  SPECIAL
 }
 
-// Tax Return Tracking
-model TaxReturn {
-  id            String         @id @default(cuid())
-  customerId    String
-  type          String         // Declaration type
-  period        String         // e.g., "2025-01" or "2025-Q1"
-  year          Int
-  month         Int?
-  taxPeriodType TaxPeriodType? // Normal veya Özel dönem
-  dueDate       DateTime
-  submittedDate DateTime?
-  isSubmitted   Boolean        @default(false)
-  notes         String?        @db.Text
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  
-  customer      Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  
-  @@index([customerId])
-  @@index([period])
-  @@index([year, month])
-  @@index([dueDate])
+enum user_role {
+  ADMIN
+  CLIENT
+}
+
+enum contactmessage_status {
+  NEW
+  PENDING
+  REPLIED
+  RESOLVED
+}
+
+enum taxreturn_taxPeriodType {
+  NORMAL
+  SPECIAL
+}
+
+enum quoterequest_status {
+  NEW
+  PENDING
+  REVIEWED
+  CONTACTED
+  COMPLETED
+}
+
+enum jobapplication_status {
+  NEW
+  REVIEWING
+  INTERVIEWED
+  ACCEPTED
+  REJECTED
+}
+
+enum declarationconfig_taxPeriodType {
+  NORMAL
+  SPECIAL
+}
+
+enum customer_status {
+  ACTIVE
+  INACTIVE
+}
+
+enum customer_onboardingStage {
+  LEAD
+  PROSPECT
+  CUSTOMER
+}
+
+enum customer_taxPeriodType {
+  NORMAL
+  SPECIAL
+}
+
+model TaxOffice {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  city      String?
+  district  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  customers customer[]
+
+  @@index([name], map: "TaxOffice_name_idx")
+  @@index([city], map: "TaxOffice_city_idx")
 }

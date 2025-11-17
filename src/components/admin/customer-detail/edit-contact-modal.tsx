@@ -15,6 +15,12 @@ import { PhoneInput } from "@/components/ui/phone-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { TaxOfficeCombobox } from "@/components/ui/tax-office-combobox"
+
+interface TaxOffice {
+  id: string
+  name: string
+}
 
 interface EditContactModalProps {
   isOpen: boolean
@@ -24,15 +30,16 @@ interface EditContactModalProps {
   initialData: {
     phone: string | null
     email: string | null
-    city: string | null
+    taxOffice: string | null
     address: string | null
   }
+  taxOffices?: TaxOffice[]
 }
 
-export function EditContactModal({ isOpen, onClose, onSave, customerId, initialData }: EditContactModalProps) {
+export function EditContactModal({ isOpen, onClose, onSave, customerId, initialData, taxOffices }: EditContactModalProps) {
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
-  const [city, setCity] = useState("")
+  const [taxOffice, setTaxOffice] = useState("")
   const [address, setAddress] = useState("")
   const [saving, setSaving] = useState(false)
 
@@ -40,7 +47,7 @@ export function EditContactModal({ isOpen, onClose, onSave, customerId, initialD
     if (isOpen && initialData) {
       setPhone(initialData.phone || "")
       setEmail(initialData.email || "")
-      setCity(initialData.city || "")
+      setTaxOffice(initialData.taxOffice || "")
       setAddress(initialData.address || "")
     }
   }, [isOpen, initialData])
@@ -51,12 +58,12 @@ export function EditContactModal({ isOpen, onClose, onSave, customerId, initialD
       const response = await fetch(`/api/customers?id=${customerId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, email, city, address }),
+        body: JSON.stringify({ phone, email, taxOffice, address }),
       })
 
       if (response.ok) {
         toast.success("İletişim bilgileri güncellendi")
-        onSave({ phone, email, city, address })
+        onSave({ phone, email, taxOffice, address })
         onClose()
       } else {
         toast.error("Güncelleme başarısız")
@@ -101,12 +108,11 @@ export function EditContactModal({ isOpen, onClose, onSave, customerId, initialD
           </div>
 
           <div>
-            <Label htmlFor="city">Şehir</Label>
-            <Input
-              id="city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="İstanbul"
+            <Label htmlFor="taxOffice">Vergi Dairesi</Label>
+            <TaxOfficeCombobox
+              value={taxOffice}
+              onValueChange={setTaxOffice}
+              taxOffices={taxOffices || []}
             />
           </div>
 

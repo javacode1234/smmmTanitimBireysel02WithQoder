@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { randomUUID } from 'crypto'
 
 export async function GET() {
   try {
-    const messages = await prisma.contactMessage.findMany({
+    const messages = await prisma.contactmessage.findMany({
       orderBy: {
         createdAt: 'desc'
       }
@@ -26,14 +27,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const contactMessage = await prisma.contactMessage.create({
+    const contactMessage = await prisma.contactmessage.create({
       data: {
+        id: crypto.randomUUID(),
         name,
         email,
         phone,
         subject,
         message,
         status: 'NEW',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     })
 
@@ -54,7 +58,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const { id, status } = await request.json()
 
-    const message = await prisma.contactMessage.update({
+    const message = await prisma.contactmessage.update({
       where: { id },
       data: { status },
     })
@@ -81,7 +85,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.contactMessage.delete({
+    await prisma.contactmessage.delete({
       where: { id },
     })
 

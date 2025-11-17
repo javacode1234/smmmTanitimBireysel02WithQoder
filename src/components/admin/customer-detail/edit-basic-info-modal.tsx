@@ -22,6 +22,12 @@ import {
 import { toast } from "sonner"
 import { Upload, X } from "lucide-react"
 import Image from "next/image"
+import { TaxOfficeCombobox } from "@/components/ui/tax-office-combobox"
+
+interface TaxOffice {
+  id: string
+  name: string
+}
 
 interface EditBasicInfoModalProps {
   isOpen: boolean
@@ -29,28 +35,32 @@ interface EditBasicInfoModalProps {
   onSave: (data: any) => void
   customerId: string
   initialData: {
-    logoUrl: string | null
+    logo: string | null
     companyName: string
     taxNumber: string | null
+    taxOffice: string | null
     status: string
     onboardingStage: string
   }
+  taxOffices: TaxOffice[]
 }
 
-export function EditBasicInfoModal({ isOpen, onClose, onSave, customerId, initialData }: EditBasicInfoModalProps) {
+export function EditBasicInfoModal({ isOpen, onClose, onSave, customerId, initialData, taxOffices }: EditBasicInfoModalProps) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [companyName, setCompanyName] = useState("")
   const [taxNumber, setTaxNumber] = useState("")
+  const [taxOffice, setTaxOffice] = useState("")
   const [status, setStatus] = useState("")
   const [onboardingStage, setOnboardingStage] = useState("")
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (isOpen && initialData) {
-      setLogoUrl(initialData.logoUrl)
+      setLogoUrl(initialData.logo)
       setCompanyName(initialData.companyName)
       setTaxNumber(initialData.taxNumber || "")
+      setTaxOffice(initialData.taxOffice || "")
       setStatus(initialData.status)
       setOnboardingStage(initialData.onboardingStage)
       setLogoFile(null)
@@ -82,13 +92,26 @@ export function EditBasicInfoModal({ isOpen, onClose, onSave, customerId, initia
 
     setSaving(true)
     try {
+      // Convert logo file to base64 if it exists
+      let logoBase64 = logoUrl
+      if (logoFile) {
+        logoBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onloadend = () => {
+            resolve(reader.result as string)
+          }
+          reader.readAsDataURL(logoFile)
+        })
+      }
+
       const response = await fetch(`/api/customers?id=${customerId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          logoUrl: logoUrl || null,
+          logo: logoBase64 || null,
           companyName,
           taxNumber: taxNumber || null,
+          taxOffice: taxOffice || null,
           status,
           onboardingStage,
         }),
@@ -97,9 +120,10 @@ export function EditBasicInfoModal({ isOpen, onClose, onSave, customerId, initia
       if (response.ok) {
         toast.success("Temel bilgiler güncellendi")
         onSave({
-          logoUrl: logoUrl || null,
+          logo: logoBase64 || null,
           companyName,
           taxNumber: taxNumber || null,
+          taxOffice: taxOffice || null,
           status,
           onboardingStage,
         })
@@ -188,6 +212,16 @@ export function EditBasicInfoModal({ isOpen, onClose, onSave, customerId, initia
               value={taxNumber}
               onChange={(e) => setTaxNumber(e.target.value)}
               placeholder="1234567890"
+            />
+          </div>
+
+          {/* Tax Office */}
+          <div>
+            <Label htmlFor="taxOffice">Vergi Dairesi</Label>
+            <TaxOfficeCombobox
+              value={taxOffice}
+              onValueChange={setTaxOffice}
+              taxOffices={taxOffices}
             />
           </div>
 

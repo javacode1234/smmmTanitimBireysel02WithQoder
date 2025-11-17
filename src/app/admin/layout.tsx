@@ -18,14 +18,15 @@ import {
   FileEdit,
   LogOut,
   Receipt,
-  UserCog
+  UserCog,
+  FileSearch
 } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "İçerik Yönetimi", href: "/admin/content", icon: FileEdit },
   { name: "Müşteriler", href: "/admin/customers", icon: Users },
-  { name: "Beyanname Takibi", href: "/admin/tax-returns", icon: Receipt },
+  { name: "Beyanname Takibi", href: "/admin/tax-returns", icon: FileSearch },
   { name: "Beyannameler", href: "/admin/declarations", icon: FileText },
   { name: "Duyurular", href: "/admin/announcements", icon: Bell },
   { name: "Tahsilat", href: "/admin/collections", icon: CreditCard },

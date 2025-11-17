@@ -9,8 +9,7 @@ import { cn } from "@/lib/utils"
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  // Add modal prop to prevent interactions outside dialog
-  return <DialogPrimitive.Root modal={true} data-slot="dialog" {...props} />
+  return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
 function DialogTrigger({
@@ -22,23 +21,7 @@ function DialogTrigger({
 function DialogPortal({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
-  const [mounted, setMounted] = React.useState(false)
-  const [container, setContainer] = React.useState<HTMLElement | null>(null)
-
-  React.useEffect(() => {
-    setMounted(true)
-    setContainer(document.body)
-    
-    // Cleanup function to prevent memory leaks
-    return () => {
-      setMounted(false)
-      setContainer(null)
-    }
-  }, [])
-
-  if (!mounted || !container) return null
-
-  return <DialogPrimitive.Portal container={container} data-slot="dialog-portal" {...props} />
+  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
 function DialogClose({
@@ -71,44 +54,22 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
-  // Add ref for cleanup tracking
-  const contentRef = React.useRef<HTMLDivElement>(null)
-  
-  // Cleanup on unmount
-  React.useEffect(() => {
-    return () => {
-      // Ensure any pending animations are cleared
-      if (contentRef.current) {
-        contentRef.current.style.animation = 'none'
-      }
-    }
-  }, [])
-  
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
-        ref={contentRef}
         data-slot="dialog-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] max-h-[calc(100vh-4rem)] translate-x-[-50%] translate-y-[-50%] gap-0 rounded-lg border shadow-lg duration-200 sm:max-w-lg",
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
           className
         )}
-        onEscapeKeyDown={(e) => {
-          // Allow escape key to close
-          e.stopPropagation()
-        }}
-        onPointerDownOutside={(e) => {
-          // Prevent closing when clicking outside during deletion
-          e.preventDefault()
-        }}
         {...props}
       >
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 z-10"
+            className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
             <XIcon />
             <span className="sr-only">Close</span>
@@ -123,7 +84,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left p-6 border-b", className)}
+      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
       {...props}
     />
   )
@@ -134,7 +95,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end p-6 border-t",
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
         className
       )}
       {...props}

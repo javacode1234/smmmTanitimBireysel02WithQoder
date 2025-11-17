@@ -28,6 +28,7 @@ interface EditBusinessModalProps {
   customerId: string
   initialData: {
     ledgerType: string | null
+    hasEmployees: boolean | null
     subscriptionFee: string | null
     establishmentDate: string | null
     taxPeriodType: string | null
@@ -38,6 +39,7 @@ interface EditBusinessModalProps {
 
 export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initialData }: EditBusinessModalProps) {
   const [ledgerType, setLedgerType] = useState("")
+  const [hasEmployees, setHasEmployees] = useState<boolean>(false)
   const [subscriptionFee, setSubscriptionFee] = useState("")
   const [establishmentDate, setEstablishmentDate] = useState("")
   const [taxPeriodType, setTaxPeriodType] = useState("")
@@ -48,6 +50,7 @@ export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initial
   useEffect(() => {
     if (isOpen && initialData) {
       setLedgerType(initialData.ledgerType || "")
+      setHasEmployees(initialData.hasEmployees || false)
       setSubscriptionFee(initialData.subscriptionFee || "")
       setEstablishmentDate(initialData.establishmentDate ? initialData.establishmentDate.split('T')[0] : "")
       setTaxPeriodType(initialData.taxPeriodType || "")
@@ -64,6 +67,7 @@ export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initial
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           ledgerType, 
+          hasEmployees,
           subscriptionFee, 
           establishmentDate: establishmentDate || null, 
           taxPeriodType: taxPeriodType || null,
@@ -74,7 +78,7 @@ export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initial
 
       if (response.ok) {
         toast.success("İş bilgileri güncellendi")
-        onSave({ ledgerType, subscriptionFee, establishmentDate, taxPeriodType, status, onboardingStage })
+        onSave({ ledgerType, hasEmployees, subscriptionFee, establishmentDate, taxPeriodType, status, onboardingStage })
         onClose()
       } else {
         toast.error("Güncelleme başarısız")
@@ -110,6 +114,34 @@ export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initial
                 <SelectItem value="Serbest Meslek Kazanç Defteri">Serbest Meslek Kazanç Defteri</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="hasEmployees">Sigortalı Çalışan</Label>
+            <div className="flex gap-4 mt-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  id="hasEmployeesYes"
+                  name="hasEmployees"
+                  checked={hasEmployees === true}
+                  onChange={() => setHasEmployees(true)}
+                  className="h-4 w-4 text-blue-600"
+                />
+                <Label htmlFor="hasEmployeesYes" className="cursor-pointer">Var</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  id="hasEmployeesNo"
+                  name="hasEmployees"
+                  checked={hasEmployees === false}
+                  onChange={() => setHasEmployees(false)}
+                  className="h-4 w-4 text-blue-600"
+                />
+                <Label htmlFor="hasEmployeesNo" className="cursor-pointer">Yok</Label>
+              </div>
+            </div>
           </div>
 
           <div>

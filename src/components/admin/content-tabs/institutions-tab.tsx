@@ -58,38 +58,169 @@ const DEFAULT_SECTION: SectionData = {
 }
 
 const DEFAULT_INSTITUTIONS: Omit<Institution, 'id'>[] = [
+  // Government Ministries
   {
-    name: "TOBB",
-    description: "Türkiye Odalar ve Borsalar Birliği",
-    url: "https://www.tobb.org.tr",
-    logo: "",
+    name: "Cumhurbaşkanlığı",
+    description: "Türkiye Cumhurbaşkanlığı",
+    url: "https://www.tccb.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmMDAwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlRDN0I8L3RleHQ+PC9zdmc+",
     isActive: true,
     order: 0,
   },
   {
-    name: "TÜRMÖB",
-    description: "Türkiye Serbest Muhasebeci Mali Müşavirler ve Yeminli Mali Müşavirler Odaları Birliği",
-    url: "https://www.turmob.org.tr",
-    logo: "",
+    name: "TBMM",
+    description: "Türkiye Büyük Millet Meclisi",
+    url: "https://www.tbmm.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwNjZmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlRCTU08L3RleHQ+PC9zdmc+",
     isActive: true,
     order: 1,
   },
   {
-    name: "GIB",
-    description: "Gelir İdaresi Başkanlığı",
-    url: "https://www.gib.gov.tr",
-    logo: "",
+    name: "Cumhurbaşkanlığı Hükümet Konağı",
+    description: "Cumhurbaşkanlığı Hükümet Konağı",
+    url: "https://www.cih.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNjYwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkNISzwvdGV4dD48L3N2Zz4=",
     isActive: true,
     order: 2,
+  },
+  {
+    name: "Adalet Bakanlığı",
+    description: "Türkiye Adalet Bakanlığı",
+    url: "https://www.adalet.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzY2ZmY2NiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkFEQTwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 3,
+  },
+  {
+    name: "İçişleri Bakanlığı",
+    description: "Türkiye İçişleri Bakanlığı",
+    url: "https://www.icisleri.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNjZmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPklDSTwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 4,
+  },
+  {
+    name: "Dışişleri Bakanlığı",
+    description: "Türkiye Dışişleri Bakanlığı",
+    url: "https://www.disisleri.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwNjZmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkRJUzwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 5,
+  },
+  {
+    name: "Hazine ve Maliye Bakanlığı",
+    description: "Türkiye Hazine ve Maliye Bakanlığı",
+    url: "https://www.hmb.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzY2ZmY2NiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkhNQjwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 6,
+  },
+  {
+    name: "Milli Savunma Bakanlığı",
+    description: "Türkiye Milli Savunma Bakanlığı",
+    url: "https://www.msb.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmMDAwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPk1TQjwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 7,
+  },
+  {
+    name: "EĞİTİM Bakanlığı",
+    description: "Türkiye Milli Eğitim Bakanlığı",
+    url: "https://www.meb.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwNjZmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPk1FQjwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 8,
+  },
+  {
+    name: "Sağlık Bakanlığı",
+    description: "Türkiye Sağlık Bakanlığı",
+    url: "https://www.saglik.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNjZmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlNBRzwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 9,
+  },
+  
+  // Regulatory Bodies and Public Institutions
+  {
+    name: "TOBB",
+    description: "Türkiye Odalar ve Borsalar Birliği",
+    url: "https://www.tobb.org.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwNjZmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlRPQkI8L3RleHQ+PC9zdmc+",
+    isActive: true,
+    order: 10,
+  },
+  {
+    name: "TÜRMOB",
+    description: "Türkiye Serbest Muhasebeci Mali Müşavirler ve Yeminli Mali Müşavirler Odaları Birliği",
+    url: "https://www.turmob.org.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNjYwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlTFnFJNT8SwQjwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 11,
+  },
+  {
+    name: "GİB",
+    description: "Gelir İdaresi Başkanlığı",
+    url: "https://www.gib.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzY2ZmY2NiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkdJQjwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 12,
   },
   {
     name: "SGK",
     description: "Sosyal Güvenlik Kurumu",
     url: "https://www.sgk.gov.tr",
-    logo: "",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNjZmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlNHSzwvdGV4dD48L3N2Zz4=",
     isActive: true,
-    order: 3,
+    order: 13,
   },
+  {
+    name: "e-Devlet",
+    description: "Türkiye Cumhuriyeti e-Devlet Kapısı",
+    url: "https://www.turkiye.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmMDAwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkVEVjwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 14,
+  },
+  {
+    name: "Merkez Bankası",
+    description: "Türkiye Cumhuriyet Merkez Bankası",
+    url: "https://www.tcmb.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwNjZmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlRDQk08L3RleHQ+PC9zdmc+",
+    isActive: true,
+    order: 15,
+  },
+  {
+    name: "BDDK",
+    description: "Bankacılık Düzenleme ve Denetleme Kurumu",
+    url: "https://www.bddk.org.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNjYwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkJERDwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 16,
+  },
+  {
+    name: "TKB",
+    description: "Tasarruf Mevduatı Sigorta Fonu",
+    url: "https://www.tkb.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzY2ZmY2NiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlRLQjwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 17,
+  },
+  {
+    name: "TİKA",
+    description: "Türk İşbirliği ve Koordinasyon Ajansı Başkanlığı",
+    url: "https://www.tika.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmMDAwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlRJS0E8L3RleHQ+PC9zdmc+",
+    isActive: true,
+    order: 18,
+  },
+  {
+    name: "YÖK",
+    description: "Yükseköğretim Kurulu Başkanlığı",
+    url: "https://www.yok.gov.tr",
+    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwNjZmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPllPSzwvdGV4dD48L3N2Zz4=",
+    isActive: true,
+    order: 19,
+  }
 ]
 
 export function InstitutionsTab() {
@@ -116,6 +247,11 @@ export function InstitutionsTab() {
     isActive: true,
     order: 0,
   })
+  
+  // Debug effect to log items changes
+  useEffect(() => {
+    console.log('Items state changed:', items)
+  }, [items])
   
   // Pagination and filtering states
   const [currentPage, setCurrentPage] = useState(1)
@@ -201,7 +337,8 @@ export function InstitutionsTab() {
     // Calculate pagination
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
-    return filtered.slice(startIndex, endIndex)
+    const result = filtered.slice(startIndex, endIndex)
+    return result
   }, [items, currentPage, itemsPerPage, searchTerm, statusFilter])
 
   // Calculate total pages
@@ -214,7 +351,8 @@ export function InstitutionsTab() {
                            (statusFilter === "inactive" && !item.isActive)
       return matchesSearch && matchesStatus
     })
-    return Math.ceil(filtered.length / itemsPerPage)
+    const pages = Math.ceil(filtered.length / itemsPerPage)
+    return pages
   }, [items, searchTerm, statusFilter, itemsPerPage])
 
   // Reset to first page when filters change
@@ -380,13 +518,30 @@ export function InstitutionsTab() {
   }
 
   // Reset to default
-  const handleReset = () => {
-    setSectionData(DEFAULT_SECTION)
-    setItems(DEFAULT_INSTITUTIONS.map((inst, idx) => ({
-      id: `temp-${idx}`,
-      ...inst
-    })))
-    toast.success('Varsayılan değerlere sıfırlandı (Kaydet butonuna basın)')
+  const handleReset = async () => {
+    try {
+      // 1. Reset section to default
+      setSectionData(DEFAULT_SECTION)
+      
+      // 2. Delete all institutions from database
+      await fetch('/api/content/institutions/reset', {
+        method: 'DELETE',
+      })
+      
+      // 3. Set items to default values (these will be shown on homepage)
+      setItems(DEFAULT_INSTITUTIONS.map((inst, idx) => ({
+        id: `temp-${idx}`,
+        ...inst
+      })))
+      
+      // 4. Mark database as empty so save defaults button becomes active
+      setIsDatabaseEmpty(true)
+      
+      toast.success('Varsayılan değerlere sıfırlandı')
+    } catch (error) {
+      console.error('Error resetting:', error)
+      toast.error('Sıfırlama sırasında bir hata oluştu')
+    }
     setIsResetDialogOpen(false)
   }
 
@@ -420,6 +575,8 @@ export function InstitutionsTab() {
       }
 
       toast.success('Varsayılan değerler veritabanına kaydedildi!')
+      // Set isDatabaseEmpty to false to make the button inactive
+      setIsDatabaseEmpty(false)
       await fetchData()
     } catch (error) {
       console.error('Error saving defaults:', error)
@@ -733,7 +890,7 @@ export function InstitutionsTab() {
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Varsayılan Değerleri Veritabanına Kaydet {!isDatabaseEmpty && '(Zaten kayıtlı)'}
+                Varsayılan Değerleri Veritabanına Kaydet
               </>
             )}
           </Button>

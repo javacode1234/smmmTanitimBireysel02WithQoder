@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Fragment } from "react"
+import { useState, useEffect, Fragment, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
@@ -50,8 +50,42 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize] = useState(5)
+  const pageSize = 10
+  
+  // Year options for select
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear()
+    return [currentYear - 1, currentYear, currentYear + 1].map(String)
+  }, [])
 
+  const formatPeriod = (tr: TaxReturn) => {
+    const t = tr.type.toLowerCase()
+    const due = new Date(tr.dueDate)
+    if (t.includes('aylık') || t.includes('kdv') || t.includes('damga')) {
+      const y = due.getFullYear()
+      const m = due.getMonth() + 1
+      const prevDate = new Date(y, m - 2, 1)
+      const py = prevDate.getFullYear()
+      const pm = String(prevDate.getMonth() + 1).padStart(2, '0')
+      return `${py}-${pm}`
+    }
+    if (tr.period.includes('Q')) {
+      const parts = tr.period.split('-Q')
+      if (parts.length === 2) {
+        return `${parts[0]}-${parts[1]}`
+      }
+    }
+    if (t.includes('geçici') || t.includes('3 aylık')) {
+      const dm = due.getMonth() + 1
+      const map: any = { 5: 1, 8: 2, 11: 3, 2: 4 }
+      const q = map[dm] || null
+      const dy = due.getFullYear()
+      const displayYear = dm === 2 ? dy - 1 : dy
+      if (q) return `${displayYear}-${q}`
+    }
+    return tr.period
+  }
+  
   useEffect(() => {
     fetchTaxReturns()
   }, [customerId, yearFilter, monthFilter, typeFilter, statusFilter])
@@ -60,41 +94,42 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
     setCurrentPage(1) // Reset to first page when filters change
   }, [yearFilter, monthFilter, typeFilter, statusFilter])
 
+  // Fetch tax returns with current filters
   const fetchTaxReturns = async () => {
     setLoading(true)
     try {
+      // Build query parameters
       const params = new URLSearchParams()
-      params.set('customerId', customerId)
+      params.append('customerId', customerId)
       
-      // Year filter - filter by period year
-      if (yearFilter !== "all") {
-        params.set('year', yearFilter)
+      // Use year and month filters separately
+      if (monthFilter !== 'all') {
+        const [y, m] = monthFilter.split('-')
+        params.append('dueDateYear', y)
+        params.append('dueDateMonth', m)
+      } else if (yearFilter !== 'all') {
+        params.append('year', yearFilter)
       }
       
-      // Month filter - filter by due date month
-      if (monthFilter !== "all") {
-        params.set('dueDateYear', yearFilter)
-        params.set('dueDateMonth', (parseInt(monthFilter) + 1).toString()) // +1 because filter is 0-11, but API expects 1-12
+      if (typeFilter !== 'all') {
+        params.append('type', typeFilter)
       }
       
-      if (typeFilter !== "all") {
-        params.set('type', typeFilter)
+      if (statusFilter !== 'all') {
+        params.append('isSubmitted', statusFilter === 'submitted' ? 'true' : 'false')
       }
-      
-      if (statusFilter !== "all") {
-        params.set('isSubmitted', statusFilter === 'submitted' ? 'true' : 'false')
-      }
-      
-      const res = await fetch(`/api/tax-returns?${params.toString()}`)
-      if (res.ok) {
-        const data = await res.json()
+
+      const response = await fetch(`/api/tax-returns?${params.toString()}`)
+      if (response.ok) {
+        const data = await response.json()
         setTaxReturns(data)
+        setCurrentPage(1)
       } else {
-        toast.error('Beyannameler yüklenirken hata oluştu')
+        toast.error('Beyannameler alınamadı')
       }
-    } catch (e) {
-      console.error(e)
-      toast.error('Beyannameler yüklenirken hata oluştu')
+    } catch (error) {
+      console.error('Error fetching tax returns:', error)
+      toast.error('Beyannameler alınamadı')
     } finally {
       setLoading(false)
     }
@@ -167,7 +202,24 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
   }
 
   // Get unique types from tax returns
-  const availableTypes = Array.from(new Set(taxReturns.map(tr => tr.type)))
+  const [availableTypes, setAvailableTypes] = useState<string[]>([])
+
+  useEffect(() => {
+    const loadTypes = async () => {
+      try {
+        const res = await fetch(`/api/customer-declaration-settings?customerId=${customerId}`)
+        if (res.ok) {
+          const data = await res.json()
+          const types = data.filter((d: any) => d.enabled).map((d: any) => d.type)
+          if (types.length > 0) {
+            setAvailableTypes(Array.from(new Set(types)))
+            return
+          }
+        }
+      } catch {}
+    }
+    loadTypes()
+  }, [customerId])
 
   // Pagination
   const totalPages = Math.ceil(taxReturns.length / pageSize)
@@ -179,11 +231,36 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)))
   }
 
-  const yearOptions = [
-    (new Date().getFullYear() - 1).toString(),
-    new Date().getFullYear().toString(),
-    (new Date().getFullYear() + 1).toString()
+  // Status options for select
+  const statusOptions = [
+    { value: "all", label: "Tümü" },
+    { value: "pending", label: "Bekliyor" },
+    { value: "submitted", label: "Verildi" },
+    { value: "overdue", label: "Gecikmiş" }
   ]
+
+  // Generate period options for the last 2 years
+  const periodOptions = useMemo(() => {
+    const options = []
+    const currentYear = new Date().getFullYear()
+    
+    // Generate periods for current year and previous year
+    for (let year = currentYear - 1; year <= currentYear + 1; year++) {
+      // Add monthly periods only
+      for (let month = 1; month <= 12; month++) {
+        const monthNames = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
+                           'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
+        options.push({
+          value: `${year}-${String(month).padStart(2, '0')}`,
+          label: monthNames[month], // Sadece ay ismi
+          year: year,
+          month: month
+        })
+      }
+    }
+    
+    return options
+  }, [])
 
   return (
     <div className="space-y-4">
@@ -209,13 +286,13 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="w-32">
-          <Label className="text-xs">Yıl</Label>
+      {/* Filters - Converted to comboboxes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <Label htmlFor="year-filter" className="text-xs mb-1 block">Yıl</Label>
           <Select value={yearFilter} onValueChange={setYearFilter}>
-            <SelectTrigger className="h-9">
-              <SelectValue />
+            <SelectTrigger id="year-filter" className="h-9">
+              <SelectValue placeholder="Yıl seçiniz" />
             </SelectTrigger>
             <SelectContent>
               {yearOptions.map(year => (
@@ -225,35 +302,29 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
           </Select>
         </div>
 
-        <div className="w-40">
-          <Label className="text-xs">Ay (Verilme Ayı)</Label>
+        <div>
+          <Label htmlFor="period-filter" className="text-xs mb-1 block">Ay</Label>
           <Select value={monthFilter} onValueChange={setMonthFilter}>
-            <SelectTrigger className="h-9">
-              <SelectValue />
+            <SelectTrigger id="period-filter" className="h-9">
+              <SelectValue placeholder="Ay seçiniz" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tüm Aylar</SelectItem>
-              <SelectItem value="0">Ocak</SelectItem>
-              <SelectItem value="1">Şubat</SelectItem>
-              <SelectItem value="2">Mart</SelectItem>
-              <SelectItem value="3">Nisan</SelectItem>
-              <SelectItem value="4">Mayıs</SelectItem>
-              <SelectItem value="5">Haziran</SelectItem>
-              <SelectItem value="6">Temmuz</SelectItem>
-              <SelectItem value="7">Ağustos</SelectItem>
-              <SelectItem value="8">Eylül</SelectItem>
-              <SelectItem value="9">Ekim</SelectItem>
-              <SelectItem value="10">Kasım</SelectItem>
-              <SelectItem value="11">Aralık</SelectItem>
+              {periodOptions
+                .filter(period => period.value.startsWith(yearFilter))
+                .map(period => (
+                  <SelectItem key={period.value} value={period.value}>{period.label}</SelectItem>
+                ))
+              }
             </SelectContent>
           </Select>
         </div>
 
-        <div className="flex-1 min-w-[200px]">
-          <Label className="text-xs">Beyanname Türü</Label>
+        <div>
+          <Label htmlFor="type-filter" className="text-xs mb-1 block">Beyanname Türü</Label>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-9">
-              <SelectValue />
+            <SelectTrigger id="type-filter" className="h-9">
+              <SelectValue placeholder="Tür seçiniz" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tüm Beyannameler</SelectItem>
@@ -264,17 +335,16 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
           </Select>
         </div>
 
-        <div className="w-40">
-          <Label className="text-xs">Durum</Label>
+        <div>
+          <Label htmlFor="status-filter" className="text-xs mb-1 block">Durum</Label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-9">
-              <SelectValue />
+            <SelectTrigger id="status-filter" className="h-9">
+              <SelectValue placeholder="Durum seçiniz" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tümü</SelectItem>
-              <SelectItem value="pending">Bekliyor</SelectItem>
-              <SelectItem value="submitted">Verildi</SelectItem>
-              <SelectItem value="overdue">Gecikmiş</SelectItem>
+              {statusOptions.map(status => (
+                <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -308,7 +378,7 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
                       {taxReturn.type}
                     </div>
                   </TableCell>
-                  <TableCell>{taxReturn.period}</TableCell>
+                  <TableCell>{formatPeriod(taxReturn)}</TableCell>
                   <TableCell>
                     {new Date(taxReturn.dueDate).toLocaleDateString('tr-TR', {
                       year: 'numeric',

@@ -209,8 +209,10 @@ async function main() {
     { type: 'KDV', frequency: 'MONTHLY', enabled: true, dueDay: 26 },
     { type: 'Muhtasar SGK (Aylık)', frequency: 'MONTHLY', enabled: true, dueDay: 26 },
     { type: 'Muhtasar SGK (3 Aylık)', frequency: 'QUARTERLY', enabled: true, quarterOffset: 1 },
-    { type: 'GGV/KGV', frequency: 'MONTHLY', enabled: true, dueDay: 26 },
-    { type: 'Yıllık GV/KV', frequency: 'YEARLY', enabled: true, dueMonth: 3, dueDay: 25 },
+    { type: 'Gelir Geçici Vergi', frequency: 'QUARTERLY', enabled: true, dueDay: 17, quarterOffset: 2, skipQuarter: true },
+    { type: 'Kurumlar Geçici Vergi', frequency: 'QUARTERLY', enabled: true, dueDay: 17, quarterOffset: 2, skipQuarter: true },
+    { type: 'Yıllık Gelir Vergisi', frequency: 'YEARLY', enabled: true, dueMonth: 3, dueDay: 25 },
+    { type: 'Yıllık Kurumlar Vergisi', frequency: 'YEARLY', enabled: true, dueMonth: 4, dueDay: 30 },
     { type: 'Damga Vergisi', frequency: 'MONTHLY', enabled: true, dueDay: 26 },
   ]
   for (const d of defaults) {

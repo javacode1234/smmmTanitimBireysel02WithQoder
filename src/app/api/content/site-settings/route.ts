@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/db'
+import { randomUUID } from 'crypto'
 
 // Default values
 const DEFAULT_SETTINGS = {
@@ -18,7 +19,7 @@ const DEFAULT_SETTINGS = {
 
 export async function GET() {
   try {
-    const settings = await prisma.siteSettings.findFirst()
+    const settings = await prisma.sitesettings.findFirst()
     
     // Kayıt yoksa null dön (otomatik oluşturma)
     if (!settings) {
@@ -44,11 +45,11 @@ export async function GET() {
 export async function DELETE() {
   try {
     // Get existing settings
-    const existing = await prisma.siteSettings.findFirst()
+    const existing = await prisma.sitesettings.findFirst()
     
     if (existing) {
       // Delete the settings
-      await prisma.siteSettings.delete({
+      await prisma.sitesettings.delete({
         where: { id: existing.id }
       })
     }
@@ -72,13 +73,13 @@ export async function POST(request: NextRequest) {
     console.log('Received data:', JSON.stringify(data, null, 2))
 
     // Get existing settings first
-    const existing = await prisma.siteSettings.findFirst()
+    const existing = await prisma.sitesettings.findFirst()
     console.log('Existing record:', existing ? existing.id : 'none')
 
     let settings
     if (existing) {
       // Update existing record
-      settings = await prisma.siteSettings.update({
+      settings = await prisma.sitesettings.update({
         where: { id: existing.id },
         data: {
           siteName: data.siteName,
@@ -102,8 +103,9 @@ export async function POST(request: NextRequest) {
       console.log('Updated successfully')
     } else {
       // Create new record
-      settings = await prisma.siteSettings.create({
+      settings = await prisma.sitesettings.create({
         data: {
+          id: crypto.randomUUID(),
           siteName: data.siteName || 'SMMM Ofisi',
           siteDescription: data.siteDescription,
           favicon: data.favicon,
@@ -120,6 +122,8 @@ export async function POST(request: NextRequest) {
           instagramUrl: data.instagramUrl,
           youtubeUrl: data.youtubeUrl,
           threadsUrl: data.threadsUrl,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       })
       console.log('Created successfully')
