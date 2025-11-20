@@ -132,13 +132,16 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
     
     setIsNavigating(true)
     
-    // Use window.location.href for consistent navigation
-    window.location.href = targetPath
+    // Use Next.js router for navigation to avoid removeChild errors
+    router.push(targetPath)
+    
+    // Reset navigation state after a short delay
+    setTimeout(() => setIsNavigating(false), 100)
   }
 
   const handleLogout = () => {
     setIsOpen(false)
-    window.location.href = '/auth/signin'
+    router.push('/auth/signin')
   }
 
   const profileLink = userType === "admin" ? "/admin/profile" : "/client/profile"

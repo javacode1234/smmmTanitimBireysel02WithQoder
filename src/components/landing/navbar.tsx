@@ -190,6 +190,14 @@ export function Navbar() {
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
             <Link 
+              href="#mevzuat" 
+              className="text-sm font-medium hover:text-primary transition-all duration-300 relative group"
+              onClick={(e) => handleAnchorClick(e, '#mevzuat')}
+            >
+              <span>Mevzuat</span>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
+            </Link>
+            <Link 
               href="#contact" 
               className="text-sm font-medium hover:text-primary transition-all duration-300 relative group"
               onClick={(e) => handleAnchorClick(e, '#contact')}
@@ -293,6 +301,13 @@ export function Navbar() {
               onClick={(e) => handleAnchorClick(e, '#faq')}
             >
               SSS
+            </Link>
+            <Link 
+              href="#mevzuat" 
+              className="block text-sm font-medium hover:text-primary transition-colors" 
+              onClick={(e) => handleAnchorClick(e, '#mevzuat')}
+            >
+              Mevzuat
             </Link>
             <Link 
               href="#contact" 

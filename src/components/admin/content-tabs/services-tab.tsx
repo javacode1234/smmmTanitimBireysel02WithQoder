@@ -215,12 +215,34 @@ export function ServicesTab() {
     fetchServices()
     fetchSectionData()
     
+    // Listen for close-all-dialogs event
+    const handleCloseAllDialogs = () => {
+      // Use setTimeout to ensure the DOM is ready for cleanup
+      setTimeout(() => {
+        setIsDialogOpen(false)
+        setIsDeleteDialogOpen(false)
+        setIsResetDialogOpen(false)
+        setIsValueDialogOpen(false)
+        setIsDeleteValueDialogOpen(false)
+      }, 0)
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('close-all-dialogs', handleCloseAllDialogs)
+    }
+    
     return () => {
+      // Ensure dialogs are closed before unmounting
       setIsDialogOpen(false)
       setIsDeleteDialogOpen(false)
       setIsResetDialogOpen(false)
       setIsValueDialogOpen(false)
       setIsDeleteValueDialogOpen(false)
+      
+      // Remove event listener
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('close-all-dialogs', handleCloseAllDialogs)
+      }
     }
   }, [])
 

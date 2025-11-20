@@ -22,8 +22,6 @@ import {
 } from "@/components/ui/select"
 import { Search, RefreshCw, UserPlus, /* Edit, */ Trash2, Eye, Building2, Copy } from "lucide-react"
 import { toast } from "sonner"
-// Removed CustomerModal import since we're no longer using the modal
-// import { CustomerModal } from "@/components/admin/customer-modal"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import Image from "next/image"
 
@@ -79,22 +77,37 @@ export default function CustomersPage() {
   const [itemsPerPage, setItemsPerPage] = useState(5)
   const [currentPage, setCurrentPage] = useState(1)
 
-  // Removed modal states since we're no longer using the modal
-  // const [isModalOpen, setIsModalOpen] = useState(false)
-  // const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null)
 
   useEffect(() => {
     setIsMounted(true)
     
+    // Listen for close-all-dialogs event
+    const handleCloseAllDialogs = () => {
+      // Use setTimeout to ensure the DOM is ready for cleanup
+      setTimeout(() => {
+        setIsDeleteDialogOpen(false)
+        setCustomerToDelete(null)
+        setIsNavigating(false)
+      }, 0)
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('close-all-dialogs', handleCloseAllDialogs)
+    }
+    
     // Cleanup: Close all modals and reset navigation on unmount to prevent DOM errors
     return () => {
+      // Ensure dialogs are closed before unmounting
       setIsNavigating(false)
-      // setIsModalOpen(false) - removed since we're no longer using the modal
       setIsDeleteDialogOpen(false)
-      // setSelectedCustomer(null) - removed since we're no longer using the modal
       setCustomerToDelete(null)
+      
+      // Remove event listener
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('close-all-dialogs', handleCloseAllDialogs)
+      }
     }
   }, [])
 
@@ -180,58 +193,51 @@ export default function CustomersPage() {
     setIsDeleteDialogOpen(false)
     setCustomerToDelete(null)
     
-    // Navigate to new customer page
-    router.push('/admin/customers/new')
+    // Dispatch event to close any open dialogs across the app
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('close-all-dialogs'))
+    }
+    
+    // Use setTimeout to ensure DOM cleanup before navigation
+    setTimeout(() => {
+      router.push('/admin/customers/new')
+    }, 80)
   }
-
-  // Removed handleEditCustomer function since we're no longer using the modal
-  /*
-  const handleEditCustomer = (customer: Customer) => {
-    setSelectedCustomer(customer)
-    setIsModalOpen(true)
-  }
-  */
 
   const handleViewCustomer = (customerId: string) => {
     if (isNavigating) return // Prevent multiple navigation attempts
     
-    setIsNavigating(true)
-    
     // Close all modals before navigation
-    // setIsModalOpen(false) - removed since we're no longer using the modal
     setIsDeleteDialogOpen(false)
+    setCustomerToDelete(null)
     
-    // Delay to ensure modals are fully closed before navigation
-    setTimeout(() => {
-      // setSelectedCustomer(null) - removed since we're no longer using the modal
-      setCustomerToDelete(null)
-    }, 50)
+    // Dispatch event to close any open dialogs across the app
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('close-all-dialogs'))
+    }
     
-    // Navigate after modal cleanup
+    // Use setTimeout to ensure DOM cleanup before navigation
     setTimeout(() => {
-      window.location.href = `/admin/customers/${customerId}`
-    }, 100)
+      router.push(`/admin/customers/${customerId}`)
+    }, 80)
   }
 
   const handleRowDoubleClick = (customerId: string) => {
     if (isNavigating) return // Prevent multiple navigation attempts
     
-    setIsNavigating(true)
-    
     // Close all modals before navigation
-    // setIsModalOpen(false) - removed since we're no longer using the modal
     setIsDeleteDialogOpen(false)
+    setCustomerToDelete(null)
     
-    // Delay to ensure modals are fully closed
-    setTimeout(() => {
-      // setSelectedCustomer(null) - removed since we're no longer using the modal
-      setCustomerToDelete(null)
-    }, 50)
+    // Dispatch event to close any open dialogs across the app
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('close-all-dialogs'))
+    }
     
-    // Navigate after modal cleanup
+    // Use setTimeout to ensure DOM cleanup before navigation
     setTimeout(() => {
-      window.location.href = `/admin/customers/${customerId}`
-    }, 100)
+      router.push(`/admin/customers/${customerId}`)
+    }, 80)
   }
 
   const confirmDelete = (customer: Customer) => {
@@ -261,44 +267,6 @@ export default function CustomersPage() {
       toast.error('Müşteri silinemedi')
     }
   }
-
-  // Removed handleModalClose function since we're no longer using the modal
-  /*
-  const handleModalClose = () => {
-    // Prevent any state updates if component is unmounting or navigating
-    if (isNavigating) return
-    
-    setIsModalOpen(false)
-    // Small delay before clearing customer to allow modal to close properly
-    setTimeout(() => {
-      if (!isNavigating) {
-        setSelectedCustomer(null)
-      }
-    }, 150)
-  }
-  */
-
-  // Removed handleModalSave function since we're no longer using the modal
-  /*
-  const handleModalSave = () => {
-    // Prevent any state updates if component is unmounting or navigating
-    if (isNavigating) return
-    
-    console.log('Modal saved, fetching customers...')
-    setIsModalOpen(false)
-    setSelectedCustomer(null)
-    setSearchTerm("") // Clear search to show all customers
-    setStatusFilter("all") // Reset filters
-    setStageFilter("all")
-    setCurrentPage(1) // Go to first page
-    // Small delay before fetching to ensure modal is fully closed
-    setTimeout(() => {
-      if (!isNavigating) {
-        fetchCustomers()
-      }
-    }, 150)
-  }
-  */
 
   return (
     <div suppressHydrationWarning>
@@ -500,21 +468,6 @@ export default function CustomersPage() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {/* Removed Edit button since we're no longer using the modal */}
-                            {/**
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (!isNavigating) handleEditCustomer(c)
-                              }}
-                              disabled={isNavigating}
-                              title="Düzenle"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            */}
                             <Button
                               variant="outline"
                               size="icon"
@@ -579,35 +532,20 @@ export default function CustomersPage() {
         </CardContent>
       </Card>
 
-      {/* Modals - Only render when mounted and not navigating */}
-      {isMounted && !isNavigating && (
-        <>
-          {/* Removed CustomerModal since we're no longer using the modal */}
-          {/**
-          <CustomerModal
-            customer={selectedCustomer}
-            isOpen={isModalOpen}
-            onClose={handleModalClose}
-            onSave={handleModalSave}
-          />
-          */}
-
-          {/* Delete Confirmation Dialog */}
-          <DeleteConfirmationDialog
-            isOpen={isDeleteDialogOpen}
-            onClose={() => {
-              setIsDeleteDialogOpen(false)
-              // Delay clearing state to prevent DOM errors
-              setTimeout(() => {
-                setCustomerToDelete(null)
-              }, 150)
-            }}
-            onConfirm={() => customerToDelete && handleDelete(customerToDelete.id)}
-            title="Müşteriyi Sil"
-            description={customerToDelete ? `"${customerToDelete.companyName}" şirketini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.` : undefined}
-          />
-        </>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false)
+          // Delay clearing state to prevent DOM errors
+          setTimeout(() => {
+            setCustomerToDelete(null)
+          }, 150)
+        }}
+        onConfirm={() => customerToDelete && handleDelete(customerToDelete.id)}
+        title="Müşteriyi Sil"
+        description={customerToDelete ? `"${customerToDelete.companyName}" şirketini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.` : undefined}
+      />
     </div>
   )
 }

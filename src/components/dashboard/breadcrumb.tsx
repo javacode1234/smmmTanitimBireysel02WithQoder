@@ -27,6 +27,7 @@ export function Breadcrumb({ userType }: BreadcrumbProps) {
     content: "İçerik Yönetimi",
     clients: "Müşteriler",
     customers: "Müşteriler",
+    new: "Yeni Müşteri",
     declarations: "Beyannameler",
     announcements: "Duyurular",
     collections: "Tahsilat",
@@ -65,8 +66,11 @@ export function Breadcrumb({ userType }: BreadcrumbProps) {
     
     setIsNavigating(true)
     
-    // Use window.location.href for consistent navigation
-    window.location.href = targetPath
+    // Use Next.js router for navigation to avoid removeChild errors
+    router.push(targetPath)
+    
+    // Reset navigation state after a short delay
+    setTimeout(() => setIsNavigating(false), 100)
   }
 
   return (

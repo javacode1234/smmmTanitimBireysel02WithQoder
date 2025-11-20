@@ -106,7 +106,14 @@ export default function TaxReturnsPage() {
       const res = await fetch('/api/customers')
       if (res.ok) {
         const data = await res.json()
-        setCustomers(data)
+        // API returns { items: [...], total, page, pageSize }
+        // Set customers state with the items array
+        if (data.items && Array.isArray(data.items)) {
+          setCustomers(data.items)
+        } else {
+          // Fallback: if data is directly an array
+          setCustomers(Array.isArray(data) ? data : [])
+        }
       }
     } catch (e) {
       console.error(e)

@@ -35,16 +35,6 @@ export function DeleteConfirmationDialog({
     ? `"${itemName}" kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`
     : "Bu kaydı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
-  // Cleanup on unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      // Ensure dialog is closed when component unmounts
-      if (isOpen && onClose) {
-        onClose()
-      }
-    }
-  }, [])
-
   // Safe close handler
   const handleClose = () => {
     if (!isDeleting && onClose) {
@@ -59,8 +49,31 @@ export function DeleteConfirmationDialog({
     }
   }
 
+  // Handle escape key and other close events
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !isDeleting) {
+        handleClose()
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', handleKeyDown)
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('keydown', handleKeyDown)
+      }
+    }
+  }, [isOpen, isDeleting])
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open && !isDeleting) {
+        handleClose()
+      }
+    }}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <div className="flex items-center gap-3">

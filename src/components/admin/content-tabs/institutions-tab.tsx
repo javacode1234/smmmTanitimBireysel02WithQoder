@@ -262,11 +262,31 @@ export function InstitutionsTab() {
   useEffect(() => {
     fetchData()
     
+    // Listen for close-all-dialogs event
+    const handleCloseAllDialogs = () => {
+      // Use setTimeout to ensure the DOM is ready for cleanup
+      setTimeout(() => {
+        setIsModalOpen(false)
+        setIsDeleteDialogOpen(false)
+        setIsResetDialogOpen(false)
+      }, 0)
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('close-all-dialogs', handleCloseAllDialogs)
+    }
+    
     // Cleanup function to close dialogs on unmount
     return () => {
+      // Ensure dialogs are closed before unmounting
       setIsModalOpen(false)
       setIsDeleteDialogOpen(false)
       setIsResetDialogOpen(false)
+      
+      // Remove event listener
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('close-all-dialogs', handleCloseAllDialogs)
+      }
     }
   }, [])
 

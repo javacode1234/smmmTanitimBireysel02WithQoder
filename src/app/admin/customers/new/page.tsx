@@ -90,7 +90,7 @@ type Customer = {
   status: "ACTIVE" | "INACTIVE";
   onboardingStage: "LEAD" | "PROSPECT" | "CUSTOMER";
   createdAt: string;
-  taxOffice: string | null;
+  taxOffice: string | null; // ID of the TaxOffice
 };
 
 export default function NewCustomerPage() {
@@ -276,7 +276,7 @@ export default function NewCustomerPage() {
           <CardTitle>Müşteri Bilgileri</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6" id="new-customer-tabs">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="company">Şirket Bilgileri</TabsTrigger>
               <TabsTrigger value="authorized">Yetkili Bilgileri</TabsTrigger>
@@ -394,7 +394,11 @@ export default function NewCustomerPage() {
                       <Label htmlFor="taxOffice">Vergi Dairesi</Label>
                       <TaxOfficeCombobox
                         value={taxOffice}
-                        onValueChange={setTaxOffice}
+                        onValueChange={(value) => {
+                          // Find the tax office ID by name and set it
+                          const selectedOffice = taxOffices.find(office => office.name === value);
+                          setTaxOffice(selectedOffice ? selectedOffice.id : value);
+                        }}
                         taxOffices={taxOffices}
                         placeholder="Vergi dairesi seçin..."
                         searchPlaceholder="Vergi dairesi ara..."
@@ -570,6 +574,7 @@ export default function NewCustomerPage() {
                     value={authorizedTCKN}
                     onChange={(e) => setAuthorizedTCKN(e.target.value)}
                     placeholder="12345678901"
+                    maxLength={11}
                   />
                 </div>
                 <div>
@@ -579,7 +584,7 @@ export default function NewCustomerPage() {
                     type="email"
                     value={authorizedEmail}
                     onChange={(e) => setAuthorizedEmail(e.target.value)}
-                    placeholder="ahmet@firma.com"
+                    placeholder="ahmet.yilmaz@email.com"
                   />
                 </div>
                 <div>
@@ -598,8 +603,7 @@ export default function NewCustomerPage() {
                     value={authorizedAddress}
                     onChange={(e) => setAuthorizedAddress(e.target.value)}
                     placeholder="Mahalle, sokak, bina no, daire no, ilçe, il"
-                    rows={2}
-                    className="min-h-[80px]"
+                    rows={3}
                   />
                 </div>
                 <div>
@@ -612,13 +616,13 @@ export default function NewCustomerPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="authorizationPeriod">Yetki Belgesi Süresi (Yıl)</Label>
+                  <Label htmlFor="authorizationPeriod">Yetki Belgesi Süresi (Ay)</Label>
                   <Input
                     id="authorizationPeriod"
                     type="number"
                     value={authorizationPeriod}
                     onChange={(e) => setAuthorizationPeriod(e.target.value)}
-                    placeholder="5"
+                    placeholder="12"
                     min="1"
                   />
                 </div>
@@ -628,103 +632,163 @@ export default function NewCustomerPage() {
             {/* Social Media */}
             <TabsContent value="social" className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium mb-4">Şirket Sosyal Medya Hesapları</h3>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <h3 className="text-lg font-medium mb-4">Firma Sosyal Medya Hesapları</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="facebookUrl">Facebook</Label>
-                    <Input
-                      id="facebookUrl"
-                      value={facebookUrl}
-                      onChange={(e) => setFacebookUrl(e.target.value)}
-                      placeholder="https://facebook.com/..."
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Facebook className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <Input
+                        id="facebookUrl"
+                        value={facebookUrl}
+                        onChange={(e) => setFacebookUrl(e.target.value)}
+                        placeholder="https://facebook.com/..."
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="xUrl">X (Twitter)</Label>
-                    <Input
-                      id="xUrl"
-                      value={xUrl}
-                      onChange={(e) => setXUrl(e.target.value)}
-                      placeholder="https://x.com/..."
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Twitter className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <Input
+                        id="xUrl"
+                        value={xUrl}
+                        onChange={(e) => setXUrl(e.target.value)}
+                        placeholder="https://x.com/..."
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="linkedinUrl">LinkedIn</Label>
-                    <Input
-                      id="linkedinUrl"
-                      value={linkedinUrl}
-                      onChange={(e) => setLinkedinUrl(e.target.value)}
-                      placeholder="https://linkedin.com/..."
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Linkedin className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <Input
+                        id="linkedinUrl"
+                        value={linkedinUrl}
+                        onChange={(e) => setLinkedinUrl(e.target.value)}
+                        placeholder="https://linkedin.com/..."
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="instagramUrl">Instagram</Label>
-                    <Input
-                      id="instagramUrl"
-                      value={instagramUrl}
-                      onChange={(e) => setInstagramUrl(e.target.value)}
-                      placeholder="https://instagram.com/..."
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Instagram className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <Input
+                        id="instagramUrl"
+                        value={instagramUrl}
+                        onChange={(e) => setInstagramUrl(e.target.value)}
+                        placeholder="https://instagram.com/..."
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="threadsUrl">Threads</Label>
-                    <Input
-                      id="threadsUrl"
-                      value={threadsUrl}
-                      onChange={(e) => setThreadsUrl(e.target.value)}
-                      placeholder="https://threads.net/..."
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <Input
+                        id="threadsUrl"
+                        value={threadsUrl}
+                        onChange={(e) => setThreadsUrl(e.target.value)}
+                        placeholder="https://threads.net/..."
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
               
-              <div className="border-t pt-6">
+              <div>
                 <h3 className="text-lg font-medium mb-4">Yetkili Sosyal Medya Hesapları</h3>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="authorizedFacebookUrl">Facebook</Label>
-                    <Input
-                      id="authorizedFacebookUrl"
-                      value={authorizedFacebookUrl}
-                      onChange={(e) => setAuthorizedFacebookUrl(e.target.value)}
-                      placeholder="https://facebook.com/..."
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Facebook className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <Input
+                        id="authorizedFacebookUrl"
+                        value={authorizedFacebookUrl}
+                        onChange={(e) => setAuthorizedFacebookUrl(e.target.value)}
+                        placeholder="https://facebook.com/..."
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="authorizedXUrl">X (Twitter)</Label>
-                    <Input
-                      id="authorizedXUrl"
-                      value={authorizedXUrl}
-                      onChange={(e) => setAuthorizedXUrl(e.target.value)}
-                      placeholder="https://x.com/..."
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Twitter className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <Input
+                        id="authorizedXUrl"
+                        value={authorizedXUrl}
+                        onChange={(e) => setAuthorizedXUrl(e.target.value)}
+                        placeholder="https://x.com/..."
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="authorizedLinkedinUrl">LinkedIn</Label>
-                    <Input
-                      id="authorizedLinkedinUrl"
-                      value={authorizedLinkedinUrl}
-                      onChange={(e) => setAuthorizedLinkedinUrl(e.target.value)}
-                      placeholder="https://linkedin.com/..."
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Linkedin className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <Input
+                        id="authorizedLinkedinUrl"
+                        value={authorizedLinkedinUrl}
+                        onChange={(e) => setAuthorizedLinkedinUrl(e.target.value)}
+                        placeholder="https://linkedin.com/..."
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="authorizedInstagramUrl">Instagram</Label>
-                    <Input
-                      id="authorizedInstagramUrl"
-                      value={authorizedInstagramUrl}
-                      onChange={(e) => setAuthorizedInstagramUrl(e.target.value)}
-                      placeholder="https://instagram.com/..."
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Instagram className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <Input
+                        id="authorizedInstagramUrl"
+                        value={authorizedInstagramUrl}
+                        onChange={(e) => setAuthorizedInstagramUrl(e.target.value)}
+                        placeholder="https://instagram.com/..."
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="authorizedThreadsUrl">Threads</Label>
-                    <Input
-                      id="authorizedThreadsUrl"
-                      value={authorizedThreadsUrl}
-                      onChange={(e) => setAuthorizedThreadsUrl(e.target.value)}
-                      placeholder="https://threads.net/..."
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <Input
+                        id="authorizedThreadsUrl"
+                        value={authorizedThreadsUrl}
+                        onChange={(e) => setAuthorizedThreadsUrl(e.target.value)}
+                        placeholder="https://threads.net/..."
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

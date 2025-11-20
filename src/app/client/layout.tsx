@@ -54,12 +54,15 @@ export default function ClientLayout({
     
     setIsNavigating(true)
     
-    // Use window.location.href to avoid removeChild errors with sidebar animations
-    window.location.href = targetPath
+    // Use Next.js router for navigation to avoid removeChild errors
+    router.push(targetPath)
+    
+    // Reset navigation state after a short delay
+    setTimeout(() => setIsNavigating(false), 100)
   }
 
   const handleLogout = () => {
-    window.location.href = '/auth/signin'
+    router.push('/auth/signin')
   }
 
   const sidebarWidth = sidebarState === "open" ? "w-64" : sidebarState === "collapsed" ? "w-20" : "w-0"

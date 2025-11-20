@@ -183,6 +183,7 @@ export function Footer() {
               <li><Link href="#pricing" onClick={(e) => handleAnchorClick(e, '#pricing')} className="hover:text-white transition-colors flex items-center gap-2">→ Fiyatlandırma</Link></li>
               <li><Link href="#team" onClick={(e) => handleAnchorClick(e, '#team')} className="hover:text-white transition-colors flex items-center gap-2">→ Ekibimiz</Link></li>
               <li><Link href="#faq" onClick={(e) => handleAnchorClick(e, '#faq')} className="hover:text-white transition-colors flex items-center gap-2">→ SSS</Link></li>
+              <li><Link href="#mevzuat" onClick={(e) => handleAnchorClick(e, '#mevzuat')} className="hover:text-white transition-colors flex items-center gap-2">→ Mevzuat</Link></li>
             </ul>
           </div>
 

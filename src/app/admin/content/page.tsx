@@ -39,13 +39,20 @@ export default function ContentManagementPage() {
     
     setIsChangingTab(true)
     
-    // Longer delay to ensure all dialogs close properly before unmounting
+    // Close all dialogs in all tabs before changing tabs
+    // Dispatch a custom event to notify all tab components to close their dialogs
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('close-all-dialogs'))
+    }
+    
+    // Use setTimeout to ensure DOM cleanup before changing tabs
     setTimeout(() => {
       setActiveTab(newTab)
+      // Additional delay to ensure all cleanup is complete
       setTimeout(() => {
         setIsChangingTab(false)
-      }, 100)
-    }, 100)
+      }, 50)
+    }, 50)
   }
 
   // Wait for client-side hydration to complete

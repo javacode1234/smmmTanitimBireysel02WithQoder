@@ -56,17 +56,29 @@ export default function AdminLayout({
 
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, targetPath: string) => {
     e.preventDefault()
-    
+
     if (isNavigating || pathname === targetPath) return
-    
+
     setIsNavigating(true)
+
+    // Dispatch close event before navigation
+    if (typeof window !== 'undefined') {
+      // Use a more robust approach to close dialogs
+      const closeEvent = new CustomEvent('close-all-dialogs')
+      window.dispatchEvent(closeEvent)
+    }
+
+    // Simple navigation without complex requestAnimationFrame nesting
+    router.push(targetPath)
     
-    // Use window.location.href to avoid removeChild errors with sidebar animations
-    window.location.href = targetPath
+    // Reset navigation state after a short delay
+    setTimeout(() => {
+      setIsNavigating(false)
+    }, 100)
   }
 
   const handleLogout = () => {
-    window.location.href = '/auth/signin'
+    router.push('/auth/signin')
   }
 
   const sidebarWidth = sidebarState === "open" ? "w-64" : sidebarState === "collapsed" ? "w-20" : "w-0"
@@ -75,10 +87,25 @@ export default function AdminLayout({
 
   // Ensure proper cleanup on unmount
   useEffect(() => {
-    return () => {
-      // Cleanup function if needed
+    let isComponentMounted = true;
+    
+    // Listen for close-all-dialogs event
+    const handleCloseAllDialogs = () => {
+      if (!isComponentMounted) return;
+      // This is just a placeholder - individual components will handle their own dialog closing
+    };
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('close-all-dialogs', handleCloseAllDialogs);
     }
-  }, [])
+    
+    return () => {
+      isComponentMounted = false;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('close-all-dialogs', handleCloseAllDialogs);
+      }
+    };
+  }, []);
 
   return (
     <BreadcrumbProvider>

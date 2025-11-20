@@ -1,5 +1,4 @@
 "use client"
-"use client"
 
 import { Navbar } from "@/components/landing/navbar"
 import { HeroSection } from "@/components/landing/hero-section"
@@ -14,21 +13,45 @@ import { FAQSection } from "@/components/landing/faq-section"
 import { ContactSection } from "@/components/landing/contact-section"
 import { Footer } from "@/components/landing/footer"
 import { ScrollToTop } from "@/components/scroll-to-top"
+import { MevzuatSection } from "@/components/landing/mevzuat-section"
 
 export default function HomePage() {
   return (
     <main className="min-h-screen">
       <Navbar />
-      <HeroSection />
-      <InstitutionsSection />
-      <AboutSection />
-      <ServicesSection />
-      <WorkflowSection />
-      <PricingSection />
-      <TestimonialsSection />
-      <TeamSection />
-      <FAQSection />
-      <ContactSection />
+      <div className="bg-white">
+        <HeroSection />
+      </div>
+      <div className="bg-gray-50">
+        <InstitutionsSection />
+      </div>
+      <div className="bg-white">
+        <AboutSection />
+      </div>
+      <div className="bg-gray-50">
+        <ServicesSection />
+      </div>
+      <div className="bg-white">
+        <WorkflowSection />
+      </div>
+      <div className="bg-gray-50">
+        <PricingSection />
+      </div>
+      <div className="bg-white">
+        <TestimonialsSection />
+      </div>
+      <div className="bg-gray-50">
+        <TeamSection />
+      </div>
+      <div className="bg-white">
+        <FAQSection />
+      </div>
+      <div className="bg-gray-50">
+        <MevzuatSection />
+      </div>
+      <div className="bg-white">
+        <ContactSection />
+      </div>
       <Footer />
       <ScrollToTop />
     </main>

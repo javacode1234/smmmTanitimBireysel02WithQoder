@@ -49,6 +49,19 @@ export function SiteSettingsTab() {
   useEffect(() => {
     fetchSettings()
     
+    // Listen for close-all-dialogs event
+    const handleCloseAllDialogs = () => {
+      // Use requestAnimationFrame to ensure DOM is ready for updates
+      requestAnimationFrame(() => {
+        setMapModalOpen(false)
+        setIsResetDialogOpen(false)
+      })
+    }
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('close-all-dialogs', handleCloseAllDialogs)
+    }
+    
     // Cleanup function to prevent memory leaks and close dialogs
     return () => {
       // Clear file input values
@@ -59,9 +72,16 @@ export function SiteSettingsTab() {
         brandIconInputRef.current.value = ''
       }
       
-      // Close all dialogs
-      setMapModalOpen(false)
-      setIsResetDialogOpen(false)
+      // Close all dialogs safely
+      requestAnimationFrame(() => {
+        setMapModalOpen(false)
+        setIsResetDialogOpen(false)
+      })
+      
+      // Remove event listener
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('close-all-dialogs', handleCloseAllDialogs)
+      }
     }
   }, [])
 
