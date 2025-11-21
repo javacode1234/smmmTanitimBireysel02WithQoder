@@ -3,6 +3,15 @@ import { prisma } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if the customer model exists
+    if (!prisma.customer) {
+      console.log('Customer model not found in prisma schema')
+      return NextResponse.json(
+        { error: 'Customer management not supported in current database schema' },
+        { status: 501 }
+      )
+    }
+    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const search = searchParams.get('search') || ''
@@ -77,6 +86,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if the customer model exists
+    if (!prisma.customer) {
+      console.log('Customer model not found in prisma schema')
+      return NextResponse.json(
+        { error: 'Customer management not supported in current database schema' },
+        { status: 501 }
+      )
+    }
+    
     const data = await request.json()
     
     console.log('Received customer data:', JSON.stringify(data, null, 2))
@@ -165,6 +183,15 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    // Check if the customer model exists
+    if (!prisma.customer) {
+      console.log('Customer model not found in prisma schema')
+      return NextResponse.json(
+        { error: 'Customer management not supported in current database schema' },
+        { status: 501 }
+      )
+    }
+    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) {
@@ -253,6 +280,15 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Check if the customer model exists
+    if (!prisma.customer) {
+      console.log('Customer model not found in prisma schema')
+      return NextResponse.json(
+        { error: 'Customer management not supported in current database schema' },
+        { status: 501 }
+      )
+    }
+    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) {

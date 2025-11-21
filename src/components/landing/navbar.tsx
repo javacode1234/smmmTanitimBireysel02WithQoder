@@ -68,7 +68,7 @@ export function Navbar() {
   }
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b">
+    <nav className="fixed top-0 w-full z-50 bg-blue-500/50 backdrop-blur-md border-b-2 border-orange-200">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

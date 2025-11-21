@@ -1,12 +1,12 @@
 # SMMM Yönetim Sistemi
 
-Serbest Muhasebeci Mali Müşavir (SMMM) tanıtım, müşteri yönetim ve takip sistemi. Next.js 14 (App Router) ve MySQL kullanılarak geliştirilmiştir.
+Serbest Muhasebeci Mali Müşavir (SMMM) tanıtım, müşteri yönetim ve takip sistemi. Next.js 14 (App Router) ve çoklu veritabanı desteği (SQLite, MySQL, PostgreSQL) ile geliştirilmiştir.
 
 ## 🚀 Teknolojiler
 
 - **Frontend:** Next.js 14, React 18, TailwindCSS, shadcn/ui, Framer Motion
 - **Backend:** Next.js API Routes
-- **Database:** MySQL
+- **Database:** SQLite (development), MySQL (local production), PostgreSQL (Vercel)
 - **ORM:** Prisma
 - **Auth:** NextAuth.js (JWT + Role-based)
 - **UI Components:** shadcn/ui
@@ -34,6 +34,9 @@ smmm-system/
 │   ├── lib/                   # Utilities
 │   └── prisma/                # Prisma schema
 ├── .env                       # Environment variables
+├── .env.development           # Development environment (SQLite)
+├── .env.production            # Production environment (MySQL)
+├── .env.vercel                # Vercel environment (PostgreSQL)
 └── package.json
 ```
 
@@ -45,9 +48,13 @@ smmm-system/
 npm install
 ```
 
-### 2. MySQL Veritabanı Ayarları
+### 2. Veritabanı Ayarları
 
-`.env` dosyasını düzenleyin ve MySQL bağlantı bilgilerinizi girin:
+#### Development (SQLite - Yerel Geliştirme)
+`.env.development` dosyası otomatik olarak SQLite kullanacak şekilde yapılandırılmıştır.
+
+#### Local Production (MySQL)
+`.env.production` dosyasını düzenleyin ve MySQL bağlantı bilgilerinizi girin:
 
 ```env
 DATABASE_URL="mysql://kullanici:sifre@localhost:3306/smmm_system"
@@ -55,11 +62,33 @@ NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-secret-key-here"
 ```
 
+#### Vercel Deployment (PostgreSQL)
+Vercel dashboard üzerinden PostgreSQL veritabanı bağlantısı yapılandırması yapılmalıdır.
+
 ### 3. Prisma Migrations
 
+#### Development için:
 ```bash
-npx prisma migrate dev --name init
-npx prisma generate
+npm run db:init:dev
+```
+
+Bu komut otomatik olarak:
+1. SQLite için uygun şemaya geçiş yapar
+2. Gerekli migrasyonları çalıştırır
+3. Veritabanını seed eder
+
+#### Diğer ortamlar için:
+```bash
+npm run db:migrate
+```
+
+Bu komut otomatik olarak:
+1. Ortama uygun şemaya geçiş yapar (MySQL/PostgreSQL)
+2. Gerekli migrasyonları çalıştırır
+
+#### Manuel şema değiştirme:
+```bash
+npm run db:switch-schema
 ```
 
 ### 4. Veritabanını Seed Edin (Opsiyonel)

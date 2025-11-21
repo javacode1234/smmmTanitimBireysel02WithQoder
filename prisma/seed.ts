@@ -17,11 +17,14 @@ async function main() {
     where: { email: 'admin@smmm.com' },
     update: {},
     create: {
+      id: 'admin-user-id',
       email: 'admin@smmm.com',
       name: 'Admin Kullanıcı',
       password: hashedPassword,
       role: 'ADMIN',
       image: '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
   })
   console.log('✅ Admin user created:', adminUser.email)
@@ -31,17 +34,23 @@ async function main() {
     where: { email: 'mukellef@example.com' },
     update: {},
     create: {
+      id: 'client-user-1-id',
       email: 'mukellef@example.com',
       name: 'Mükellef Kullanıcı',
       password: hashedPassword,
       role: 'CLIENT',
       image: '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
       client: {
         create: {
+          id: 'client-1-id',
           companyName: 'ABC Ticaret Ltd. Şti.',
           taxNumber: '1234567890',
           phone: '0533 987 6543',
           address: 'Atatürk Cad. No: 123 Merkez/İstanbul',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       },
     },
@@ -53,17 +62,23 @@ async function main() {
     where: { email: 'firma@example.com' },
     update: {},
     create: {
+      id: 'client-user-2-id',
       email: 'firma@example.com',
       name: 'Ahmet Yılmaz',
       password: hashedPassword,
       role: 'CLIENT',
       image: '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
       client: {
         create: {
+          id: 'client-2-id',
           companyName: 'XYZ Danışmanlık A.Ş.',
           taxNumber: '9876543210',
           phone: '0532 123 4567',
           address: 'İnönü Mah. Cumhuriyet Cad. No: 45 Kadıköy/İstanbul',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       },
     },
@@ -72,9 +87,10 @@ async function main() {
 
   // Seed Job Applications
   console.log('📝 Seeding job applications...')
-  await prisma.jobApplication.createMany({
+  await prisma.jobapplication.createMany({
     data: [
       {
+        id: 'job-app-1',
         name: "Selin Akar",
         email: "selin@example.com",
         phone: "0555 111 2233",
@@ -84,8 +100,11 @@ async function main() {
         coverLetter: "Muhasebe alanında 3 yıllık tecrübem ve SMMM sınavına hazırlanıyor olmam nedeniyle ekibinizde yer almak istiyorum.",
         cvFileName: "selin_akar_cv.pdf",
         status: "NEW",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
+        id: 'job-app-2',
         name: "Murat Çelik",
         email: "murat@example.com",
         phone: "0532 444 5566",
@@ -95,8 +114,11 @@ async function main() {
         coverLetter: "Şirketinizde muhasebe departmanında çalışmak ve kendimi geliştirmek istiyorum.",
         cvFileName: "murat_celik_cv.pdf",
         status: "REVIEWING",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
+        id: 'job-app-3',
         name: "Deniz Yılmaz",
         email: "deniz@example.com",
         phone: "0543 777 8899",
@@ -106,8 +128,11 @@ async function main() {
         coverLetter: "Yeni mezun olarak pratik tecrübe kazanmak ve SMMM olma yolunda ilerlemek istiyorum.",
         cvFileName: "deniz_yilmaz_cv.pdf",
         status: "INTERVIEWED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
+        id: 'job-app-4',
         name: "Ayşe Demir",
         email: "ayse.demir@example.com",
         phone: "0533 222 3344",
@@ -117,15 +142,18 @@ async function main() {
         coverLetter: "SMMM ruhsatına sahip, 8 yıllık tecrübeli bir mali müşavir olarak ekibinize katılmak istiyorum.",
         cvFileName: "ayse_demir_cv.pdf",
         status: "REJECTED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     ],
   })
 
   // Seed Quote Requests
   console.log('💼 Seeding quote requests...')
-  await prisma.quoteRequest.createMany({
+  await prisma.quoterequest.createMany({
     data: [
       {
+        id: 'quote-1',
         name: "Ahmet Yılmaz",
         email: "ahmet@example.com",
         phone: "0555 123 4567",
@@ -133,8 +161,11 @@ async function main() {
         serviceType: "Tam Tasdik",
         message: "Yıllık mali tablolarımız için tam tasdik hizmeti almak istiyoruz.",
         status: "PENDING",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
+        id: 'quote-2',
         name: "Zeynep Kaya",
         email: "zeynep@example.com",
         phone: "0532 987 6543",
@@ -142,8 +173,11 @@ async function main() {
         serviceType: "Sınırlı Bağımsız Denetim",
         message: "Şirketimiz için sınırlı bağımsız denetim hizmeti talep ediyoruz.",
         status: "REVIEWED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
+        id: 'quote-3',
         name: "Mehmet Öz",
         email: "mehmet@example.com",
         phone: "0543 456 7890",
@@ -151,8 +185,11 @@ async function main() {
         serviceType: "Muhasebe Danışmanlığı",
         message: "Aylık muhasebe takibi ve beyanname hizmetleri için teklif almak istiyorum.",
         status: "CONTACTED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
+        id: 'quote-4',
         name: "Fatma Arslan",
         email: "fatma@example.com",
         phone: "0533 789 0123",
@@ -160,45 +197,59 @@ async function main() {
         serviceType: "Vergi Danışmanlığı",
         message: "KDV ve kurumlar vergisi konusunda danışmanlık ihtiyacımız var.",
         status: "COMPLETED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     ],
   })
 
   // Seed Contact Messages
   console.log('📧 Seeding contact messages...')
-  await prisma.contactMessage.createMany({
+  await prisma.contactmessage.createMany({
     data: [
       {
+        id: 'contact-1',
         name: "Ali Demir",
         email: "ali@example.com",
         phone: "0555 111 2222",
         subject: "Hizmetler Hakkında Bilgi",
         message: "SMMM hizmetleriniz hakkında detaylı bilgi almak istiyorum.",
         status: "NEW",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
+        id: 'contact-2',
         name: "Ayşe Şahin",
         email: "ayse@example.com",
         phone: "0532 333 4444",
         subject: "Randevu Talebi",
         message: "Yeni kurduğumuz şirket için randevu almak istiyoruz.",
         status: "PENDING",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
+        id: 'contact-3',
         name: "Mustafa Çelik",
         email: "mustafa@example.com",
         phone: "0543 555 6666",
         subject: "Fiyat Bilgisi",
         message: "Aylık muhasebe hizmetiniz için ücret bilgisi alabilir miyim?",
         status: "REPLIED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
+        id: 'contact-4',
         name: "Elif Yıldız",
         email: "elif@example.com",
         phone: "0533 777 8888",
         subject: "E-Fatura Sistemi",
         message: "E-fatura sistemine geçiş konusunda yardım alabilir miyiz?",
         status: "RESOLVED",
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     ],
   })
@@ -206,17 +257,87 @@ async function main() {
   // Seed Declaration Configs
   console.log('🧾 Seeding declaration configs...')
   const defaults = [
-    { type: 'KDV', frequency: 'MONTHLY', enabled: true, dueDay: 26 },
-    { type: 'Muhtasar SGK (Aylık)', frequency: 'MONTHLY', enabled: true, dueDay: 26 },
-    { type: 'Muhtasar SGK (3 Aylık)', frequency: 'QUARTERLY', enabled: true, quarterOffset: 1 },
-    { type: 'Gelir Geçici Vergi', frequency: 'QUARTERLY', enabled: true, dueDay: 17, quarterOffset: 2, skipQuarter: true },
-    { type: 'Kurumlar Geçici Vergi', frequency: 'QUARTERLY', enabled: true, dueDay: 17, quarterOffset: 2, skipQuarter: true },
-    { type: 'Yıllık Gelir Vergisi', frequency: 'YEARLY', enabled: true, dueMonth: 3, dueDay: 25 },
-    { type: 'Yıllık Kurumlar Vergisi', frequency: 'YEARLY', enabled: true, dueMonth: 4, dueDay: 30 },
-    { type: 'Damga Vergisi', frequency: 'MONTHLY', enabled: true, dueDay: 26 },
+    { 
+      id: 'decl-config-1',
+      type: 'KDV', 
+      frequency: 'MONTHLY', 
+      enabled: true, 
+      dueDay: 26,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    { 
+      id: 'decl-config-2',
+      type: 'Muhtasar SGK (Aylık)', 
+      frequency: 'MONTHLY', 
+      enabled: true, 
+      dueDay: 26,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    { 
+      id: 'decl-config-3',
+      type: 'Muhtasar SGK (3 Aylık)', 
+      frequency: 'QUARTERLY', 
+      enabled: true, 
+      quarterOffset: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    { 
+      id: 'decl-config-4',
+      type: 'Gelir Geçici Vergi', 
+      frequency: 'QUARTERLY', 
+      enabled: true, 
+      dueDay: 17, 
+      quarterOffset: 2, 
+      skipQuarter: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    { 
+      id: 'decl-config-5',
+      type: 'Kurumlar Geçici Vergi', 
+      frequency: 'QUARTERLY', 
+      enabled: true, 
+      dueDay: 17, 
+      quarterOffset: 2, 
+      skipQuarter: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    { 
+      id: 'decl-config-6',
+      type: 'Yıllık Gelir Vergisi', 
+      frequency: 'YEARLY', 
+      enabled: true, 
+      dueMonth: 3, 
+      dueDay: 25,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    { 
+      id: 'decl-config-7',
+      type: 'Yıllık Kurumlar Vergisi', 
+      frequency: 'YEARLY', 
+      enabled: true, 
+      dueMonth: 4, 
+      dueDay: 30,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    { 
+      id: 'decl-config-8',
+      type: 'Damga Vergisi', 
+      frequency: 'MONTHLY', 
+      enabled: true, 
+      dueDay: 26,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
   ]
   for (const d of defaults) {
-    await (prisma as any).declarationConfig.upsert({
+    await (prisma as any).declarationconfig.upsert({
       where: { type: d.type },
       update: {},
       create: d as any,

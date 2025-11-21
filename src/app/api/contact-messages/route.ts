@@ -4,6 +4,12 @@ import { randomUUID } from 'crypto'
 
 export async function GET() {
   try {
+    // Check if the model exists
+    if (!prisma.contactmessage) {
+      console.log('contactmessage model not found in prisma schema')
+      return NextResponse.json([])
+    }
+    
     const messages = await prisma.contactmessage.findMany({
       orderBy: {
         createdAt: 'desc'
@@ -18,6 +24,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if the model exists
+    if (!prisma.contactmessage) {
+      console.log('contactmessage model not found in prisma schema')
+      return NextResponse.json(
+        { error: 'Contact messages not supported in current database schema' },
+        { status: 501 }
+      )
+    }
+    
     const { name, email, phone, subject, message } = await request.json()
 
     if (!name || !email || !phone || !subject || !message) {
@@ -56,6 +71,15 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    // Check if the model exists
+    if (!prisma.contactmessage) {
+      console.log('contactmessage model not found in prisma schema')
+      return NextResponse.json(
+        { error: 'Contact messages not supported in current database schema' },
+        { status: 501 }
+      )
+    }
+    
     const { id, status } = await request.json()
 
     const message = await prisma.contactmessage.update({
@@ -75,6 +99,15 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Check if the model exists
+    if (!prisma.contactmessage) {
+      console.log('contactmessage model not found in prisma schema')
+      return NextResponse.json(
+        { error: 'Contact messages not supported in current database schema' },
+        { status: 501 }
+      )
+    }
+    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

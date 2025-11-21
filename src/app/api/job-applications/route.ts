@@ -8,6 +8,12 @@ export async function GET() {
     console.log('job-applications GET: prisma =', prisma)
     console.log('job-applications GET: prisma.jobapplication =', prisma?.jobapplication)
     
+    // Check if the model exists
+    if (!prisma.jobapplication) {
+      console.log('jobapplication model not found in prisma schema')
+      return NextResponse.json([])
+    }
+    
     const applications = await prisma.jobapplication.findMany({
       orderBy: {
         createdAt: 'desc'
@@ -22,6 +28,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if the model exists
+    if (!prisma.jobapplication) {
+      console.log('jobapplication model not found in prisma schema')
+      return NextResponse.json(
+        { error: 'Job applications not supported in current database schema' },
+        { status: 501 }
+      )
+    }
+    
     const formData = await request.formData()
     
     const firstName = formData.get('firstName') as string
@@ -92,6 +107,15 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    // Check if the model exists
+    if (!prisma.jobapplication) {
+      console.log('jobapplication model not found in prisma schema')
+      return NextResponse.json(
+        { error: 'Job applications not supported in current database schema' },
+        { status: 501 }
+      )
+    }
+    
     const { id, status } = await request.json()
 
     const application = await prisma.jobapplication.update({
@@ -111,6 +135,15 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Check if the model exists
+    if (!prisma.jobapplication) {
+      console.log('jobapplication model not found in prisma schema')
+      return NextResponse.json(
+        { error: 'Job applications not supported in current database schema' },
+        { status: 501 }
+      )
+    }
+    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

@@ -200,13 +200,31 @@ export function SiteSettingsTab() {
         // Refresh to get updated data
         await fetchSettings()
       } else {
-        const error = await response.json()
-        console.error('Save error:', error)
-        toast.error(error.error || 'Ayarlar kaydedilirken bir hata oluştu')
+        // More detailed error handling
+        const errorText = await response.text()
+        console.error('Save error response:', response.status, response.statusText, errorText)
+        
+        let errorMessage = 'Ayarlar kaydedilirken bir hata oluştu'
+        
+        // Try to parse the error response as JSON
+        try {
+          if (errorText) {
+            const error = JSON.parse(errorText)
+            console.error('Save error parsed:', error)
+            errorMessage = error.error || error.message || errorText || errorMessage
+          } else {
+            errorMessage = `HTTP ${response.status}: ${response.statusText}`
+          }
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+          errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error('Error saving settings:', error)
-      toast.error('Ayarlar kaydedilirken bir hata oluştu')
+      toast.error('Ayarlar kaydedilirken bir hata oluştu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'))
     } finally {
       setIsSaving(false)
     }
@@ -269,13 +287,31 @@ export function SiteSettingsTab() {
         toast.success('Varsayılan değerler veritabanına kaydedildi!')
         await fetchSettings()
       } else {
-        const error = await response.json()
-        console.error('Save error:', error)
-        toast.error(error.error || 'Varsayılan değerler kaydedilemedi')
+        // More detailed error handling
+        const errorText = await response.text()
+        console.error('Save error response:', response.status, response.statusText, errorText)
+        
+        let errorMessage = 'Varsayılan değerler kaydedilemedi'
+        
+        // Try to parse the error response as JSON
+        try {
+          if (errorText) {
+            const error = JSON.parse(errorText)
+            console.error('Save error parsed:', error)
+            errorMessage = error.error || error.message || errorText || errorMessage
+          } else {
+            errorMessage = `HTTP ${response.status}: ${response.statusText}`
+          }
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+          errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error('Error saving defaults:', error)
-      toast.error('Varsayılan değerler kaydedilemedi')
+      toast.error('Varsayılan değerler kaydedilemedi: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'))
     } finally {
       setIsSavingDefaults(false)
     }

@@ -30,12 +30,30 @@ export async function GET() {
     return NextResponse.json(settings)
   } catch (error: any) {
     console.error('Error fetching site settings:', error)
+    // More detailed error handling
+    let errorMessage = 'Site ayarları yüklenemedi'
+    let errorDetails = 'Unknown error'
+    
+    if (error instanceof Error) {
+      errorMessage = error.message
+      errorDetails = error.message
+    } else if (typeof error === 'string') {
+      errorDetails = error
+    } else if (error && typeof error === 'object') {
+      errorDetails = JSON.stringify(error)
+    }
+    
     // Handle missing table (P2021)
-    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+    if (error?.code === 'P2021' || error?.message?.includes('does not exist')) {
       return NextResponse.json(null)
     }
+    
     return NextResponse.json(
-      { error: 'Site ayarları yüklenemedi' },
+      { 
+        error: errorMessage,
+        details: errorDetails,
+        code: error?.code || 'UNKNOWN_ERROR'
+      },
       { status: 500 }
     )
   }
@@ -58,10 +76,27 @@ export async function DELETE() {
       success: true,
       message: 'Site ayarları varsayılan değerlere sıfırlandı'
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error resetting site settings:', error)
+    // More detailed error handling
+    let errorMessage = 'Site ayarları sıfırlanamadı'
+    let errorDetails = 'Unknown error'
+    
+    if (error instanceof Error) {
+      errorMessage = error.message
+      errorDetails = error.message
+    } else if (typeof error === 'string') {
+      errorDetails = error
+    } else if (error && typeof error === 'object') {
+      errorDetails = JSON.stringify(error)
+    }
+    
     return NextResponse.json(
-      { error: 'Site ayarları sıfırlanamadı' },
+      { 
+        error: errorMessage,
+        details: errorDetails,
+        code: error?.code || 'UNKNOWN_ERROR'
+      },
       { status: 500 }
     )
   }
@@ -71,6 +106,14 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     console.log('Received data:', JSON.stringify(data, null, 2))
+
+    // Validate required fields
+    if (!data) {
+      return NextResponse.json(
+        { error: 'Geçersiz veri', message: 'İstek gövdesi boş olamaz' },
+        { status: 400 }
+      )
+    }
 
     // Get existing settings first
     const existing = await prisma.sitesettings.findFirst()
@@ -98,6 +141,7 @@ export async function POST(request: NextRequest) {
           instagramUrl: data.instagramUrl,
           youtubeUrl: data.youtubeUrl,
           threadsUrl: data.threadsUrl,
+          updatedAt: new Date(),
         },
       })
       console.log('Updated successfully')
@@ -105,7 +149,7 @@ export async function POST(request: NextRequest) {
       // Create new record
       settings = await prisma.sitesettings.create({
         data: {
-          id: crypto.randomUUID(),
+          id: data.id || 'default-settings',
           siteName: data.siteName || 'SMMM Ofisi',
           siteDescription: data.siteDescription,
           favicon: data.favicon,
@@ -130,10 +174,35 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(settings)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving site settings:', error)
+    
+    // More detailed error handling
+    let errorMessage = 'Site ayarları kaydedilemedi'
+    let errorDetails = 'Unknown error'
+    
+    if (error instanceof Error) {
+      errorMessage = error.message
+      errorDetails = error.message
+    } else if (typeof error === 'string') {
+      errorDetails = error
+    } else if (error && typeof error === 'object') {
+      errorDetails = JSON.stringify(error)
+    }
+    
+    // Handle specific Prisma errors
+    if (error?.code === 'P2002') {
+      errorMessage = 'Ayarlar zaten mevcut, güncellenemedi'
+    } else if (error?.code === 'P2025') {
+      errorMessage = 'Güncellenecek ayar bulunamadı'
+    }
+    
     return NextResponse.json(
-      { error: 'Site ayarları kaydedilemedi', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: errorMessage,
+        details: errorDetails,
+        code: error?.code || 'UNKNOWN_ERROR'
+      },
       { status: 500 }
     )
   }

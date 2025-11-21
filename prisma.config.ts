@@ -7,6 +7,6 @@ export default defineConfig({
   },
   engine: "classic",
   datasource: {
-    url: process.env.DATABASE_URL || "mysql://root:1234@localhost:3306/smmm_system",
+    url: "file:./dev.db",
   },
 });

@@ -4,6 +4,12 @@ import { prisma } from "@/lib/db"
 // GET /api/profile - Get current user profile
 export async function GET(req: NextRequest) {
   try {
+    // Check if the model exists
+    if (!prisma.user) {
+      console.log('user model not found in prisma schema')
+      return NextResponse.json({ error: "User model not available" }, { status: 501 })
+    }
+    
     // TODO: Get user ID from session/auth
     // For now, return admin user as default
     const user = await prisma.user.findFirst({
@@ -31,6 +37,12 @@ export async function GET(req: NextRequest) {
 // PATCH /api/profile - Update current user profile
 export async function PATCH(req: NextRequest) {
   try {
+    // Check if the model exists
+    if (!prisma.user) {
+      console.log('user model not found in prisma schema')
+      return NextResponse.json({ error: "User model not available" }, { status: 501 })
+    }
+    
     const body = await req.json()
     const { name, email, image } = body
 

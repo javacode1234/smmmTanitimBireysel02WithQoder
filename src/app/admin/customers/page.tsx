@@ -135,16 +135,37 @@ export default function CustomersPage() {
           setCustomers(Array.isArray(data) ? data : [])
         }
       } else {
-        const errorData = await res.json().catch(() => ({ error: 'Bilinmeyen hata' }))
-        console.error('API Error:', errorData)
-        let errorMessage = errorData.error || "Müşteriler yüklenirken hata oluştu"
+        // Enhanced error handling for empty or malformed error responses
+        let errorData;
+        let errorMessage = "Müşteriler yüklenirken hata oluştu";
         
-        // If errorData is empty object, try to get more info
-        if (!errorData.error && Object.keys(errorData).length === 0) {
+        try {
+          errorData = await res.json().catch(() => ({ error: 'Bilinmeyen hata' }))
+        } catch {
+          errorData = { error: 'Bilinmeyen hata' }
+        }
+        
+        console.error('API Error:', errorData)
+        
+        // Handle empty error object
+        if (errorData && typeof errorData === 'object' && Object.keys(errorData).length === 0) {
+          // Try to get more info from response
           try {
             const errorText = await res.text()
-            if (errorText) errorMessage = errorText
-          } catch {}
+            if (errorText) {
+              errorMessage = errorText
+            } else {
+              errorMessage = `HTTP ${res.status}: ${res.statusText || 'Bilinmeyen hata'}`
+            }
+          } catch {
+            errorMessage = `HTTP ${res.status}: ${res.statusText || 'Bilinmeyen hata'}`
+          }
+        } else if (errorData && typeof errorData === 'object' && errorData.error) {
+          errorMessage = errorData.error
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData
+        } else {
+          errorMessage = `HTTP ${res.status}: ${res.statusText || 'Bilinmeyen hata'}`
         }
         
         console.error('Final error message:', errorMessage)

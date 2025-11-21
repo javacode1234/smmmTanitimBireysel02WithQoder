@@ -1,84 +1,62 @@
-const DEFAULT_INSTITUTIONS = [
-  {
-    name: "TOBB",
-    description: "Türkiye Odalar ve Borsalar Birliği",
-    url: "https://www.tobb.org.tr",
-    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwNjZmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlRPQkI8L3RleHQ+PC9zdmc+",
-    isActive: true,
-    order: 0,
-  },
-  {
-    name: "TÜRMÖB",
-    description: "Türkiye Serbest Muhasebeci Mali Müşavirler ve Yeminli Mali Müşavirler Odaları Birliği",
-    url: "https://www.turmob.org.tr",
-    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNjYwMCIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlTFnFJNT8SwQjwvdGV4dD48L3N2Zz4=",
-    isActive: true,
-    order: 1,
-  },
-  {
-    name: "GIB",
-    description: "Gelir İdaresi Başkanlığı",
-    url: "https://www.gib.gov.tr",
-    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzY2ZmY2NiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPkdJQjwvdGV4dD48L3N2Zz4=",
-    isActive: true,
-    order: 2,
-  },
-  {
-    name: "SGK",
-    description: "Sosyal Güvenlik Kurumu",
-    url: "https://www.sgk.gov.tr",
-    logo: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2ZmNjZmZiIvPjx0ZXh0IHg9IjUwIiB5PSI1NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC13ZWlnaHQ9ImJvbGQiPlNHSzwvdGV4dD48L3N2Zz4=",
-    isActive: true,
-    order: 3,
-  },
-];
-
+// Test script to simulate the "Save Defaults to Database" functionality
 async function testSaveDefaults() {
-  console.log('Testing save defaults functionality...');
-  
   try {
-    // 1. Reset all institutions
-    console.log('1. Resetting institutions...');
-    const resetResponse = await fetch('http://localhost:3000/api/content/institutions/reset', {
+    console.log('Testing save defaults functionality...');
+    
+    // First, delete any existing settings
+    console.log('Deleting existing settings...');
+    const deleteResponse = await fetch('http://localhost:3000/api/content/site-settings', {
       method: 'DELETE',
     });
     
-    console.log('Reset response status:', resetResponse.status);
-    const resetData = await resetResponse.json();
-    console.log('Reset response data:', resetData);
+    console.log('Delete response status:', deleteResponse.status);
     
-    // 2. Save default institutions one by one
-    console.log('2. Saving default institutions...');
-    for (let i = 0; i < DEFAULT_INSTITUTIONS.length; i++) {
-      const institution = DEFAULT_INSTITUTIONS[i];
-      console.log(`Saving institution ${i + 1}: ${institution.name}`);
+    // Then try to save default settings (simulating the button click)
+    console.log('Saving default settings...');
+    const defaultSettings = {
+      siteName: "SMMM Ofisi",
+      siteDescription: "Profesyonel muhasebe ve mali müşavirlik hizmetleri",
+      favicon: "",
+      brandIcon: "",
+      phone: "+90 (212) 123 45 67",
+      email: "info@smmmofisi.com",
+      address: "İstanbul, Türkiye",
+      mapLatitude: "41.0082",
+      mapLongitude: "28.9784",
+      mapEmbedUrl: "",
+      facebookUrl: "",
+      xUrl: "",
+      linkedinUrl: "",
+      instagramUrl: "",
+      youtubeUrl: "",
+      threadsUrl: "",
+    };
+    
+    const saveResponse = await fetch('http://localhost:3000/api/content/site-settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(defaultSettings),
+    });
+    
+    console.log('Save response status:', saveResponse.status);
+    
+    if (saveResponse.ok) {
+      const savedData = await saveResponse.json();
+      console.log('Success! Default settings saved:', savedData);
+    } else {
+      const errorText = await saveResponse.text();
+      console.log('Save error response:', saveResponse.status, saveResponse.statusText, errorText);
       
-      const response = await fetch('http://localhost:3000/api/content/institutions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(institution),
-      });
-      
-      console.log(`Response status for ${institution.name}:`, response.status);
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`Saved ${institution.name}:`, data);
-      } else {
-        const errorData = await response.json();
-        console.log(`Error saving ${institution.name}:`, errorData);
+      // Try to parse the error as JSON
+      try {
+        const error = JSON.parse(errorText);
+        console.log('Parsed error:', error);
+      } catch (parseError) {
+        console.log('Failed to parse error response:', parseError);
       }
     }
-    
-    // 3. Fetch and verify
-    console.log('3. Fetching institutions to verify...');
-    const fetchResponse = await fetch('http://localhost:3000/api/content/institutions');
-    console.log('Fetch response status:', fetchResponse.status);
-    const fetchedData = await fetchResponse.json();
-    console.log('Fetched institutions:', fetchedData);
-    console.log('Total institutions fetched:', fetchedData.length);
-    
   } catch (error) {
-    console.error('Error in test:', error);
+    console.error('Test failed with error:', error);
   }
 }
 

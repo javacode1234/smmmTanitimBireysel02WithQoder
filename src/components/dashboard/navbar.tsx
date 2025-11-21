@@ -74,6 +74,11 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
               : (userType === "admin" ? "AK" : "MK")
           })
         }
+        // Handle 501 error (Not Implemented) when user model is not available
+        else if (response && response.status === 501) {
+          // Silently ignore 501 errors - this is expected in simplified schema
+          console.log('User model not available in current database schema')
+        }
       } catch (error) {
         // Silently ignore profile fetch errors
       }
