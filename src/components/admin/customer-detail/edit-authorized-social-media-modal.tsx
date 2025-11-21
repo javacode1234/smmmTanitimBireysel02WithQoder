@@ -17,7 +17,7 @@ import { toast } from "sonner"
 interface EditAuthorizedSocialMediaModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: any) => void
+  onSave: (data: AuthorizedSocialMediaUpdate) => void
   customerId: string
   initialData: {
     authorizedFacebookUrl: string | null
@@ -26,6 +26,14 @@ interface EditAuthorizedSocialMediaModalProps {
     authorizedInstagramUrl: string | null
     authorizedThreadsUrl: string | null
   }
+}
+
+interface AuthorizedSocialMediaUpdate {
+  authorizedFacebookUrl: string | null
+  authorizedXUrl: string | null
+  authorizedLinkedinUrl: string | null
+  authorizedInstagramUrl: string | null
+  authorizedThreadsUrl: string | null
 }
 
 export function EditAuthorizedSocialMediaModal({ isOpen, onClose, onSave, customerId, initialData }: EditAuthorizedSocialMediaModalProps) {

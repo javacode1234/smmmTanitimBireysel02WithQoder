@@ -27,61 +27,22 @@ import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-di
 import { toast } from "sonner"
 import { exportJobApplicationToPDF } from "@/lib/pdf-export"
 
-// Mock data
-const mockJobApplications = [
-  {
-    id: "1",
-    name: "Selin Akar",
-    email: "selin@example.com",
-    phone: "0555 111 2233",
-    position: "Mali Müşavir Yardımcısı",
-    experience: "3 yıl",
-    education: "İktisat Fakültesi",
-    coverLetter: "Muhasebe alanında 3 yıllık tecrübem ve SMMM sınavına hazırlanıyor olmam nedeniyle ekibinizde yer almak istiyorum.",
-    cvFileName: "selin_akar_cv.pdf",
-    status: "new",
-    createdAt: "2024-01-15T10:00:00",
-  },
-  {
-    id: "2",
-    name: "Murat Çelik",
-    email: "murat@example.com",
-    phone: "0532 444 5566",
-    position: "Muhasebe Elemanı",
-    experience: "5 yıl",
-    education: "İşletme Fakültesi",
-    coverLetter: "Şirketinizde muhasebe departmanında çalışmak ve kendimi geliştirmek istiyorum.",
-    cvFileName: "murat_celik_cv.pdf",
-    status: "reviewing",
-    createdAt: "2024-01-14T09:30:00",
-  },
-  {
-    id: "3",
-    name: "Deniz Yılmaz",
-    email: "deniz@example.com",
-    phone: "0543 777 8899",
-    position: "Stajyer",
-    experience: "Yeni Mezun",
-    education: "Muhasebe ve Finans Yönetimi",
-    coverLetter: "Yeni mezun olarak pratik tecrübe kazanmak ve SMMM olma yolunda ilerlemek istiyorum.",
-    cvFileName: "deniz_yilmaz_cv.pdf",
-    status: "interviewed",
-    createdAt: "2024-01-13T14:20:00",
-  },
-  {
-    id: "4",
-    name: "Ayşe Demir",
-    email: "ayse.demir@example.com",
-    phone: "0533 222 3344",
-    position: "Mali Müşavir",
-    experience: "8 yıl",
-    education: "İktisat Fakültesi - Yüksek Lisans",
-    coverLetter: "SMMM ruhsatına sahip, 8 yıllık tecrübeli bir mali müşavir olarak ekibinize katılmak istiyorum.",
-    cvFileName: "ayse_demir_cv.pdf",
-    status: "rejected",
-    createdAt: "2024-01-12T11:00:00",
-  },
-]
+type ApplicationStatus = 'NEW' | 'REVIEWING' | 'INTERVIEWED' | 'REJECTED' | 'ACCEPTED' | 'new' | 'reviewing' | 'interviewed' | 'rejected' | 'accepted'
+
+interface JobApplication {
+  id: string
+  name: string
+  email: string
+  phone: string
+  position: string
+  experience: string
+  education: string
+  coverLetter?: string
+  cvFileName?: string
+  createdAt: string
+  status: ApplicationStatus
+}
+
 
 const statusColors = {
   NEW: "bg-blue-100 text-blue-800",
@@ -104,14 +65,14 @@ export default function JobApplicationsPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [positionFilter, setPositionFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
-  const [selectedApplication, setSelectedApplication] = useState<any>(null)
+  const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [applicationToDelete, setApplicationToDelete] = useState<any>(null)
+  const [applicationToDelete, setApplicationToDelete] = useState<JobApplication | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [applications, setApplications] = useState<any[]>([])
+  const [applications, setApplications] = useState<JobApplication[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
 
@@ -121,7 +82,7 @@ export default function JobApplicationsPage() {
     try {
       const response = await fetch('/api/job-applications')
       if (response.ok) {
-        const data = await response.json()
+        const data: JobApplication[] = await response.json()
         setApplications(data)
       } else {
         toast.error('Başvurular yüklenirken bir hata oluştu')
@@ -163,12 +124,12 @@ export default function JobApplicationsPage() {
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage)
 
-  const handleViewDetails = (application: any) => {
+  const handleViewDetails = (application: JobApplication) => {
     setSelectedApplication(application)
     setIsModalOpen(true)
   }
 
-  const handleEditStatus = (application: any) => {
+  const handleEditStatus = (application: JobApplication) => {
     setSelectedApplication(application)
     setIsEditModalOpen(true)
   }
@@ -223,12 +184,12 @@ export default function JobApplicationsPage() {
     }
   }
 
-  const confirmDelete = (application: any) => {
+  const confirmDelete = (application: JobApplication) => {
     setApplicationToDelete(application)
     setIsDeleteDialogOpen(true)
   }
 
-  const handleExportPDF = (application: any) => {
+  const handleExportPDF = (application: JobApplication) => {
     try {
       exportJobApplicationToPDF(application)
       toast.success('Başvuru başarıyla dışa aktarıldı!')

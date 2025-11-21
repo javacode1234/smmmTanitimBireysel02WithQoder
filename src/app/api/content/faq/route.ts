@@ -15,7 +15,7 @@ export async function GET() {
     })
 
     return NextResponse.json(faqs)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching FAQs:', error)
     return NextResponse.json([])
   }

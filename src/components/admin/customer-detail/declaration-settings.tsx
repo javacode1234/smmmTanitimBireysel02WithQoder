@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -41,55 +41,54 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
   const [editForm, setEditForm] = useState<DeclarationSetting | null>(null)
   const [generating, setGenerating] = useState(false)
 
-  // Tanımlı beyannameleri çek
-  useEffect(() => {
-    const fetchDeclarations = async () => {
-      setLoading(true)
-      try {
-        const res = await fetch('/api/declarations-config')
-        if (res.ok) {
-          const data = await res.json()
-          // API'den gelen beyannameleri dönüştür
-          const declarations = data.map((d: any) => ({
-            id: d.id,
-            type: d.type,
-            enabled: false, // Varsayılan olarak kapalı
-            frequency: d.frequency.toLowerCase(),
-            dueDay: d.dueDay || 26,
-            dueHour: d.dueHour || 23,
-            dueMinute: d.dueMinute || 59,
-            dueMonth: d.dueMonth,
-            quarterOffset: d.quarterOffset,
-            yearlyCount: d.yearlyCount,
-            skipQuarter: d.skipQuarter,
-            quarters: d.quarters ? JSON.parse(d.quarters) : undefined
-          }))
-          
-          setAvailableDeclarations(declarations)
-          
-          // Eğer müşteri için ayar varsa, enabled durumlarını güncelle
-          if (settings.length > 0) {
-            const merged = declarations.map((decl: DeclarationSetting) => {
-              const existing = settings.find(s => s.type === decl.type)
-              return existing ? { ...decl, enabled: existing.enabled } : decl
-            })
-            setLocalSettings(merged)
-          } else {
-            setLocalSettings(declarations)
-          }
-        } else {
-          toast.error("Beyanname listesi yüklenemedi")
-        }
-      } catch (error) {
-        console.error('Error fetching declarations:', error)
+  const fetchDeclarations = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/declarations-config')
+      if (res.ok) {
+        const data = await res.json()
+        const declarations = data.map((d: {
+          id: string
+          type: string
+          frequency: string
+          dueDay?: number
+          dueHour?: number
+          dueMinute?: number
+          dueMonth?: number
+          quarterOffset?: number
+          yearlyCount?: number
+          skipQuarter?: number
+          quarters?: string | null
+        }) => ({
+          id: d.id,
+          type: d.type,
+          enabled: false,
+          frequency: d.frequency.toLowerCase(),
+          dueDay: d.dueDay || 26,
+          dueHour: d.dueHour || 23,
+          dueMinute: d.dueMinute || 59,
+          dueMonth: d.dueMonth,
+          quarterOffset: d.quarterOffset,
+          yearlyCount: d.yearlyCount,
+          skipQuarter: d.skipQuarter,
+          quarters: d.quarters ? JSON.parse(d.quarters) : undefined
+        }))
+        setAvailableDeclarations(declarations)
+        setLocalSettings(declarations)
+      } else {
         toast.error("Beyanname listesi yüklenemedi")
-      } finally {
-        setLoading(false)
       }
+    } catch (error) {
+      console.error('Error fetching declarations:', error)
+      toast.error("Beyanname listesi yüklenemedi")
+    } finally {
+      setLoading(false)
     }
-
-    fetchDeclarations()
   }, [])
+
+  useEffect(() => {
+    fetchDeclarations()
+  }, [fetchDeclarations])
 
   // settings değiştiğinde enabled durumlarını güncelle
   useEffect(() => {
@@ -132,7 +131,7 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
     }
   }
 
-  const updateEditForm = (field: keyof DeclarationSetting, value: any) => {
+  const updateEditForm = (field: keyof DeclarationSetting, value: string | number | boolean | undefined) => {
     if (editForm) {
       setEditForm({ ...editForm, [field]: value })
     }
@@ -327,14 +326,13 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
       }
 
       // Önce mevcut beyannameleri kontrol et
-      let existingTaxReturns: any[] = []
+      let existingTaxReturns: { customerId: string; type: string; period: string }[] = []
       try {
         const checkRes = await fetch(`/api/tax-returns?customerId=${customerId}&currentPeriod=false`)
         if (checkRes.ok) {
           existingTaxReturns = await checkRes.json()
         }
-      } catch (e) {
-        // Hata olursa devam et, duplicate check API'de yapılacak
+      } catch {
       }
 
       // Sadece mevcut olmayan beyannameleri filtrele
@@ -382,7 +380,7 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
             console.log('Raw response text:', responseText)
             
             // JSON parse etmeyi dene
-            let errorData: any = {}
+            let errorData: { error?: string; rawResponse?: string; [key: string]: unknown } = {}
             try {
               errorData = JSON.parse(responseText)
             } catch (parseError) {
@@ -450,11 +448,7 @@ export function DeclarationSettings({ settings, customerId, establishmentDate, o
     return `Ayın ${declaration.dueDay}'si ${time}`
   }
 
-  const getMonthName = (monthNum: number) => {
-    const months = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 
-                    'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık']
-    return months[monthNum]
-  }
+  
 
   const handleReset = async () => {
     if (!confirm("Ayarları sıfırlamak istediğinize emin misiniz? Bu işlem müşteri beyannamelerini de silecektir.")) {

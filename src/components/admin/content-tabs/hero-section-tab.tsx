@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { Camera, Loader2, RotateCcw, Save } from "lucide-react"
+import Image from "next/image"
 import { toast } from "sonner"
 
 // Ana sayfa section linkleri
@@ -180,8 +181,17 @@ export function HeroSectionTab() {
         toast.success('Hero bölümü başarıyla kaydedildi!')
         await fetchHeroData()
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Kaydetme sırasında bir hata oluştu')
+        let message = 'Kaydetme sırasında bir hata oluştu'
+        try {
+          const ct = response.headers.get('content-type') || ''
+          const err = ct.includes('application/json') ? await response.json() : await response.text()
+          if (typeof err === 'string' && err.trim().length > 0) message = err
+          else if (err && typeof err === 'object') message = err.error || message
+        } catch {}
+        if (response.status === 501) {
+          message = 'Geliştirme (SQLite) şemasında hero yönetimi desteklenmiyor'
+        }
+        toast.error(message)
       }
     } catch (error) {
       console.error('Error saving hero:', error)
@@ -232,8 +242,17 @@ export function HeroSectionTab() {
         toast.success('Varsayılan değerler veritabanına kaydedildi!')
         await fetchHeroData()
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Varsayılan değerler kaydedilemedi')
+        let message = 'Varsayılan değerler kaydedilemedi'
+        try {
+          const ct = response.headers.get('content-type') || ''
+          const err = ct.includes('application/json') ? await response.json() : await response.text()
+          if (typeof err === 'string' && err.trim().length > 0) message = err
+          else if (err && typeof err === 'object') message = err.error || message
+        } catch {}
+        if (response.status === 501) {
+          message = 'Geliştirme (SQLite) şemasında hero yönetimi desteklenmiyor'
+        }
+        toast.error(message)
       }
     } catch (error) {
       console.error('Error saving defaults:', error)
@@ -334,7 +353,7 @@ export function HeroSectionTab() {
                 placeholder="https://ornek.com veya /sayfa-yolu"
               />
               <p className="text-xs text-muted-foreground">
-                Dahili sayfa için "/" ile başlayın (örn: /hakkimizda), harici link için tam URL girin
+                Dahili sayfa için &quot;/&quot; ile başlayın (örn: /hakkimizda), harici link için tam URL girin
               </p>
             </div>
           )}
@@ -343,7 +362,7 @@ export function HeroSectionTab() {
             <Label>Hero Görseli</Label>
             <div className="flex items-center gap-4">
               {formData.image && (
-                <img src={formData.image} alt="Hero" className="h-32 w-32 rounded object-cover border" />
+                <Image src={formData.image} alt="Hero" width={128} height={128} className="h-32 w-32 rounded object-cover border" unoptimized />
               )}
               <div>
                 <Button

@@ -113,10 +113,11 @@ export async function GET() {
     }
 
     return NextResponse.json(services)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching services:', error)
     // Handle missing table (P2021) - return default values
-    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+    const err = error as { code?: string; message?: string }
+    if (err.code === 'P2021' || err.message?.includes('does not exist')) {
       return NextResponse.json(getDefaultServices())
     }
     // Return default values on error
@@ -167,18 +168,18 @@ export async function POST(request: NextRequest) {
 
     console.log('POST /api/content/services - Service created successfully:', service.id)
     return NextResponse.json(service)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('POST /api/content/services - Error creating service:', error)
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      code: (error as any).code
+      code: (error as { code?: string })?.code
     })
     return NextResponse.json(
       { 
         error: 'Hizmet eklenemedi', 
         details: error instanceof Error ? error.message : 'Unknown error',
-        code: (error as any).code 
+        code: (error as { code?: string })?.code 
       },
       { status: 500 }
     )

@@ -13,11 +13,30 @@ import { Badge } from "@/components/ui/badge"
 import { Download, Mail, Phone, Calendar, FileText, Briefcase, GraduationCap, Clock } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 
+type ApplicationStatus = 'NEW' | 'REVIEWING' | 'INTERVIEWED' | 'REJECTED' | 'ACCEPTED' | 'new' | 'reviewing' | 'interviewed' | 'rejected' | 'accepted'
+
+interface JobApplication {
+  id: string
+  name: string
+  email: string
+  phone: string
+  position: string
+  experience: string
+  education: string
+  coverLetter?: string
+  cvFileName?: string
+  cvFileData?: string
+  cvMimeType?: string
+  cvFilePath?: string
+  createdAt: string
+  status: ApplicationStatus
+}
+
 interface JobApplicationModalProps {
-  application: any
+  application: JobApplication | null
   isOpen: boolean
   onClose: () => void
-  onExportPDF: (application: any) => void
+  onExportPDF: (application: JobApplication) => void
 }
 
 const statusColors = {

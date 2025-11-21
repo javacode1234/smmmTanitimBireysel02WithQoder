@@ -10,13 +10,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "customerId is required" }, { status: 400 })
     }
 
-    const items = await (prisma as any).customerDeclarationSetting.findMany({
+    const items = await prisma.customerDeclarationSetting.findMany({
       where: { customerId },
       orderBy: { type: "asc" },
     })
 
     // Map DB enum to lower-case strings for UI
-    const mapped = items.map((i: any) => ({
+    const mapped = items.map((i) => ({
       type: i.type,
       enabled: i.enabled,
       frequency: String(i.frequency).toLowerCase(),
@@ -49,11 +49,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Replace existing set: delete and create many
-    await (prisma as any).customerDeclarationSetting.deleteMany({ where: { customerId } })
+    await prisma.customerDeclarationSetting.deleteMany({ where: { customerId } })
 
     if (settings.length > 0) {
-      await (prisma as any).customerDeclarationSetting.createMany({
-        data: settings.map((s: any) => ({
+      await prisma.customerDeclarationSetting.createMany({
+        data: settings.map((s) => ({
           customerId,
           type: s.type,
           enabled: !!s.enabled,

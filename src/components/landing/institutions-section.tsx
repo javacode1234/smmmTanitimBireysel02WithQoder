@@ -7,9 +7,28 @@ import { ExternalLink, ChevronLeft, ChevronRight } from "lucide-react"
 import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 
-// Government institutions data
-const defaultInstitutions = [
+type InstitutionItem = {
+  id?: string
+  name: string
+  description?: string
+  url?: string
+  logo?: string
+  isActive?: boolean
+  order?: number
+}
+
+type Institution = {
+  name: string
+  fullName: string
+  logo: string
+  url: string
+  bgColor: string
+  isCustom?: boolean
+}
+
+const defaultInstitutions: Institution[] = [
   {
     name: "GİB",
     fullName: "Gelir İdaresi Başkanlığı",
@@ -69,7 +88,7 @@ const defaultInstitutions = [
 ]
 
 export function InstitutionsSection() {
-  const [institutions, setInstitutions] = useState(defaultInstitutions)
+  const [institutions, setInstitutions] = useState<Institution[]>(defaultInstitutions)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isMountedRef = useRef(true)
@@ -138,17 +157,16 @@ export function InstitutionsSection() {
         setError(null)
         const response = await fetch('/api/content/institutions')
         if (response.ok) {
-          const data = await response.json()
-          // Only use database data if there are active items
-          const activeItems = data.filter((item: any) => item.isActive)
+          const data: InstitutionItem[] = await response.json()
+          const activeItems: InstitutionItem[] = (data || []).filter((item: InstitutionItem) => item.isActive)
           if (activeItems.length > 0 && isMountedRef.current) {
-            const dbInstitutions = activeItems.map((item: any) => ({
+            const dbInstitutions: Institution[] = activeItems.map((item: InstitutionItem) => ({
               name: item.name,
               fullName: item.description || item.name,
-              logo: item.logo, // Base64 image
+              logo: item.logo || "",
               url: item.url || "#",
-              bgColor: "from-gray-100 to-gray-200", // Neutral for custom logos
-              isCustom: true // Flag for rendering
+              bgColor: "from-gray-100 to-gray-200",
+              isCustom: !!item.logo
             }))
             setInstitutions(dbInstitutions)
           }
@@ -280,21 +298,14 @@ export function InstitutionsSection() {
                     {/* Content */}
                     <div className="relative z-10 w-full flex flex-col items-center">
                       <div className={`h-20 w-20 md:h-24 md:w-24 rounded-2xl bg-gradient-to-br ${institution.bgColor} flex items-center justify-center mb-4 shadow-lg group-hover:shadow-xl overflow-hidden transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
-                        {(institution as any).isCustom && institution.logo.startsWith('data:') ? (
-                          <img 
-                            src={institution.logo} 
-                            alt={institution.name} 
+                        {institution.isCustom && institution.logo.startsWith('data:') ? (
+                          <Image
+                            src={institution.logo}
+                            alt={institution.name}
+                            width={96}
+                            height={96}
+                            unoptimized
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              try {
-                                const target = e.target as HTMLImageElement;
-                                if (target && typeof target.style !== 'undefined') {
-                                  target.style.display = 'none';
-                                }
-                              } catch (error) {
-                                console.warn('Error hiding image:', error);
-                              }
-                            }}
                           />
                         ) : (
                           <span className="text-4xl md:text-5xl transform group-hover:scale-110 transition-transform duration-300">{institution.logo}</span>
@@ -343,7 +354,7 @@ export function InstitutionsSection() {
           {/* Navigation Buttons */}
           <Button
             onClick={scrollPrev}
-            disabled={false}
+            disabled={prevBtnDisabled}
             className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full bg-white shadow-xl border-2 border-blue-100 hover:bg-blue-50 hover:border-blue-300 hidden md:flex items-center justify-center"
             variant="outline"
             size="icon"
@@ -353,7 +364,7 @@ export function InstitutionsSection() {
           
           <Button
             onClick={scrollNext}
-            disabled={false}
+            disabled={nextBtnDisabled}
             className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full bg-white shadow-xl border-2 border-blue-100 hover:bg-blue-50 hover:border-blue-300 hidden md:flex items-center justify-center"
             variant="outline"
             size="icon"

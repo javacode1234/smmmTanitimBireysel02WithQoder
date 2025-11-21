@@ -18,14 +18,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { QuoteRequest, QuoteRequestStatus } from "@/components/admin/quote-request-modal"
 
 interface EditQuoteRequestModalProps {
-  request: any
+  request: QuoteRequest | null
   isOpen: boolean
   onClose: () => void
-  onStatusUpdate: (requestId: string, newStatus: string) => void
+  onStatusUpdate: (requestId: string, newStatus: QuoteRequestStatus) => void
 }
+
+ 
 
 const statusColors = {
   NEW: "bg-blue-100 text-blue-800",
@@ -46,13 +49,6 @@ const statusLabels = {
 export function EditQuoteRequestModal({ request, isOpen, onClose, onStatusUpdate }: EditQuoteRequestModalProps) {
   const [selectedStatus, setSelectedStatus] = useState(request?.status || "NEW")
 
-  // Update selected status when request changes or modal opens
-  useEffect(() => {
-    if (request?.status) {
-      setSelectedStatus(request.status)
-    }
-  }, [request?.status, isOpen])
-
   if (!request) return null
 
   const handleSave = () => {
@@ -61,7 +57,7 @@ export function EditQuoteRequestModal({ request, isOpen, onClose, onStatusUpdate
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+      <DialogContent key={request.id} className="max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Teklif Talebi Durumunu Güncelle</DialogTitle>
           <DialogDescription>

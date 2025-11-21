@@ -43,6 +43,20 @@ import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-di
 import { Badge } from "@/components/ui/badge"
 
 // Available icons for selection
+interface Feature {
+  id: string
+  icon: string
+  title: string
+  description: string
+  isActive: boolean
+}
+
+interface AboutData {
+  title: string
+  subtitle: string
+  description: string
+  features: Feature[]
+}
 const AVAILABLE_ICONS = [
   { name: "Award", component: Award },
   { name: "Shield", component: Shield },
@@ -57,7 +71,7 @@ const AVAILABLE_ICONS = [
 ]
 
 // Default values for the about section
-const DEFAULT_FEATURES = [
+const DEFAULT_FEATURES: Feature[] = [
   {
     id: "default-1",
     icon: "Award",
@@ -88,7 +102,7 @@ const DEFAULT_FEATURES = [
   }
 ]
 
-const DEFAULT_ABOUT = {
+const DEFAULT_ABOUT: AboutData = {
   title: "Hakkımızda",
   subtitle: "Serbest Muhasebeci Mali Müşavir olarak, işletmelerin finansal süreçlerini en verimli şekilde yönetmelerine yardımcı oluyoruz.",
   description: "Profesyonel kadromuz ve modern teknoloji altyapımız ile sektörde fark yaratıyoruz.",
@@ -96,14 +110,14 @@ const DEFAULT_ABOUT = {
 }
 
 export function AboutTab() {
-  const [aboutData, setAboutData] = useState<any>(DEFAULT_ABOUT)
+  const [aboutData, setAboutData] = useState<AboutData>(DEFAULT_ABOUT)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
-  const [editingFeature, setEditingFeature] = useState<any>(null)
+  const [editingFeature, setEditingFeature] = useState<Feature | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [featureToDelete, setFeatureToDelete] = useState<any>(null)
+  const [featureToDelete, setFeatureToDelete] = useState<Feature | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false)
@@ -120,7 +134,7 @@ export function AboutTab() {
           if (data && data.id) {
             // Ensure all features have isActive property
             if (data.features) {
-              data.features = data.features.map((feature: any) => ({
+              data.features = data.features.map((feature: Feature) => ({
                 ...feature,
                 isActive: feature.isActive ?? true
               }))
@@ -179,7 +193,7 @@ export function AboutTab() {
   }, [])
 
   // Filter features based on search term
-  const filteredFeatures = aboutData.features.filter((feature: any) =>
+  const filteredFeatures = aboutData.features.filter((feature: Feature) =>
     feature.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     feature.description.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -221,7 +235,7 @@ export function AboutTab() {
   }
 
   // Edit a feature
-  const editFeature = (feature: any) => {
+  const editFeature = (feature: Feature) => {
     // Create a deep copy of the feature to edit
     const featureCopy = JSON.parse(JSON.stringify(feature))
     // Ensure isActive property exists
@@ -234,18 +248,18 @@ export function AboutTab() {
 
   // Save feature (new or edited)
   const saveFeature = () => {
-    if (!editingFeature.title.trim()) {
+    if (!editingFeature || !editingFeature.title.trim()) {
       toast.error("Başlık alanı boş olamaz")
       return
     }
 
     // Mevcut bir özelliği mi düzenliyoruz yoksa yeni bir özellik mi ekliyoruz?
     // editingFeature.id'si aboutData.features dizisinde varsa mevcut bir özelliği düzenliyoruz
-    const isExistingFeature = aboutData.features.some((f: any) => f.id === editingFeature.id);
+    const isExistingFeature = aboutData.features.some((f: Feature) => f.id === editingFeature.id);
     
     if (isExistingFeature) {
       // Mevcut özelliği güncelle
-      const updatedFeatures = aboutData.features.map((f: any) => {
+      const updatedFeatures = aboutData.features.map((f: Feature) => {
         if (f.id === editingFeature.id) {
           return { ...editingFeature }
         }
@@ -267,7 +281,7 @@ export function AboutTab() {
   }
 
   // Open delete confirmation dialog
-  const openDeleteDialog = (feature: any) => {
+  const openDeleteDialog = (feature: Feature) => {
     setFeatureToDelete(feature)
     setIsDeleteDialogOpen(true)
   }
@@ -275,7 +289,7 @@ export function AboutTab() {
   // Confirm delete feature
   const confirmDeleteFeature = () => {
     if (featureToDelete) {
-      const updatedFeatures = aboutData.features.filter((f: any) => f.id !== featureToDelete.id)
+      const updatedFeatures = aboutData.features.filter((f: Feature) => f.id !== featureToDelete.id)
       setAboutData({ ...aboutData, features: updatedFeatures })
       toast.success("Özellik başarıyla silindi")
     }
@@ -432,7 +446,7 @@ export function AboutTab() {
             </TableHeader>
             <TableBody>
               {paginatedFeatures.length > 0 ? (
-                paginatedFeatures.map((feature: any) => {
+                paginatedFeatures.map((feature: Feature) => {
                   const IconComponent = AVAILABLE_ICONS.find(icon => icon.name === feature.icon)?.component || Award
                   return (
                     <TableRow key={feature.id}>

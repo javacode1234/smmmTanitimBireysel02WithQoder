@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useTransition } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -65,7 +65,6 @@ type Customer = {
 
 export default function CustomersPage() {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [isMounted, setIsMounted] = useState(false)
   const [isNavigating, setIsNavigating] = useState(false)
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -121,54 +120,43 @@ export default function CustomersPage() {
       params.set("page", currentPage.toString())
       params.set("pageSize", itemsPerPage.toString())
 
-      const res = await fetch(`/api/customers?${params.toString()}`)
+      const res = await fetch(`/api/customers?${params.toString()}`, {
+        cache: 'no-store',
+        headers: { 'accept': 'application/json' }
+      })
       if (res.ok) {
-        const data = await res.json()
-        console.log('Fetched customers:', data)
-        
-        // API returns { items: [...], total, page, pageSize }
-        // Update state with the items array
-        if (data.items && Array.isArray(data.items)) {
-          setCustomers(data.items)
-        } else {
-          // Fallback: if data is directly an array
-          setCustomers(Array.isArray(data) ? data : [])
+        try {
+          const contentType = res.headers.get('content-type') || ''
+          const data = contentType.includes('application/json') ? await res.json() : JSON.parse(await res.text())
+          
+          if (data && data.items && Array.isArray(data.items)) {
+            setCustomers(data.items)
+          } else if (Array.isArray(data)) {
+            setCustomers(data)
+          } else if (data && Array.isArray(data.items) === false && Array.isArray(data) === false) {
+            setCustomers([])
+          }
+        } catch (parseError) {
+          console.error('Response parse error:', parseError)
+          setCustomers([])
         }
       } else {
-        // Enhanced error handling for empty or malformed error responses
-        let errorData;
         let errorMessage = "Müşteriler yüklenirken hata oluştu";
-        
         try {
-          errorData = await res.json().catch(() => ({ error: 'Bilinmeyen hata' }))
-        } catch {
-          errorData = { error: 'Bilinmeyen hata' }
-        }
-        
-        console.error('API Error:', errorData)
-        
-        // Handle empty error object
-        if (errorData && typeof errorData === 'object' && Object.keys(errorData).length === 0) {
-          // Try to get more info from response
-          try {
-            const errorText = await res.text()
-            if (errorText) {
-              errorMessage = errorText
-            } else {
-              errorMessage = `HTTP ${res.status}: ${res.statusText || 'Bilinmeyen hata'}`
+          const contentType = res.headers.get('content-type') || ''
+          if (contentType.includes('application/json')) {
+            const errorJson = await res.json()
+            if (errorJson && typeof errorJson === 'object') {
+              errorMessage = errorJson.error || JSON.stringify(errorJson)
             }
-          } catch {
-            errorMessage = `HTTP ${res.status}: ${res.statusText || 'Bilinmeyen hata'}`
+          } else {
+            const errorText = await res.text()
+            errorMessage = errorText || `HTTP ${res.status}: ${res.statusText || 'Bilinmeyen hata'}`
           }
-        } else if (errorData && typeof errorData === 'object' && errorData.error) {
-          errorMessage = errorData.error
-        } else if (typeof errorData === 'string') {
-          errorMessage = errorData
-        } else {
+        } catch {
           errorMessage = `HTTP ${res.status}: ${res.statusText || 'Bilinmeyen hata'}`
         }
         
-        console.error('Final error message:', errorMessage)
         toast.error(errorMessage, {
           action: {
             label: <div className="flex items-center gap-1"><Copy className="h-3 w-3" /> Kopyala</div>,

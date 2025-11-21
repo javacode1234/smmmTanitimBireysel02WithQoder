@@ -1,9 +1,0 @@
-* Cannot read properties of null (reading 'removeChild')
-* Navigation kodları yazarken requestAnimationFrame kullanacağım
-* setTimeout ile navigation yapmaktan kaçınacağım
-* State cleanup + router.push birlikte olduğunda requestAnimationFrame ile saracağım
-* Framer Motion olan sayfalara "use client" eklemeyi unutmayacağım
-* Button asChild + Link pattern'inden uzak duracağım
-* API routes'ta boş hata nesnelerini düzgün işlemeliyim ("Save error: {}" hatası)
-* Prisma modelleri olmayan ortamlarda 501 dönmeliyim
-* 501 hatalarını frontend'te sessizce ele almalıyım

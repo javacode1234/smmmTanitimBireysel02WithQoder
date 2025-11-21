@@ -3,6 +3,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import type { PanInfo } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react"
@@ -37,10 +38,6 @@ export function TestimonialsSection() {
     paragraph: "500'den fazla mutlu müşterimizin deneyimleri. Güven ve memnuniyet odaklı hizmet anlayışımızın en büyük kanıtı."
   })
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
   const fetchData = async () => {
     try {
       const [testimonialsRes, sectionRes] = await Promise.all([
@@ -70,6 +67,13 @@ export function TestimonialsSection() {
   }
 
   useEffect(() => {
+    const id = setTimeout(() => {
+      fetchData()
+    }, 0)
+    return () => clearTimeout(id)
+  }, [])
+
+  useEffect(() => {
     if (isPaused || testimonials.length === 0) return
 
     const timer = setInterval(() => {
@@ -91,7 +95,7 @@ export function TestimonialsSection() {
     setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)
   }
 
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: any) => {
+  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const threshold = 50
     if (info.offset.x > threshold) {
       prevSlide()
@@ -182,7 +186,7 @@ export function TestimonialsSection() {
 
                     {/* Testimonial Text */}
                     <p className="text-gray-700 mb-6 leading-relaxed italic text-base">
-                      "{testimonial.content}"
+                      &ldquo;{testimonial.content}&rdquo;
                     </p>
 
                     {/* Author Info */}

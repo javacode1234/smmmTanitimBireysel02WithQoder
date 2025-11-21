@@ -19,10 +19,7 @@ import {
   ArrowDown,
   Loader2,
   Mail,
-  Phone,
-  Linkedin,
-  Facebook,
-  Instagram
+  Phone
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -199,7 +196,7 @@ export function TeamTab() {
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [editingMember, setEditingMember] = useState<any>(null)
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -222,7 +219,7 @@ export function TeamTab() {
     try {
       const response = await fetch('/api/content/team/section')
       if (response.ok) {
-        const data = await response.json()
+        const data: TeamMember[] = await response.json()
         if (data && data.id) {
           setSectionData({
             title: data.title || DEFAULT_SECTION_DATA.title,
@@ -248,7 +245,7 @@ export function TeamTab() {
         const data = await response.json()
         
         if (data && data.length > 0) {
-          const allDefaults = data.every((m: any) => m.id?.startsWith('default-'))
+          const allDefaults = data.every((m: TeamMember) => m.id?.startsWith('default-'))
           setMembers(data)
           setIsDatabaseEmpty(allDefaults)
         } else {

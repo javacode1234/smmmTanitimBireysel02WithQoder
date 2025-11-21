@@ -18,13 +18,23 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { useState, useEffect } from "react"
+import { useState } from "react"
+
+type ContactMessageStatus = 'NEW' | 'PENDING' | 'REPLIED' | 'RESOLVED'
+
+interface ContactMessage {
+  id: string
+  email: string
+  phone: string
+  subject: string
+  status: ContactMessageStatus
+}
 
 interface EditContactMessageModalProps {
-  message: any
+  message: ContactMessage | null
   isOpen: boolean
   onClose: () => void
-  onStatusUpdate: (messageId: string, newStatus: string) => void
+  onStatusUpdate: (messageId: string, newStatus: ContactMessageStatus) => void
 }
 
 const statusColors = {
@@ -42,14 +52,7 @@ const statusLabels = {
 }
 
 export function EditContactMessageModal({ message, isOpen, onClose, onStatusUpdate }: EditContactMessageModalProps) {
-  const [selectedStatus, setSelectedStatus] = useState(message?.status || "NEW")
-
-  // Update selected status when message changes or modal opens
-  useEffect(() => {
-    if (message?.status) {
-      setSelectedStatus(message.status)
-    }
-  }, [message?.status, isOpen])
+  const [selectedStatus, setSelectedStatus] = useState<ContactMessageStatus>(message?.status || "NEW")
 
   if (!message) return null
 

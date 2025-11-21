@@ -3,24 +3,25 @@ import { prisma } from "@/lib/db"
 
 export async function GET() {
   try {
-    const items = await (prisma as any).declarationConfig.findMany({
+    const items = await prisma.declarationconfig.findMany({
       orderBy: { createdAt: "desc" },
     })
     return NextResponse.json(items)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching declaration configs:", error)
-    const code = error?.code
-    // If table not found or column issue during development, return empty list to avoid breaking UI
-    if (code === "P2021" || code === "P2022") {
+    const err = error as { code?: string }
+    if (err?.code === "P2021" || err?.code === "P2022") {
       return NextResponse.json([])
     }
     return NextResponse.json({ error: "Failed to fetch declarations" }, { status: 500 })
   }
 }
 
+type ReqBody = Record<string, unknown>
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body: ReqBody = await request.json()
     const {
       type,
       enabled = true,
@@ -41,10 +42,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "type and frequency are required" }, { status: 400 })
     }
 
-    const created = await (prisma as any).declarationConfig.create({
+    const created = await prisma.declarationconfig.create({
       data: {
-        type,
-        enabled,
+        type: String(type),
+        enabled: Boolean(enabled),
         frequency: String(frequency).toUpperCase(),
         taxPeriodType: taxPeriodType ? String(taxPeriodType).toUpperCase() : undefined,
         dueDay: dueDay != null ? Number(dueDay) : undefined,
@@ -55,26 +56,27 @@ export async function POST(request: NextRequest) {
         yearlyCount: yearlyCount != null ? Number(yearlyCount) : undefined,
         skipQuarter: !!skipQuarter,
         optional: !!optional,
-        quarters: quarters || null,
+        quarters: (quarters as string | null) ?? null,
       },
     })
 
     return NextResponse.json(created, { status: 201 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating declaration config:", error)
-    const msg = String(error?.message || "")
-    if (error?.code === "P2002") {
+    const err = error as { code?: string; message?: string }
+    const msg = String(err?.message || "")
+    if (err?.code === "P2002") {
       return NextResponse.json({ error: "type must be unique" }, { status: 409 })
     }
     // Fallback: if Prisma Client is outdated and optional arg is unknown, retry without it
     if (msg.includes("Unknown argument") && msg.toLowerCase().includes("optional")) {
       try {
-        const body2 = await request.clone().json()
+        const body2: ReqBody = await request.clone().json()
         const { type: t, enabled: e, frequency: f, dueDay: dd, dueHour: dh, dueMinute: dm, dueMonth: dmo, quarterOffset: qo, yearlyCount: yc, skipQuarter: sq } = body2
-        const created = await (prisma as any).declarationConfig.create({
+        const created = await prisma.declarationconfig.create({
           data: {
-            type: t,
-            enabled: e,
+            type: String(t),
+            enabled: Boolean(e),
             frequency: String(f).toUpperCase(),
             dueDay: dd != null ? Number(dd) : undefined,
             dueHour: dh != null ? Number(dh) : undefined,
@@ -96,14 +98,14 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json()
+    const body: ReqBody = await request.json()
     const { id, ...data } = body
 
     if (!id) {
       return NextResponse.json({ error: "id is required" }, { status: 400 })
     }
 
-    const updated = await (prisma as any).declarationConfig.update({
+    const updated = await prisma.declarationconfig.update({
       where: { id },
       data: {
         ...data,
@@ -122,15 +124,16 @@ export async function PATCH(request: NextRequest) {
     })
 
     return NextResponse.json(updated)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating declaration config:", error)
-    const msg = String(error?.message || "")
+    const err = error as { message?: string }
+    const msg = String(err?.message || "")
     // Fallback: unknown optional argument → retry without it
     if (msg.includes("Unknown argument") && msg.toLowerCase().includes("optional")) {
       try {
-        const body2 = await request.clone().json()
+        const body2: ReqBody = await request.clone().json()
         const { id: updateId, ...updateData } = body2
-        const updated = await (prisma as any).declarationConfig.update({
+        const updated = await prisma.declarationconfig.update({
           where: { id: updateId },
           data: {
             ...updateData,
@@ -162,7 +165,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "id is required" }, { status: 400 })
     }
 
-    await (prisma as any).declarationConfig.delete({ where: { id } })
+    await prisma.declarationconfig.delete({ where: { id } })
     return NextResponse.json({ message: "Declaration deleted" })
   } catch (error) {
     console.error("Error deleting declaration config:", error)

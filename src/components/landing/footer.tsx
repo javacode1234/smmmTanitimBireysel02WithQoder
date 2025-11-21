@@ -46,10 +46,6 @@ export function Footer() {
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({})
   const scrollingRef = useRef(false)
 
-  useEffect(() => {
-    fetchSiteSettings()
-  }, [])
-
   const fetchSiteSettings = async () => {
     try {
       const response = await fetch('/api/content/site-settings')
@@ -71,6 +67,13 @@ export function Footer() {
       setSiteSettings(DEFAULT_SETTINGS)
     }
   }
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      fetchSiteSettings()
+    }, 0)
+    return () => clearTimeout(id)
+  }, [])
 
   // Helper function to get value or default
   const getValue = (key: keyof typeof DEFAULT_SETTINGS) => {
@@ -116,9 +119,12 @@ export function Footer() {
             <div className="flex items-center space-x-2 mb-4">
               <div className="h-10 w-10 rounded-lg overflow-hidden">
                 {siteSettings.brandIcon ? (
-                  <img
+                  <Image
                     src={siteSettings.brandIcon}
                     alt={getValue('siteName')}
+                    width={40}
+                    height={40}
+                    unoptimized
                     className="h-full w-full object-cover"
                   />
                 ) : (

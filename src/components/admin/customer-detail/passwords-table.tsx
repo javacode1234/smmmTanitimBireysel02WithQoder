@@ -27,7 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Trash2, Plus, ChevronLeft, ChevronRight, Edit, Eye, EyeOff } from "lucide-react"
+import { Trash2, Plus, Edit, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 
 interface Password {
@@ -39,11 +39,10 @@ interface Password {
 
 interface PasswordsTableProps {
   passwords: Password[]
-  customerId: string
   onUpdate: (passwords: Password[]) => void
 }
 
-export function PasswordsTable({ passwords, customerId, onUpdate }: PasswordsTableProps) {
+export function PasswordsTable({ passwords, onUpdate }: PasswordsTableProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)

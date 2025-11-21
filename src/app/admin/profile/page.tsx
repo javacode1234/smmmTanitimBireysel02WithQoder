@@ -56,7 +56,7 @@ export default function AdminProfilePage() {
           setFormData(userData)
           setPreviewAvatar(userData.avatar)
         }
-      } catch (error) {
+      } catch {
         // Silently ignore profile fetch errors
       } finally {
         setIsLoading(false)
@@ -105,7 +105,7 @@ export default function AdminProfilePage() {
       }
       reader.readAsDataURL(file)
       toast.success('Resim yüklendi! Değişiklikleri kaydetmeyi unutmayın.')
-    } catch (error) {
+    } catch {
       toast.error('Resim yüklenirken bir hata oluştu')
     }
   }
@@ -141,7 +141,7 @@ export default function AdminProfilePage() {
         const errorData = await response.json().catch(() => ({ error: 'Profil güncellenirken bir hata oluştu' }))
         toast.error(errorData.error || 'Profil güncellenirken bir hata oluştu')
       }
-    } catch (error) {
+    } catch {
       toast.error('Profil güncellenirken bir hata oluştu. Lütfen tekrar deneyin.')
     } finally {
       setIsSaving(false)

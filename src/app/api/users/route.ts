@@ -79,7 +79,7 @@ export async function PATCH(req: NextRequest) {
     const { name, email, password, role } = body
 
     // Prepare update data
-    const updateData: any = {}
+    const updateData: Partial<{ name: string | null; email: string; password: string; role: string }> = {}
     if (name !== undefined) updateData.name = name || null
     if (email) updateData.email = email
     if (role) updateData.role = role

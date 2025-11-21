@@ -29,10 +29,19 @@ interface TaxOffice {
   name: string
 }
 
+interface BasicInfoUpdate {
+  logo: string | null
+  companyName: string
+  taxNumber: string | null
+  taxOffice: string | null
+  status: string
+  onboardingStage: string
+}
+
 interface EditBasicInfoModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: any) => void
+  onSave: (data: BasicInfoUpdate) => void
   customerId: string
   initialData: {
     logo: string | null

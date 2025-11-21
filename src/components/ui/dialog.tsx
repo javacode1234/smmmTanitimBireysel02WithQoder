@@ -10,16 +10,37 @@ function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   const [isOpen, setIsOpen] = React.useState(false);
-  
-  // Handle open change with proper cleanup
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    props.onOpenChange?.(open);
-  };
+  const { onOpenChange, open, ...rest } = props;
+  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
+    setIsOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  }, [onOpenChange]);
+
+  React.useEffect(() => {
+    if (typeof open === 'boolean') {
+      setIsOpen(open)
+    }
+  }, [open])
+
+  React.useEffect(() => {
+    const handler = () => {
+      if (isOpen) {
+        handleOpenChange(false)
+      }
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('close-all-dialogs', handler)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('close-all-dialogs', handler)
+      }
+    }
+  }, [isOpen, handleOpenChange])
 
   return <DialogPrimitive.Root 
     data-slot="dialog" 
-    {...props} 
+    {...rest} 
     onOpenChange={handleOpenChange}
     open={isOpen}
   />;

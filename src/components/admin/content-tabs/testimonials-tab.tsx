@@ -160,7 +160,7 @@ export function TestimonialsTab() {
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [editingTestimonial, setEditingTestimonial] = useState<any>(null)
+  const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [testimonialToDelete, setTestimonialToDelete] = useState<Testimonial | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -183,7 +183,7 @@ export function TestimonialsTab() {
     try {
       const response = await fetch('/api/content/testimonials/section')
       if (response.ok) {
-        const data = await response.json()
+        const data: Testimonial[] = await response.json()
         if (data && data.id) {
           setSectionData({
             title: data.title || DEFAULT_SECTION_DATA.title,
@@ -209,7 +209,7 @@ export function TestimonialsTab() {
         const data = await response.json()
         
         if (data && data.length > 0) {
-          const allDefaults = data.every((t: any) => t.id?.startsWith('default-'))
+          const allDefaults = data.every((t: Testimonial) => t.id?.startsWith('default-'))
           setTestimonials(data)
           setIsDatabaseEmpty(allDefaults)
         } else {

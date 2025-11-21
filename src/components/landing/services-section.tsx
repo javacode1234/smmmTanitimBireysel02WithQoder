@@ -4,10 +4,10 @@ import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileText, Calculator, Building2, TrendingUp, Shield, Users, ArrowRight, CheckCircle } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { motion } from "framer-motion"
 
-// Icon map
-const iconMap: any = {
+const iconMap: Record<string, LucideIcon> = {
   FileText: FileText,
   Calculator: Calculator,
   Building2: Building2,
@@ -16,9 +16,18 @@ const iconMap: any = {
   Users: Users
 }
 
-const defaultServices = [
+type Service = {
+  id?: string
+  icon: string
+  title: string
+  description: string
+  features: string[]
+  color: string
+}
+
+const defaultServices: Service[] = [
   {
-    icon: FileText,
+    icon: 'FileText',
     title: "Beyanname Hazırlama",
     description: "Tüm vergi beyannamelerinizi zamanında ve eksiksiz hazırlıyoruz.",
     features: [
@@ -30,7 +39,7 @@ const defaultServices = [
     color: "from-blue-500 to-blue-600"
   },
   {
-    icon: Calculator,
+    icon: 'Calculator',
     title: "Muhasebe Hizmetleri",
     description: "Günlük muhasebe işlemlerinizi profesyonel ekibimizle yönetiyoruz.",
     features: [
@@ -42,7 +51,7 @@ const defaultServices = [
     color: "from-green-500 to-green-600"
   },
   {
-    icon: Building2,
+    icon: 'Building2',
     title: "Şirket Kuruluşu",
     description: "Şirket kuruluş süreçlerinizde baştan sona yanınızdayız.",
     features: [
@@ -54,7 +63,7 @@ const defaultServices = [
     color: "from-purple-500 to-purple-600"
   },
   {
-    icon: TrendingUp,
+    icon: 'TrendingUp',
     title: "Mali Danışmanlık",
     description: "İşletmenizin büyümesi için stratejik mali danışmanlık sunuyoruz.",
     features: [
@@ -66,7 +75,7 @@ const defaultServices = [
     color: "from-orange-500 to-orange-600"
   },
   {
-    icon: Shield,
+    icon: 'Shield',
     title: "Denetim ve Revizyon",
     description: "Mali tablolarınızın doğruluğunu garanti altına alıyoruz.",
     features: [
@@ -78,7 +87,7 @@ const defaultServices = [
     color: "from-red-500 to-red-600"
   },
   {
-    icon: Users,
+    icon: 'Users',
     title: "Bordro Hizmetleri",
     description: "Personel bordro ve SGK işlemlerinizi eksiksiz yönetiyoruz.",
     features: [
@@ -92,8 +101,8 @@ const defaultServices = [
 ]
 
 export function ServicesSection() {
-  const [services, setServices] = useState<any[]>(defaultServices)
-  const [sectionData, setSectionData] = useState({ title: "Hizmetlerimiz", paragraph: "" })
+  const [services, setServices] = useState<Service[]>(defaultServices)
+  const [sectionData, setSectionData] = useState<{ title: string; paragraph: string }>({ title: "Hizmetlerimiz", paragraph: "" })
   const [loading, setLoading] = useState(true)
   const isMountedRef = useRef(true)
 
@@ -108,13 +117,16 @@ export function ServicesSection() {
           // API'den veri geldi mi kontrol et
           if (data && data.length > 0) {
             // Features string'i parse et
-            const parsedData = data.map((service: any) => ({
-              ...service,
-              features: typeof service.features === 'string' 
-                ? JSON.parse(service.features) 
-                : service.features
+            const parsedData: Service[] = data.map((service: { icon: string; title: string; description: string; features: string | string[]; color?: string; isActive?: boolean }) => ({
+              icon: service.icon,
+              title: service.title,
+              description: service.description,
+              features: typeof service.features === 'string'
+                ? JSON.parse(service.features)
+                : (service.features || []),
+              color: service.color || 'from-blue-500 to-blue-600'
             }))
-            setServices(parsedData.filter((s: any) => s.isActive !== false))
+            setServices(parsedData.filter((s) => Array.isArray(s.features)))
           } else {
             setServices(defaultServices)
           }
@@ -143,11 +155,14 @@ export function ServicesSection() {
       }
     }
 
-    fetchServices()
-    fetchSectionData()
+    const id = setTimeout(() => {
+      fetchServices()
+      fetchSectionData()
+    }, 0)
 
     return () => {
       isMountedRef.current = false
+      clearTimeout(id)
     }
   }, [])
 

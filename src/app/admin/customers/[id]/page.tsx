@@ -14,30 +14,16 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Building2, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  FileText, 
-  KeyRound, 
-  FolderOpen, 
-  User, 
   Save, 
   Upload, 
-  Plus, 
   X, 
-  Check,
   ArrowLeft,
-  Calendar,
-  DollarSign,
-  Globe,
   Facebook,
   Twitter,
   Linkedin,
   Instagram,
   MessageSquare,
-  Image as ImageIcon,
-  Copy
+  Image as ImageIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
@@ -136,7 +122,6 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   
   // Declarations
   const [declarations, setDeclarations] = useState<string[]>([]);
-  const [availableDeclarations, setAvailableDeclarations] = useState<Array<{id:string,type:string,enabled:boolean}>>([]);
   
   // Notes
   const [notes, setNotes] = useState("");
@@ -146,9 +131,6 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   
   // Institutional Passwords
   const [passwords, setPasswords] = useState<Array<{id: string, institution: string, username: string, password: string}>>([]);
-  const [newInstitution, setNewInstitution] = useState("");
-  const [newUsername, setNewUsername] = useState("");
-  const [newPassword, setNewPassword] = useState("");
   
   // Tax offices
   const [taxOffices, setTaxOffices] = useState<Array<{id: string, name: string}>>([]);
@@ -366,7 +348,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
         <Link 
           href="/admin/customers" 
           className="flex items-center text-blue-600 hover:text-blue-800 mb-4"
-          onClick={(e) => {
+          onClick={() => {
             // Dispatch event to close any open dialogs across the app
             if (typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('close-all-dialogs'));

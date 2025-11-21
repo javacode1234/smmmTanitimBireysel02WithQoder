@@ -19,7 +19,7 @@ export class DomErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     const msg = error?.message || ""
-    const name = (error as any)?.name || ""
+    const name = error.name || ""
     // Target the common navigation DOM error patterns
     if (msg.includes("removeChild") || msg.includes("appendChild") || msg.includes("insertBefore") || 
         msg.includes("Cannot read properties of null") || name === "NotFoundError" || name === "TypeError") {

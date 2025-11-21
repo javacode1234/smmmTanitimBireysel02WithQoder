@@ -132,7 +132,8 @@ export function WorkflowTab() {
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [editingStep, setEditingStep] = useState<any>(null)
+  type EditableWorkflowStep = Omit<WorkflowStep, 'id'> & { id?: string }
+  const [editingStep, setEditingStep] = useState<EditableWorkflowStep | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [stepToDelete, setStepToDelete] = useState<WorkflowStep | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -226,7 +227,7 @@ export function WorkflowTab() {
           let errorData
           try {
             errorData = JSON.parse(errorText)
-          } catch (e) {
+          } catch {
             errorData = { error: 'Parse error', details: errorText }
           }
           
@@ -339,7 +340,7 @@ export function WorkflowTab() {
         console.log('Workflow steps data:', data)
         
         if (data && data.length > 0) {
-          const allDefaults = data.every((s: any) => s.id?.startsWith('default-'))
+          const allDefaults = data.every((s: WorkflowStep) => s.id?.startsWith('default-'))
           setSteps(data)
           
           if (allDefaults) {

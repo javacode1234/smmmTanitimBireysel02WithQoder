@@ -3,6 +3,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Check, Star, Zap, Crown, Sparkles } from "lucide-react"
@@ -38,7 +39,7 @@ interface SectionData {
   footerText?: string
 }
 
-const iconMap: { [key: string]: any } = {
+const iconMap: Record<string, LucideIcon> = {
   'Star': Star,
   'Zap': Zap,
   'Crown': Crown,
@@ -60,10 +61,6 @@ export function PricingSection() {
     footerText: "* Tüm fiyatlar KDV hariçtir. Özel ihtiyaçlarınız için size özel paket oluşturabiliriz. İlk ay ücretsiz danışmanlık hizmeti ile başlayabilirsiniz."
   })
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
   const fetchData = async () => {
     try {
       const [plansRes, servicesRes, sectionRes] = await Promise.all([
@@ -77,25 +74,33 @@ export function PricingSection() {
         // Only show active pricing plans
         const activePlans = (data || []).filter((p: PricingPlan) => p.isActive === true)
         // Parse features from JSON string or array
-        const parsedPlans = activePlans.map((plan: any) => {
-          let features = plan.features
-          
-          // Eğer string ise JSON parse et
-          if (typeof features === 'string') {
-            features = JSON.parse(features)
+        type FeatureInput = string | { text: string; isIncluded?: boolean }[]
+        const parsedPlans = activePlans.map((plan: PricingPlan | (PricingPlan & { features: FeatureInput })) => {
+          const raw: FeatureInput = (plan as { features: FeatureInput }).features
+          let featuresArr: string[] = []
+
+          if (typeof raw === 'string') {
+            try {
+              const parsed = JSON.parse(raw) as string[] | { text: string; isIncluded?: boolean }[]
+              if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'object') {
+                featuresArr = (parsed as { text: string; isIncluded?: boolean }[])
+                  .filter((f) => f.isIncluded !== false)
+                  .map((f) => f.text)
+              } else if (Array.isArray(parsed)) {
+                featuresArr = parsed as string[]
+              }
+            } catch {
+              featuresArr = []
+            }
+          } else if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === 'object') {
+            featuresArr = (raw as { text: string; isIncluded?: boolean }[])
+              .filter((f) => f.isIncluded !== false)
+              .map((f) => f.text)
+          } else if (Array.isArray(raw)) {
+            featuresArr = raw as string[]
           }
-          
-          // Eğer array içinde objeler varsa, sadece text alır ve isIncluded=true olanları filtrele
-          if (Array.isArray(features) && features.length > 0 && typeof features[0] === 'object') {
-            features = features
-              .filter((f: any) => f.isIncluded !== false)
-              .map((f: any) => f.text)
-          }
-          
-          return {
-            ...plan,
-            features
-          }
+
+          return { ...plan, features: featuresArr }
         })
         setPlans(parsedPlans)
       }
@@ -123,6 +128,13 @@ export function PricingSection() {
       console.error('Error fetching pricing data:', error)
     }
   }
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      fetchData()
+    }, 0)
+    return () => clearTimeout(id)
+  }, [])
 
   const handleQuoteRequest = (packageName: string) => {
     setSelectedPackage(packageName)

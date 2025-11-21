@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
-import { FolderOpen, Download, Trash2, Plus, ChevronLeft, ChevronRight, Edit, Upload as UploadIcon, Eye, EyeOff } from "lucide-react"
+import { FolderOpen, Download, Trash2, Plus, Edit, Upload as UploadIcon, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 
 interface Document {
@@ -42,11 +42,10 @@ interface Document {
 
 interface DocumentsTableProps {
   documents: Document[]
-  customerId: string
   onUpdate: (documents: Document[]) => void
 }
 
-export function DocumentsTable({ documents, customerId, onUpdate }: DocumentsTableProps) {
+export function DocumentsTable({ documents, onUpdate }: DocumentsTableProps) {
   const [activeTab, setActiveTab] = useState<'incoming' | 'outgoing'>('incoming')
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)

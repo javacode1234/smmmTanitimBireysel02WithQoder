@@ -22,7 +22,6 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Label } from "@/components/ui/label"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface FAQCategory {
@@ -58,7 +57,8 @@ export function FAQTab() {
   const [faqSearchTerm, setFaqSearchTerm] = useState("")
   const [faqCurrentPage, setFaqCurrentPage] = useState(1)
   const [faqItemsPerPage, setFaqItemsPerPage] = useState(5)
-  const [editingFaq, setEditingFaq] = useState<any>(null)
+  type EditableFaq = Omit<FAQ, 'id'> & { id?: string }
+  const [editingFaq, setEditingFaq] = useState<EditableFaq | null>(null)
   const [isFaqDialogOpen, setIsFaqDialogOpen] = useState(false)
   const [faqToDelete, setFaqToDelete] = useState<FAQ | null>(null)
   const [isFaqDeleteDialogOpen, setIsFaqDeleteDialogOpen] = useState(false)
@@ -87,10 +87,10 @@ export function FAQTab() {
     try {
       const res = await fetch('/api/content/faq/categories')
       if (res.ok) {
-        const data = await res.json()
+        const data: FAQCategory[] = await res.json()
         if (data?.length > 0) {
           setCategories(data)
-          setIsDatabaseEmpty(data.every((c: any) => c.id?.startsWith('default-')))
+          setIsDatabaseEmpty(data.every((c: FAQCategory) => c.id?.startsWith('default-')))
         }
       }
     } catch (error) {
@@ -102,7 +102,7 @@ export function FAQTab() {
     try {
       const res = await fetch('/api/content/faq')
       if (res.ok) {
-        const data = await res.json()
+        const data: FAQ[] = await res.json()
         if (data?.length > 0) setFaqs(data)
       }
     } catch (error) {

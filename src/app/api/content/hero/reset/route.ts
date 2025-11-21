@@ -11,8 +11,12 @@ export async function DELETE() {
       success: true,
       message: 'Hero bölümü varsayılan değerlere sıfırlandı'
     })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error resetting hero section:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    if ((error as { code?: string })?.code === 'P2021' || msg.includes('does not exist')) {
+      return NextResponse.json({ success: true, message: 'Hero bölümü zaten boş' })
+    }
     return NextResponse.json(
       { error: 'Hero bölümü sıfırlanamadı' },
       { status: 500 }

@@ -13,11 +13,24 @@ import { Badge } from "@/components/ui/badge"
 import { Download, Mail, Phone, Calendar, FileText, MessageSquare } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 
+type ContactMessageStatus = 'NEW' | 'PENDING' | 'REPLIED' | 'RESOLVED' | 'new' | 'pending' | 'replied' | 'resolved'
+
+interface ContactMessage {
+  id: string
+  name: string
+  email: string
+  phone: string
+  subject: string
+  message: string
+  status: ContactMessageStatus
+  createdAt: string
+}
+
 interface ContactMessageModalProps {
-  message: any
+  message: ContactMessage | null
   isOpen: boolean
   onClose: () => void
-  onExportPDF: (message: any) => void
+  onExportPDF: (message: ContactMessage) => void
 }
 
 const statusColors = {

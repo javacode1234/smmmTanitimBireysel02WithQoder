@@ -1,10 +1,40 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Starting database seed...')
+
+  const isSqlite = (process.env.DATABASE_URL || '').startsWith('file:')
+
+  // Minimal seed for SQLite dev
+  if (isSqlite) {
+    console.log('🔧 Detected SQLite (development). Running minimal seed...')
+    const settings = await prisma.sitesettings.upsert({
+      where: { id: 'default-settings' },
+      update: {},
+      create: {
+        id: 'default-settings',
+        siteName: 'SMMM Ofisi',
+        siteDescription: 'Profesyonel muhasebe ve mali müşavirlik hizmetleri',
+        phone: '+90 (212) 123 45 67',
+        email: 'info@smmmofisi.com',
+        address: 'İstanbul, Türkiye',
+        facebookUrl: '',
+        xUrl: '',
+        linkedinUrl: '',
+        instagramUrl: '',
+        youtubeUrl: '',
+        threadsUrl: '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    })
+    console.log('✅ Site settings created:', settings.siteName)
+    console.log('✅ Minimal database seeding completed successfully!')
+    return
+  }
 
   // Seed Users
   console.log('👥 Seeding users...')
@@ -84,6 +114,59 @@ async function main() {
     },
   })
   console.log('✅ Client user 2 created:', clientUser2.email)
+
+  // Seed Tax Offices
+  try {
+    console.log('🏛️ Seeding tax offices...')
+    await prisma.taxOffice.createMany({
+      data: [
+        { id: 'tax-ist-anadolu', name: 'İstanbul Anadolu VDB', city: 'İstanbul', district: 'Anadolu' },
+        { id: 'tax-ist-avrupa', name: 'İstanbul Avrupa VDB', city: 'İstanbul', district: 'Avrupa' },
+        { id: 'tax-ankara', name: 'Ankara VDB', city: 'Ankara', district: 'Merkez' },
+        { id: 'tax-izmir', name: 'İzmir VDB', city: 'İzmir', district: 'Merkez' },
+      ],
+      skipDuplicates: true,
+    })
+    console.log('✅ Tax offices seeded')
+  } catch (e) {
+    console.warn('⚠️ Skipping tax offices seed:', e instanceof Error ? e.message : e)
+  }
+
+  // Seed Customers
+  try {
+    console.log('👤 Seeding customers...')
+    await prisma.customer.upsert({
+      where: { id: 'seed-cust-1' },
+      update: {},
+      create: {
+        id: 'seed-cust-1',
+        companyName: 'Acme Yazılım Ltd. Şti.',
+        taxNumber: '1111111111',
+        email: 'contact@acmeyazilim.com',
+        phone: '+90 212 000 0011',
+        status: 'ACTIVE',
+        onboardingStage: 'CUSTOMER',
+        taxOffice: { connect: { id: 'tax-ist-avrupa' } },
+      }
+    })
+    await prisma.customer.upsert({
+      where: { id: 'seed-cust-2' },
+      update: {},
+      create: {
+        id: 'seed-cust-2',
+        companyName: 'Beta Danışmanlık A.Ş.',
+        taxNumber: '2222222222',
+        email: 'info@betadns.com',
+        phone: '+90 216 000 0022',
+        status: 'ACTIVE',
+        onboardingStage: 'PROSPECT',
+        taxOffice: { connect: { id: 'tax-ist-anadolu' } },
+      }
+    })
+    console.log('✅ Customers seeded')
+  } catch (e) {
+    console.warn('⚠️ Skipping customers seed:', e instanceof Error ? e.message : e)
+  }
 
   // Seed Job Applications
   console.log('📝 Seeding job applications...')
@@ -335,12 +418,12 @@ async function main() {
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-  ]
+  ] as Prisma.DeclarationconfigCreateInput[]
   for (const d of defaults) {
-    await (prisma as any).declarationconfig.upsert({
+    await prisma.declarationconfig.upsert({
       where: { type: d.type },
       update: {},
-      create: d as any,
+      create: d,
     })
   }
 

@@ -27,49 +27,18 @@ import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-di
 import { toast } from "sonner"
 import { exportContactMessageToPDF } from "@/lib/pdf-export"
 
-// Mock data
-const mockContactMessages = [
-  {
-    id: "1",
-    name: "Zeynep Kara",
-    email: "zeynep@example.com",
-    phone: "0555 789 1234",
-    subject: "Hizmetleriniz Hakkında",
-    message: "Şirketimiz için sunduğunuz hizmetler hakkında detaylı bilgi almak istiyorum.",
-    status: "new",
-    createdAt: "2024-01-15T09:30:00",
-  },
-  {
-    id: "2",
-    name: "Can Aydın",
-    email: "can@example.com",
-    phone: "0532 456 7890",
-    subject: "Fiyat Teklifi",
-    message: "KDV beyannamesi hazırlama hizmetiniz için ücret bilgisi rica ediyorum.",
-    status: "replied",
-    createdAt: "2024-01-14T11:20:00",
-  },
-  {
-    id: "3",
-    name: "Elif Yıldız",
-    email: "elif@example.com",
-    phone: "0543 123 4567",
-    subject: "Randevu Talebi",
-    message: "Ofise gelerek görüşmek istiyorum. Uygun bir randevu tarihi alabir miyim?",
-    status: "pending",
-    createdAt: "2024-01-13T14:45:00",
-  },
-  {
-    id: "4",
-    name: "Burak Özdemir",
-    email: "burak@example.com",
-    phone: "0533 987 6543",
-    subject: "Şikayet",
-    message: "Geçen ay gönderdiğim belgelerin işlenmesiyle ilgili bir sorun yaşadım.",
-    status: "resolved",
-    createdAt: "2024-01-12T16:10:00",
-  },
-]
+type ContactMessageStatus = 'NEW' | 'PENDING' | 'REPLIED' | 'RESOLVED' | 'new' | 'pending' | 'replied' | 'resolved'
+
+interface ContactMessage {
+  id: string
+  name: string
+  email: string
+  phone: string
+  subject: string
+  message: string
+  status: ContactMessageStatus
+  createdAt: string
+}
 
 const statusColors = {
   NEW: "bg-blue-100 text-blue-800",
@@ -89,16 +58,16 @@ export default function ContactMessagesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
-  const [selectedMessage, setSelectedMessage] = useState<any>(null)
+  const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [messageToDelete, setMessageToDelete] = useState<any>(null)
+  const [messageToDelete, setMessageToDelete] = useState<ContactMessage | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [messages, setMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<ContactMessage[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isMounted, setIsMounted] = useState(false)
+  const isMounted = true
 
   // Fetch messages from API
   const fetchMessages = async () => {
@@ -119,16 +88,9 @@ export default function ContactMessagesPage() {
     }
   }
 
-  // Ensure component is mounted on client before fetching
   useEffect(() => {
-    setIsMounted(true)
+    fetchMessages()
   }, [])
-
-  useEffect(() => {
-    if (isMounted) {
-      fetchMessages()
-    }
-  }, [isMounted])
 
   // Filter data
   const filteredData = messages.filter((message) => {
@@ -147,12 +109,12 @@ export default function ContactMessagesPage() {
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage)
 
-  const handleViewDetails = (message: any) => {
+  const handleViewDetails = (message: ContactMessage) => {
     setSelectedMessage(message)
     setIsModalOpen(true)
   }
 
-  const handleEditStatus = (message: any) => {
+  const handleEditStatus = (message: ContactMessage) => {
     setSelectedMessage(message)
     setIsEditModalOpen(true)
   }
@@ -207,12 +169,12 @@ export default function ContactMessagesPage() {
     }
   }
 
-  const confirmDelete = (message: any) => {
+  const confirmDelete = (message: ContactMessage) => {
     setMessageToDelete(message)
     setIsDeleteDialogOpen(true)
   }
 
-  const handleExportPDF = (message: any) => {
+  const handleExportPDF = (message: ContactMessage) => {
     try {
       exportContactMessageToPDF(message)
       toast.success('Mesaj başarıyla dışa aktarıldı!')

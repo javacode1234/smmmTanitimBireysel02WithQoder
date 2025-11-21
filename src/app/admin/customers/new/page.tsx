@@ -3,14 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,23 +14,10 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Building2, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  FileText, 
-  KeyRound, 
-  FolderOpen, 
-  User, 
-  Save, 
-  Upload, 
-  Plus, 
-  X, 
-  Check,
+  Save,
+  Upload,
+  X,
   ArrowLeft,
-  Calendar,
-  DollarSign,
-  Globe,
   Facebook,
   Twitter,
   Linkedin,
@@ -54,44 +33,6 @@ import { TaxOfficeCombobox } from "@/components/ui/tax-office-combobox";
 import Link from "next/link";
 import Image from "next/image";
 
-type Customer = {
-  id: string;
-  logo: string | null;
-  companyName: string;
-  phone: string | null;
-  email: string | null;
-  address: string | null;
-  facebookUrl: string | null;
-  xUrl: string | null;
-  linkedinUrl: string | null;
-  instagramUrl: string | null;
-  threadsUrl: string | null;
-  ledgerType: string | null;
-  hasEmployees: boolean | null;
-  employeeCount: number | null; // New field for insurance employee count
-  subscriptionFee: string | null;
-  establishmentDate: string | null;
-  authorizedName: string | null;
-  authorizedTCKN: string | null;
-  authorizedEmail: string | null;
-  authorizedPhone: string | null;
-  authorizedAddress: string | null;
-  authorizedFacebookUrl: string | null;
-  authorizedXUrl: string | null;
-  authorizedLinkedinUrl: string | null;
-  authorizedInstagramUrl: string | null;
-  authorizedThreadsUrl: string | null;
-  authorizationDate: string | null;
-  authorizationPeriod: string | null;
-  declarations: string | null;
-  documents: string | null;
-  passwords: string | null;
-  notes: string | null;
-  status: "ACTIVE" | "INACTIVE";
-  onboardingStage: "LEAD" | "PROSPECT" | "CUSTOMER";
-  createdAt: string;
-  taxOffice: string | null; // ID of the TaxOffice
-};
 
 export default function NewCustomerPage() {
   const router = useRouter();
@@ -140,20 +81,16 @@ export default function NewCustomerPage() {
   const [authorizationPeriod, setAuthorizationPeriod] = useState("");
   
   // Declarations
-  const [declarations, setDeclarations] = useState<string[]>([]);
-  const [availableDeclarations, setAvailableDeclarations] = useState<Array<{id:string,type:string,enabled:boolean}>>([]);
+  const [declarations] = useState<string[]>([]);
   
   // Notes
   const [notes, setNotes] = useState("");
   
   // Documents
-  const [documents, setDocuments] = useState<Array<{id: string, name: string, file: string, uploadDate: string}>>([]);
+  const [documents] = useState<Array<{id: string, name: string, file: string, uploadDate: string}>>([]);
   
   // Institutional Passwords
-  const [passwords, setPasswords] = useState<Array<{id: string, institution: string, username: string, password: string}>>([]);
-  const [newInstitution, setNewInstitution] = useState("");
-  const [newUsername, setNewUsername] = useState("");
-  const [newPassword, setNewPassword] = useState("");
+  const [passwords] = useState<Array<{id: string, institution: string, username: string, password: string}>>([]);
   
   // Tax offices
   const [taxOffices, setTaxOffices] = useState<Array<{id: string, name: string}>>([]);

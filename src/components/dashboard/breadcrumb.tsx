@@ -85,7 +85,7 @@ export function Breadcrumb({ userType }: BreadcrumbProps) {
         <Home className="h-4 w-4" />
       </Link>
       
-      {breadcrumbItems.map((item, index) => (
+      {breadcrumbItems.map((item) => (
         <Fragment key={item.path}>
           <ChevronRight className="h-4 w-4 text-gray-400" />
           {item.isLast ? (

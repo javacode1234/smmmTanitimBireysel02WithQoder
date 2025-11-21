@@ -1,21 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
-// Helper function to get current month's date range for filtering by due date
-function getCurrentMonthDueDateRange() {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() // 0-11
-  
-  // Start of current month
-  const startDate = new Date(year, month, 1)
-  
-  // Start of next month
-  const endDate = new Date(year, month + 1, 1)
-  
-  return { startDate, endDate }
-}
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -53,7 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause
-    const where: any = {}
+    const where: Record<string, unknown> = {}
 
     if (customerId) {
       where.customerId = customerId
@@ -169,9 +154,10 @@ export async function GET(request: NextRequest) {
     }))
 
     return NextResponse.json(response)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching tax returns:', error)
-    return NextResponse.json({ error: 'Beyannameler alınamadı: ' + error.message }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: 'Beyannameler alınamadı: ' + message }, { status: 500 })
   }
 }
 
@@ -278,11 +264,10 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(taxReturn)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating tax return:', error)
-    // Detaylı hata logu
-    console.error('Request data:', JSON.stringify(request.body, null, 2))
-    return NextResponse.json({ error: 'Beyanname oluşturulamadı: ' + error.message, details: error }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: 'Beyanname oluşturulamadı: ' + message }, { status: 500 })
   }
 }
 
@@ -330,9 +315,10 @@ export async function PATCH(request: NextRequest) {
     })
 
     return NextResponse.json(taxReturn)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating tax return:', error)
-    return NextResponse.json({ error: 'Beyanname güncellenemedi: ' + error.message }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: 'Beyanname güncellenemedi: ' + message }, { status: 500 })
   }
 }
 
@@ -355,8 +341,9 @@ export async function DELETE(request: NextRequest) {
     }
     
     return NextResponse.json({ error: 'ID veya müşteri ID gerekli' }, { status: 400 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting tax return:', error)
-    return NextResponse.json({ error: 'Beyanname silinemedi: ' + error.message }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: 'Beyanname silinemedi: ' + message }, { status: 500 })
   }
 }

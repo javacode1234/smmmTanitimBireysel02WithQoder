@@ -32,60 +32,41 @@ export function DynamicFavicon() {
         const data = await response.json()
         if (!isMountedRef.current || !document || !document.head) return
         
-        // Safely remove existing favicon links using .remove() instead of removeChild
+        // Do NOT remove existing favicon links; update or append to avoid React DOM conflicts
+        let existingLink: HTMLLinkElement | null = null
         try {
-          const existingLinks = document.head.querySelectorAll("link[rel*='icon']")
-          existingLinks.forEach(link => {
-            try {
-              // Extra safety check before removing
-              if (link && typeof link.remove === 'function') {
-                link.remove()
-              } else if (link && link.parentNode) {
-                // Fallback to removeChild if remove is not available, with additional null check
-                try {
-                  // Check if parent node still exists and contains the child
-                  if (link.parentNode && typeof link.parentNode.contains === 'function' && link.parentNode.contains(link)) {
-                    link.parentNode.removeChild(link)
-                  }
-                } catch (removeError) {
-                  // Ignore errors when removing child - element may have already been removed
-                  // console.warn('Error removing favicon link:', removeError)
-                }
-              }
-            } catch (e) {
-              // Ignore individual removal errors
-              console.warn('Error processing favicon link:', e)
-            }
-          })
+          existingLink = document.head.querySelector("link[rel*='icon']") as HTMLLinkElement | null
         } catch (e) {
-          // Ignore query/removal errors
-          console.warn('Error querying favicon links:', e)
+          console.warn('Error querying favicon link:', e)
         }
         
         if (!isMountedRef.current || !document || !document.head) return
 
-        // Create new favicon link
-        const link = document.createElement('link')
-        link.rel = 'icon'
-        link.type = 'image/x-icon'
-        
+        // Prepare favicon URL
         const timestamp = Date.now()
-        
+        let href = `/favicon.svg?t=${timestamp}`
         if (data?.favicon) {
           const isValidBase64 = data.favicon.startsWith('data:image/')
-          link.href = isValidBase64 ? `${data.favicon}#${timestamp}` : `/favicon.svg?t=${timestamp}`
-        } else {
-          link.href = `/favicon.svg?t=${timestamp}`
+          href = isValidBase64 ? `${data.favicon}#${timestamp}` : `/favicon.svg?t=${timestamp}`
         }
-        
-        // Safely append to head
+
+        // Update existing or append new link safely
         try {
-          if (document.head && isMountedRef.current) {
-            document.head.appendChild(link)
+          if (existingLink) {
+            existingLink.href = href
+            existingLink.type = 'image/x-icon'
+            existingLink.rel = 'icon'
+          } else {
+            const link = document.createElement('link')
+            link.rel = 'icon'
+            link.type = 'image/x-icon'
+            link.href = href
+            if (document.head && isMountedRef.current) {
+              document.head.appendChild(link)
+            }
           }
         } catch (e) {
-          // Ignore append errors
-          console.warn('Error appending favicon link:', e)
+          console.warn('Error updating/appending favicon link:', e)
         }
 
         // Update title safely

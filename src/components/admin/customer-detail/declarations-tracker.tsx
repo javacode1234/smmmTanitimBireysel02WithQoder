@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Fragment, useMemo } from "react"
+import { useState, useEffect, Fragment, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
@@ -77,7 +77,7 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
     }
     if (t.includes('geçici') || t.includes('3 aylık')) {
       const dm = due.getMonth() + 1
-      const map: any = { 5: 1, 8: 2, 11: 3, 2: 4 }
+      const map: Record<number, number> = { 5: 1, 8: 2, 11: 3, 2: 4 }
       const q = map[dm] || null
       const dy = due.getFullYear()
       const displayYear = dm === 2 ? dy - 1 : dy
@@ -88,14 +88,14 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
   
   useEffect(() => {
     fetchTaxReturns()
-  }, [customerId, yearFilter, monthFilter, typeFilter, statusFilter])
+  }, [fetchTaxReturns])
 
   useEffect(() => {
     setCurrentPage(1) // Reset to first page when filters change
   }, [yearFilter, monthFilter, typeFilter, statusFilter])
 
   // Fetch tax returns with current filters
-  const fetchTaxReturns = async () => {
+  const fetchTaxReturns = useCallback(async () => {
     setLoading(true)
     try {
       // Build query parameters
@@ -118,7 +118,7 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
       if (statusFilter !== 'all') {
         params.append('isSubmitted', statusFilter === 'submitted' ? 'true' : 'false')
       }
-
+      
       const response = await fetch(`/api/tax-returns?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
@@ -133,7 +133,7 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [customerId, yearFilter, monthFilter, typeFilter, statusFilter])
 
   const handleToggleSubmitted = async (taxReturn: TaxReturn) => {
     try {
@@ -210,7 +210,9 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
         const res = await fetch(`/api/customer-declaration-settings?customerId=${customerId}`)
         if (res.ok) {
           const data = await res.json()
-          const types = data.filter((d: any) => d.enabled).map((d: any) => d.type)
+          const types = (data as DeclarationTypeEntry[])
+            .filter((d) => d.enabled)
+            .map((d) => d.type)
           if (types.length > 0) {
             setAvailableTypes(Array.from(new Set(types)))
             return
@@ -497,10 +499,11 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
           <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
           <p className="text-muted-foreground">Kayıt bulunamadı</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Filtreleri değiştirerek tekrar deneyin veya "Ayarlar" sekmesinden beyanname oluşturun
+            Filtreleri değiştirerek tekrar deneyin veya &ldquo;Ayarlar&rdquo; sekmesinden beyanname oluşturun
           </p>
         </div>
       )}
     </div>
   )
 }
+interface DeclarationTypeEntry { enabled: boolean; type: string }

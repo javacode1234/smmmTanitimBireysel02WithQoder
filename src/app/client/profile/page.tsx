@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { User, Mail, Phone, Building, MapPin, FileText, Camera, Save, Lock } from "lucide-react"
+import { User, Mail, Phone, Building, FileText, Camera, Save, Lock } from "lucide-react"
 
 export default function ClientProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
@@ -106,7 +106,7 @@ export default function ClientProfilePage() {
       }
       reader.readAsDataURL(file)
       toast.success('Resim yüklendi! Değişiklikleri kaydetmeyi unutmayın.')
-    } catch (error) {
+    } catch {
       toast.error('Resim yüklenirken bir hata oluştu')
     }
   }

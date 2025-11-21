@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion"
 import { useState, useEffect, useRef } from "react"
+import type { SVGProps } from "react"
+import type { LucideIcon } from "lucide-react"
 import { 
   Award, 
   Shield, 
@@ -13,18 +15,40 @@ import {
   TrendingUp as TrendingUpIcon
 } from "lucide-react"
 
-// Map icon names to actual components
-const iconMap: any = {
+type Feature = {
+  icon: string
+  title: string
+  description: string
+  isActive?: boolean
+}
+
+type AboutData = {
+  id?: string
+  title: string
+  subtitle: string
+  description?: string
+  features: Feature[]
+  values?: string[]
+}
+
+type ServicesSection = {
+  valuesTitle: string
+  footerText?: string
+  footerSignature?: string
+  values: string[]
+}
+
+const iconMap: Record<string, LucideIcon | ((props: SVGProps<SVGSVGElement>) => JSX.Element)> = {
   Award: Award,
   Shield: Shield,
   Users: Users,
   TrendingUp: TrendingUp,
-  Star: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>,
-  Heart: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>,
-  Lightbulb: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><path d="M9 18h6m-3-11a6 6 0 1 1 0 12H9a6 6 0 1 1 0-12Z"></path><path d="M12 7v1"></path><path d="M10 15h.01"></path><path d="M14 15h.01"></path><path d="M10 11h.01"></path><path d="M14 11h.01"></path></svg>,
-  Target: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>,
-  Globe: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>,
-  Clock: (props: any) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+  Star: (props: SVGProps<SVGSVGElement>) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>,
+  Heart: (props: SVGProps<SVGSVGElement>) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>,
+  Lightbulb: (props: SVGProps<SVGSVGElement>) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><path d="M9 18h6m-3-11a6 6 0 1 1 0 12H9a6 6 0 1 1 0-12Z"></path><path d="M12 7v1"></path><path d="M10 15h.01"></path><path d="M14 15h.01"></path><path d="M10 11h.01"></path><path d="M14 11h.01"></path></svg>,
+  Target: (props: SVGProps<SVGSVGElement>) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>,
+  Globe: (props: SVGProps<SVGSVGElement>) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>,
+  Clock: (props: SVGProps<SVGSVGElement>) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={props.stroke || "currentColor"} strokeWidth={props.strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={props.className}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
 }
 
 const defaultValues = {
@@ -70,8 +94,8 @@ const defaultValues = {
 }
 
 export function AboutSection() {
-  const [aboutData, setAboutData] = useState<any>(defaultValues)
-  const [servicesData, setServicesData] = useState<any>({
+  const [aboutData, setAboutData] = useState<AboutData>(defaultValues)
+  const [servicesData, setServicesData] = useState<ServicesSection>({
     valuesTitle: "Hizmet Değerlerimiz",
     footerText: "Profesyonel kadromuz ve modern teknoloji altyapımız ile sektörde fark yaratıyoruz.",
     footerSignature: "SMMM Ekibi",
@@ -125,16 +149,15 @@ export function AboutSection() {
           const data = await response.json()
           if (data && data.valuesTitle) {
             // API'den gelen values'i string array'e çevir ve aktif olanları filtrele
-            const valuesArray = (data.values || []).filter((v: any) => {
-              // Eğer obje ise ve isActive false değilse
-              if (typeof v === 'object') {
-                return v.isActive !== false
-              }
-              // String ise direkt al
-              return true
-            }).map((v: any) => 
-              typeof v === 'object' ? v.text : v
-            ).filter((v: any) => v)
+            const valuesArray = (data.values || [])
+              .filter((v: string | { text: string; isActive?: boolean }) => {
+                if (typeof v === 'object') {
+                  return v.isActive !== false
+                }
+                return true
+              })
+              .map((v: string | { text: string }) => (typeof v === 'object' ? v.text : v))
+              .filter((v: string) => !!v)
             
             setServicesData({
               valuesTitle: data.valuesTitle,
@@ -158,28 +181,18 @@ export function AboutSection() {
     }
   }, [])
 
-  // Database'den gelen veriyi mi yoksa default değerleri mi kullanacağımızı belirle
-  const hasCustomData = () => {
-    // Eğer aboutData default values ile aynı değilse özel veri var demektir
-    return aboutData && aboutData.id // Database'den gelen verinin id'si olur
-  }
 
   // Aktif özellikleri getir
-  const getDisplayFeatures = () => {
+  const getDisplayFeatures = (): Feature[] => {
     if (!aboutData || !aboutData.features || aboutData.features.length === 0) {
-      return defaultValues.features;
+      return defaultValues.features
     }
-    
-    // Sadece aktif olan özellikleri filtrele
-    const activeFeatures = aboutData.features.filter((feature: any) => feature.isActive !== false);
-    
-    // Aktif özellik yoksa default göster
+    const activeFeatures = aboutData.features.filter((feature: Feature) => feature.isActive !== false)
     if (activeFeatures.length === 0) {
-      return defaultValues.features;
+      return defaultValues.features
     }
-    
-    return activeFeatures;
-  };
+    return activeFeatures
+  }
 
   // Aktif değerleri getir
   const getDisplayValues = () => {
@@ -232,7 +245,7 @@ export function AboutSection() {
         {/* Features Grid */}
         {isVisible && (
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {getDisplayFeatures().map((feature: any, index: number) => {
+          {getDisplayFeatures().map((feature: Feature, index: number) => {
             const IconComponent = iconMap[feature.icon] || Award
             return (
               <motion.div
@@ -342,7 +355,7 @@ export function AboutSection() {
               className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-100"
             >
               <p className="text-gray-700 italic">
-                "{servicesData?.footerText || defaultValues.footerText}"
+                &ldquo;{servicesData?.footerText || defaultValues.footerText}&rdquo;
               </p>
               <div className="mt-4 font-semibold text-blue-600">
                 - {servicesData?.footerSignature || defaultValues.footerSignature}

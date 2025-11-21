@@ -18,13 +18,23 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { useState, useEffect } from "react"
+import { useState } from "react"
+
+type ApplicationStatus = 'NEW' | 'REVIEWING' | 'INTERVIEWED' | 'REJECTED' | 'ACCEPTED'
+
+interface JobApplication {
+  id: string
+  email: string
+  phone: string
+  position: string
+  status: ApplicationStatus
+}
 
 interface EditJobApplicationModalProps {
-  application: any
+  application: JobApplication | null
   isOpen: boolean
   onClose: () => void
-  onStatusUpdate: (applicationId: string, newStatus: string) => void
+  onStatusUpdate: (applicationId: string, newStatus: ApplicationStatus) => void
 }
 
 const statusColors = {
@@ -44,14 +54,9 @@ const statusLabels = {
 }
 
 export function EditJobApplicationModal({ application, isOpen, onClose, onStatusUpdate }: EditJobApplicationModalProps) {
-  const [selectedStatus, setSelectedStatus] = useState(application?.status || "NEW")
+  const [selectedStatus, setSelectedStatus] = useState<ApplicationStatus>(application?.status || "NEW")
 
-  // Update selected status when application changes or modal opens
-  useEffect(() => {
-    if (application?.status) {
-      setSelectedStatus(application.status)
-    }
-  }, [application?.status, isOpen])
+  // Selected status initialized from application; user changes handled via Select
 
   if (!application) return null
 

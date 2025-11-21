@@ -19,7 +19,7 @@ import { toast } from "sonner"
 interface EditAuthorizedPersonModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: any) => void
+  onSave: (data: AuthorizedPersonUpdate) => void
   customerId: string
   initialData: {
     authorizedName: string | null
@@ -28,6 +28,14 @@ interface EditAuthorizedPersonModalProps {
     authorizedEmail: string | null
     authorizedAddress: string | null
   }
+}
+
+interface AuthorizedPersonUpdate {
+  authorizedName: string
+  authorizedTCKN: string
+  authorizedPhone: string
+  authorizedEmail: string
+  authorizedAddress: string
 }
 
 export function EditAuthorizedPersonModal({ isOpen, onClose, onSave, customerId, initialData }: EditAuthorizedPersonModalProps) {

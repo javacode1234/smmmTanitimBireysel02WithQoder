@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { randomUUID } from 'crypto'
 // import { QuoteStatus } from '@prisma/client' - using string literals instead
 
 export async function GET() {
@@ -45,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     const quoteRequest = await prisma.quoterequest.create({
       data: {
-        id: crypto.randomUUID(),
+        id: (globalThis.crypto ?? window.crypto).randomUUID(),
         name,
         email,
         phone,

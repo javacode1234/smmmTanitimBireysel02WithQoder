@@ -41,10 +41,6 @@ export function TeamSection() {
     paragraph: "Alanında uzman, deneyimli ve sertifikalı mali müşavirlerimiz ile işletmenizin mali süreçlerini güvenle yönetiyoruz."
   })
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
   const fetchData = async () => {
     try {
       const [membersRes, sectionRes] = await Promise.all([
@@ -72,6 +68,13 @@ export function TeamSection() {
       console.error('Error fetching team data:', error)
     }
   }
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      fetchData()
+    }, 0)
+    return () => clearTimeout(id)
+  }, [])
 
   return (
     <section id="team" className="py-12 px-4 bg-gradient-to-b from-gray-50 to-white">

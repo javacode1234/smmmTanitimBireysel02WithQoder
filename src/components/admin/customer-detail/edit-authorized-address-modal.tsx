@@ -17,11 +17,15 @@ import { toast } from "sonner"
 interface EditAuthorizedAddressModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: any) => void
+  onSave: (data: AuthorizedAddressUpdate) => void
   customerId: string
   initialData: {
     authorizedAddress: string | null
   }
+}
+
+interface AuthorizedAddressUpdate {
+  authorizedAddress: string | null
 }
 
 export function EditAuthorizedAddressModal({ isOpen, onClose, onSave, customerId, initialData }: EditAuthorizedAddressModalProps) {

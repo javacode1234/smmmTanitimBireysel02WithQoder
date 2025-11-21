@@ -36,28 +36,21 @@ export async function GET() {
     }
     
     return NextResponse.json(section)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching services section:', error)
-    // If table doesn't exist, return default values instead of error
-    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
-      return NextResponse.json({
-        title: "Hizmetlerimiz",
-        paragraph: "İşletmenizin tüm mali ihtiyaçları için kapsamlı ve profesyonel çözümler sunuyoruz.",
-        valuesTitle: "Hizmet Değerlerimiz",
-        footerText: "Profesyonel kadromuz ve modern teknoloji altyapımız ile sektörde fark yaratıyoruz.",
-        footerSignature: "SMMM Ekibi",
-        values: [
-          { id: "value-1", text: "Müşteri memnuniyeti odaklı hizmet anlayışı", isActive: true, order: 0 },
-          { id: "value-2", text: "Güncel mevzuat takibi ve uygulaması", isActive: true, order: 1 },
-          { id: "value-3", text: "Hızlı ve güvenilir çözümler", isActive: true, order: 2 },
-          { id: "value-4", text: "7/24 destek ve danışmanlık", isActive: true, order: 3 }
-        ]
-      })
-    }
-    return NextResponse.json(
-      { error: 'Hizmetler bölümü alınamadı' },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      title: "Hizmetlerimiz",
+      paragraph: "İşletmenizin tüm mali ihtiyaçları için kapsamlı ve profesyonel çözümler sunuyoruz.",
+      valuesTitle: "Hizmet Değerlerimiz",
+      footerText: "Profesyonel kadromuz ve modern teknoloji altyapımız ile sektörde fark yaratıyoruz.",
+      footerSignature: "SMMM Ekibi",
+      values: [
+        { id: "value-1", text: "Müşteri memnuniyeti odaklı hizmet anlayışı", isActive: true, order: 0 },
+        { id: "value-2", text: "Güncel mevzuat takibi ve uygulaması", isActive: true, order: 1 },
+        { id: "value-3", text: "Hızlı ve güvenilir çözümler", isActive: true, order: 2 },
+        { id: "value-4", text: "7/24 destek ve danışmanlık", isActive: true, order: 3 }
+      ]
+    })
   }
 }
 
@@ -69,7 +62,7 @@ export async function POST(request: NextRequest) {
     
     if (existingSection) {
       // Update section
-      const section = await prisma.servicesSection.update({
+      await prisma.servicesSection.update({
         where: { id: existingSection.id },
         data: {
           title: data.title,
@@ -87,8 +80,9 @@ export async function POST(request: NextRequest) {
       
       // Create new values
       if (data.values && data.values.length > 0) {
+        type ValueInput = { text: string; isActive?: boolean }
         await prisma.serviceValue.createMany({
-          data: data.values.map((value: any, index: number) => ({
+          data: (data.values as ValueInput[]).map((value, index: number) => ({
             sectionId: existingSection.id,
             text: value.text,
             isActive: value.isActive !== undefined ? value.isActive : true,
@@ -116,7 +110,7 @@ export async function POST(request: NextRequest) {
           footerText: data.footerText,
           footerSignature: data.footerSignature,
           values: {
-            create: data.values ? data.values.map((value: any, index: number) => ({
+            create: data.values ? (data.values as { text: string; isActive?: boolean }[]).map((value, index: number) => ({
               text: value.text,
               isActive: value.isActive !== undefined ? value.isActive : true,
               order: index
@@ -129,10 +123,11 @@ export async function POST(request: NextRequest) {
       })
       return NextResponse.json(section)
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error saving services section:', error)
     // If table doesn't exist, inform user to run migration
-    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+    const err = error as { code?: string; message?: string }
+    if (err.code === 'P2021' || err.message?.includes('does not exist')) {
       return NextResponse.json(
         { error: 'Database migration gerekiyor. Lütfen "npx prisma db push" komutunu çalıştırın.' },
         { status: 500 }

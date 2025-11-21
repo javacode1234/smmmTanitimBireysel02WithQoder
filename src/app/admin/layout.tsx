@@ -17,7 +17,6 @@ import {
   CreditCard,
   FileEdit,
   LogOut,
-  Receipt,
   UserCog,
   FileSearch
 } from "lucide-react"

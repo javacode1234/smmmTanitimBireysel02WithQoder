@@ -75,7 +75,6 @@ export async function POST(request: NextRequest) {
     const updatedAccruals = []
     for (const accrual of unpaidAccruals) {
       const accrualTotal = Number(accrual.amount)
-      const carryForwardAmount = accrualTotal - Number(accrual.carryForwardAmount)
       
       const updated = await prisma.subscriptionAccrual.update({
         where: {

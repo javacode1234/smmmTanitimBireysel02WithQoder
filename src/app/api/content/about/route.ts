@@ -39,15 +39,7 @@ function getDefaultFeatures() {
   ];
 }
 
-function getDefaultValues() {
-  return [
-    { id: "default-v1", text: "Müşteri memnuniyeti odaklı hizmet anlayışı", isActive: true, order: 0 },
-    { id: "default-v2", text: "Şeffaf ve dürüst iş yapış biçimi", isActive: true, order: 1 },
-    { id: "default-v3", text: "Zamanında ve eksiksiz bildirim süreçleri", isActive: true, order: 2 },
-    { id: "default-v4", text: "7/24 danışmanlık desteği", isActive: true, order: 3 },
-    { id: "default-v5", text: "Dijital dönüşüm ve otomasyon", isActive: true, order: 4 }
-  ];
-}
+//
 
 export async function GET() {
   try {
@@ -72,23 +64,14 @@ export async function GET() {
     }
 
     return NextResponse.json(aboutSection)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching about section:', error)
-    
-    // If table doesn't exist (P2021), return default values
-    if (error.code === 'P2021' || error.message?.includes('does not exist in the current database')) {
-      return NextResponse.json({
-        title: "Hakkımızda",
-        subtitle: "Serbest Muhasebeci Mali Müşavir olarak, işletmelerin finansal süreçlerini en verimli şekilde yönetmelerine yardımcı oluyoruz.",
-        description: "Profesyonel kadromuz ve modern teknoloji altyapımız ile sektörde fark yaratıyoruz.",
-        features: getDefaultFeatures()
-      })
-    }
-    
-    return NextResponse.json(
-      { error: 'Hakkımızda bölümü alınamadı' },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      title: "Hakkımızda",
+      subtitle: "Serbest Muhasebeci Mali Müşavir olarak, işletmelerin finansal süreçlerini en verimli şekilde yönetmelerine yardımcı oluyoruz.",
+      description: "Profesyonel kadromuz ve modern teknoloji altyapımız ile sektörde fark yaratıyoruz.",
+      features: getDefaultFeatures()
+    })
   }
 }
 
@@ -132,8 +115,7 @@ export async function POST(request: NextRequest) {
     
     if (existingSection) {
       // Update existing section
-      // First, update the main section data
-      const updatedSection = await prisma.aboutSection.update({
+      await prisma.aboutSection.update({
         where: { id: existingSection.id },
         data: {
           title: data.title,
@@ -152,7 +134,7 @@ export async function POST(request: NextRequest) {
       // Try to create features with isActive field, fallback to without if it fails
       try {
         await prisma.aboutFeature.createMany({
-          data: data.features.map((feature: any, index: number) => ({
+          data: (data.features as { icon: string; title: string; description: string; isActive?: boolean }[]).map((feature, index: number) => ({
             sectionId: existingSection.id,
             icon: feature.icon,
             title: feature.title,
@@ -161,10 +143,10 @@ export async function POST(request: NextRequest) {
             order: index
           }))
         })
-      } catch (error: any) {
+      } catch {
         // Fallback: create features without isActive field
         await prisma.aboutFeature.createMany({
-          data: data.features.map((feature: any, index: number) => ({
+          data: (data.features as { icon: string; title: string; description: string }[]).map((feature, index: number) => ({
             sectionId: existingSection.id,
             icon: feature.icon,
             title: feature.title,
@@ -194,7 +176,7 @@ export async function POST(request: NextRequest) {
             description: data.description,
             image: data.image,
             features: {
-              create: data.features.map((feature: any, index: number) => ({
+              create: (data.features as { icon: string; title: string; description: string; isActive?: boolean }[]).map((feature, index: number) => ({
                 icon: feature.icon,
                 title: feature.title,
                 description: feature.description,
@@ -207,7 +189,7 @@ export async function POST(request: NextRequest) {
             features: true
           }
         })
-      } catch (error: any) {
+      } catch {
         // Fallback: create section without isActive field
         newSection = await prisma.aboutSection.create({
           data: {
@@ -216,7 +198,7 @@ export async function POST(request: NextRequest) {
             description: data.description,
             image: data.image,
             features: {
-              create: data.features.map((feature: any, index: number) => ({
+              create: (data.features as { icon: string; title: string; description: string }[]).map((feature, index: number) => ({
                 icon: feature.icon,
                 title: feature.title,
                 description: feature.description,

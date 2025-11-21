@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 import { Lock, Eye, EyeOff } from "lucide-react"
 
@@ -28,7 +28,7 @@ type UserType = "admin" | "client"
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [backgroundImage, setBackgroundImage] = useState("")
+  const [backgroundImage] = useState(() => backgroundImages[Math.floor(Math.random() * backgroundImages.length)])
   const [activeTab, setActiveTab] = useState<UserType>("admin")
   const [isChangingTab, setIsChangingTab] = useState(false)
 
@@ -46,19 +46,14 @@ export default function SignInPage() {
     }, 50)
   }
 
-  // Set random background image on component mount
-  useEffect(() => {
-    const randomImage = backgroundImages[Math.floor(Math.random() * backgroundImages.length)]
-    setBackgroundImage(randomImage)
-  }, [])
+  
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>, userType: UserType) => {
     e.preventDefault()
     setIsLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+    formData.get("email")
 
     try {
       // TODO: Implement actual sign in logic with NextAuth
@@ -72,11 +67,11 @@ export default function SignInPage() {
       
       // Use window.location.href instead of router.push to avoid removeChild errors
       if (userType === "admin") {
-        window.location.href = "/admin"
+        window.location.assign("/admin")
       } else {
-        window.location.href = "/client"
+        window.location.assign("/client")
       }
-    } catch (error) {
+    } catch {
       toast.error("Giriş başarısız. Lütfen bilgilerinizi kontrol edin.")
       setIsLoading(false)
     }
@@ -206,14 +201,14 @@ export default function SignInPage() {
           <div className="mt-6 text-center text-sm">
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault()
-                window.location.href = '/'
-              }}
-              className="text-white/90 hover:text-white hover:underline inline-flex items-center gap-1 cursor-pointer bg-transparent border-0"
-            >
-              ← Ana sayfaya dön
-            </button>
+            onClick={(e) => {
+              e.preventDefault()
+              window.location.assign('/')
+            }}
+            className="text-white/90 hover:text-white hover:underline inline-flex items-center gap-1 cursor-pointer bg-transparent border-0"
+          >
+            ← Ana sayfaya dön
+          </button>
           </div>
         </CardContent>
       </Card>

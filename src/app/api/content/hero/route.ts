@@ -7,16 +7,9 @@ export async function GET() {
       orderBy: { order: 'asc' },
     })
     return NextResponse.json(items)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching hero items:', error)
-    // Handle missing table (P2021) - return empty array
-    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
-      return NextResponse.json([])
-    }
-    return NextResponse.json(
-      { error: 'Hero bölümü alınamadı' },
-      { status: 500 }
-    )
+    return NextResponse.json([])
   }
 }
 
@@ -27,8 +20,15 @@ export async function POST(request: NextRequest) {
       data,
     })
     return NextResponse.json(item)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error creating hero item:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    if ((error as { code?: string })?.code === 'P2021' || msg.includes('does not exist')) {
+      return NextResponse.json(
+        { error: 'Hero yönetimi mevcut veritabanı şemasında desteklenmiyor' },
+        { status: 501 }
+      )
+    }
     return NextResponse.json(
       { error: 'Hero eklenemedi' },
       { status: 500 }
@@ -55,8 +55,15 @@ export async function PATCH(request: NextRequest) {
     })
 
     return NextResponse.json(item)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error updating hero item:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    if ((error as { code?: string })?.code === 'P2021' || msg.includes('does not exist')) {
+      return NextResponse.json(
+        { error: 'Hero yönetimi mevcut veritabanı şemasında desteklenmiyor' },
+        { status: 501 }
+      )
+    }
     return NextResponse.json(
       { error: 'Hero güncellenemedi' },
       { status: 500 }
@@ -81,8 +88,15 @@ export async function DELETE(request: NextRequest) {
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error deleting hero item:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    if ((error as { code?: string })?.code === 'P2021' || msg.includes('does not exist')) {
+      return NextResponse.json(
+        { error: 'Hero yönetimi mevcut veritabanı şemasında desteklenmiyor' },
+        { status: 501 }
+      )
+    }
     return NextResponse.json(
       { error: 'Hero silinemedi' },
       { status: 500 }

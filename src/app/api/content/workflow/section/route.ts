@@ -17,7 +17,7 @@ export async function GET() {
     }
 
     return NextResponse.json(section)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching workflow section:', error)
     return NextResponse.json(DEFAULT_SECTION_DATA)
   }

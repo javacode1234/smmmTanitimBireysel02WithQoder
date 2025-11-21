@@ -63,10 +63,11 @@ export async function GET() {
     }
 
     return NextResponse.json(steps)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching workflow steps:', error)
     // Handle missing table - return default values
-    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+    const err = error as { code?: string; message?: string }
+    if (err.code === 'P2021' || err.message?.includes('does not exist')) {
       return NextResponse.json(getDefaultSteps())
     }
     // Return default values on error
@@ -105,18 +106,18 @@ export async function POST(request: NextRequest) {
 
     console.log('POST /api/content/workflow - Step created successfully:', step.id)
     return NextResponse.json(step)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('POST /api/content/workflow - Error creating step:', error)
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      code: (error as any).code
+      code: (error as { code?: string })?.code
     })
     return NextResponse.json(
       { 
         error: 'Adım eklenemedi', 
         details: error instanceof Error ? error.message : 'Unknown error',
-        code: (error as any).code 
+        code: (error as { code?: string })?.code 
       },
       { status: 500 }
     )

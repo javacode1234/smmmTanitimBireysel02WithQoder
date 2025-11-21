@@ -150,7 +150,6 @@ const Carousel = React.forwardRef<
     autoPlay?: boolean;
     autoPlayInterval?: number;
     continuousFlow?: boolean;
-    flowSpeed?: number;
   }
 >(
   (
@@ -161,7 +160,6 @@ const Carousel = React.forwardRef<
       autoPlay = false,
       autoPlayInterval = 5000,
       continuousFlow = false,
-      flowSpeed = 30,
       ...props
     },
     ref
@@ -491,7 +489,14 @@ const Carousel = React.forwardRef<
       <CarouselContext.Provider value={contextValue}>
         <CarouselErrorBoundary>
           <div
-            ref={carouselRef}
+            ref={React.useCallback((node: HTMLDivElement | null) => {
+              carouselRef.current = node;
+              if (typeof ref === 'function') {
+                ref(node);
+              } else if (ref) {
+                (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+              }
+            }, [ref])}
             className={cn("relative", className)}
             onMouseEnter={pauseAutoplay}
             onMouseLeave={resumeAutoplay}
@@ -510,7 +515,7 @@ const CarouselContent = React.forwardRef<
   HTMLDivElement,
   CarouselContentProps
 >(({ children, className, ...props }, ref) => {
-  const { currentIndex, itemsPerView, isDragging, dragStart, dragMove, dragEnd, translateX, continuousFlow, flowPosition } = useCarousel()
+  const { currentIndex, isDragging, dragStart, dragMove, dragEnd, translateX, continuousFlow, flowPosition } = useCarousel()
   const isMountedRef = React.useRef({ current: true });
   
   // Track mount status
@@ -744,7 +749,7 @@ const CarouselPrevious = React.forwardRef<
   HTMLButtonElement,
   CarouselPreviousProps
 >(({ className, onClick, disabled, ...props }, ref) => {
-  const { goToPrevious, currentIndex, totalItems } = useCarousel()
+  const { goToPrevious, totalItems } = useCarousel()
   const isMountedRef = React.useRef({ current: true });
   
   // Track mount status
@@ -792,12 +797,13 @@ const CarouselPrevious = React.forwardRef<
     </Button>
   )
 })
+CarouselPrevious.displayName = "CarouselPrevious"
 
 const CarouselNext = React.forwardRef<
   HTMLButtonElement,
   CarouselNextProps
 >(({ className, onClick, disabled, ...props }, ref) => {
-  const { goToNext, currentIndex, totalItems } = useCarousel()
+  const { goToNext, totalItems } = useCarousel()
   const isMountedRef = React.useRef({ current: true });
   
   // Track mount status
@@ -858,16 +864,11 @@ const CarouselIndicators = ({ className }: { className?: string }) => {
       isMountedRef.current = { current: false };
     };
   }, []);
-  
-  if (totalItems <= 1) return null
-
   const handleClick = React.useCallback((index: number, e: React.MouseEvent) => {
     try {
       e.preventDefault();
       e.stopPropagation();
-      // Check if component is still mounted
       if (!isMountedRef.current.current) return;
-      
       if (typeof goToSlide === 'function') {
         goToSlide(index)
       }
@@ -875,6 +876,8 @@ const CarouselIndicators = ({ className }: { className?: string }) => {
       console.warn('Error in CarouselIndicators handleClick:', error)
     }
   }, [goToSlide])
+  
+  if (totalItems <= 1) return null
 
   return (
     <div className={cn("flex justify-center gap-2 mt-4", className)}>

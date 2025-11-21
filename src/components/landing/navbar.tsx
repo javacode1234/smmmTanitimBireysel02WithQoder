@@ -1,12 +1,10 @@
 "use client"
-"use client"
 
 import Link from "next/link"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
 import { Menu } from "lucide-react"
 import { useState, useEffect } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 
 interface SiteSettings {
   siteName?: string
@@ -15,14 +13,9 @@ interface SiteSettings {
 
 export function Navbar() {
   const pathname = usePathname()
-  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({})
   const [isNavigating, setIsNavigating] = useState(false)
-
-  useEffect(() => {
-    fetchSiteSettings()
-  }, [])
 
   const fetchSiteSettings = async () => {
     try {
@@ -35,6 +28,13 @@ export function Navbar() {
       console.error('Error fetching site settings:', error)
     }
   }
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      fetchSiteSettings()
+    }, 0)
+    return () => clearTimeout(id)
+  }, [])
 
   // Handle signin navigation with cleanup - FINAL FIX for removeChild error
   const handleSignIn = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -88,9 +88,12 @@ export function Navbar() {
           >
             <div className="h-10 w-10 rounded-lg overflow-hidden transform group-hover:scale-105 transition-transform">
               {siteSettings.brandIcon ? (
-                <img
+                <Image
                   src={siteSettings.brandIcon}
                   alt={siteSettings.siteName || "SMMM"}
+                  width={40}
+                  height={40}
+                  unoptimized
                   className="h-full w-full object-cover"
                 />
               ) : (

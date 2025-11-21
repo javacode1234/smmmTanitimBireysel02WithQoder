@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { useEffect, useState, Fragment } from "react"
+import { useEffect, useState, Fragment, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -85,21 +85,51 @@ export default function TaxReturnsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(5)
 
-  // Modal states
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [taxReturnToDelete, setTaxReturnToDelete] = useState<TaxReturn | null>(null)
+  
 
   useEffect(() => {
     setIsMounted(true)
     fetchCustomers()
   }, [])
 
+  const fetchTaxReturns = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (periodFilter === "current") {
+        params.set("dueDateYear", new Date().getFullYear().toString())
+        params.set("dueDateMonth", (new Date().getMonth() + 1).toString())
+      } else if (periodFilter === "custom") {
+        params.set("dueDateYear", customYear)
+        params.set("dueDateMonth", customMonth)
+      }
+      if (typeFilter !== "all") {
+        params.set("type", typeFilter)
+      }
+      if (statusFilter !== "all") {
+        params.set("isSubmitted", statusFilter)
+      }
+      const res = await fetch(`/api/tax-returns?${params.toString()}`)
+      if (res.ok) {
+        const data = await res.json()
+        setTaxReturns(data)
+      } else {
+        toast.error("Beyannameler yüklenirken hata oluştu")
+      }
+    } catch (e) {
+      console.error(e)
+      toast.error("Beyannameler yüklenirken hata oluştu")
+    } finally {
+      setLoading(false)
+    }
+  }, [periodFilter, customYear, customMonth, typeFilter, statusFilter])
+
   useEffect(() => {
     if (isMounted) {
       fetchTaxReturns()
-      setCurrentPage(1) // Reset to first page when filters change
+      setCurrentPage(1)
     }
-  }, [isMounted, periodFilter, customYear, customMonth, typeFilter, statusFilter])
+  }, [isMounted, fetchTaxReturns])
 
   const fetchCustomers = async () => {
     try {
@@ -120,45 +150,7 @@ export default function TaxReturnsPage() {
     }
   }
 
-  const fetchTaxReturns = async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams()
-      
-      // Period filtering based on due date (when the return should be submitted)
-      if (periodFilter === "current") {
-        // Show tax returns due this month
-        params.set("dueDateYear", new Date().getFullYear().toString())
-        params.set("dueDateMonth", (new Date().getMonth() + 1).toString())
-      } else if (periodFilter === "custom") {
-        // Custom month selection - show returns due in selected month
-        params.set("dueDateYear", customYear)
-        params.set("dueDateMonth", customMonth)
-      }
-      // If "all", no date filter
-
-      if (typeFilter !== "all") {
-        params.set("type", typeFilter)
-      }
-
-      if (statusFilter !== "all") {
-        params.set("isSubmitted", statusFilter)
-      }
-
-      const res = await fetch(`/api/tax-returns?${params.toString()}`)
-      if (res.ok) {
-        const data = await res.json()
-        setTaxReturns(data)
-      } else {
-        toast.error("Beyannameler yüklenirken hata oluştu")
-      }
-    } catch (e) {
-      console.error(e)
-      toast.error("Beyannameler yüklenirken hata oluştu")
-    } finally {
-      setLoading(false)
-    }
-  }
+  
 
   const handleToggleSubmitted = async (taxReturn: TaxReturn) => {
     try {

@@ -46,7 +46,7 @@ export default function UsersPage() {
       } else {
         toast.error("Kullanıcılar yüklenemedi")
       }
-    } catch (error) {
+    } catch {
       toast.error("Bir hata oluştu")
     } finally {
       setLoading(false)
@@ -99,7 +99,7 @@ export default function UsersPage() {
         const error = await res.json()
         toast.error(error.error || "İşlem başarısız")
       }
-    } catch (error) {
+    } catch {
       toast.error("Bir hata oluştu")
     }
   }
@@ -115,7 +115,7 @@ export default function UsersPage() {
       } else {
         toast.error("Silme işlemi başarısız")
       }
-    } catch (error) {
+    } catch {
       toast.error("Bir hata oluştu")
     }
   }

@@ -71,7 +71,7 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
         form.reset()
       }
       setCvFile(null)
-    } catch (error) {
+    } catch {
       toast.error("Bir hata oluştu. Lütfen tekrar deneyin.")
     } finally {
       setIsSubmitting(false)
@@ -86,7 +86,7 @@ export function CareerModal({ open, onOpenChange }: CareerModalProps) {
             Kariyer Fırsatları
           </DialogTitle>
           <DialogDescription>
-            Ekibimize katılmak için formu doldurun ve CV'nizi yükleyin
+            Ekibimize katılmak için formu doldurun ve CV&apos;nizi yükleyin
           </DialogDescription>
         </DialogHeader>
 

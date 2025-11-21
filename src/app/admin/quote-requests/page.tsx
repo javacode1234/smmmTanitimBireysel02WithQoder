@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -20,71 +20,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Eye, Download, Search, Filter, RefreshCw, Edit, Trash2 } from "lucide-react"
+import { Eye, Download, Search, RefreshCw, Edit, Trash2 } from "lucide-react"
 import { QuoteRequestModal } from "@/components/admin/quote-request-modal"
 import { EditQuoteRequestModal } from "@/components/admin/edit-quote-request-modal"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { toast } from "sonner"
 import { exportQuoteRequestToPDF } from "@/lib/pdf-export"
+import { QuoteRequest, QuoteRequestStatus } from "@/components/admin/quote-request-modal"
 
-// Mock data - will be replaced with actual API data
-const mockQuoteRequests = [
-  {
-    id: "1",
-    name: "Ahmet Yılmaz",
-    email: "ahmet@example.com",
-    phone: "0555 123 4567",
-    company: "ABC Ltd. Şti.",
-    serviceType: "Muhasebe",
-    message: "Şirketimiz için tam zamanlı muhasebe hizmeti talep ediyoruz.",
-    status: "pending",
-    createdAt: "2024-01-15T10:30:00",
-  },
-  {
-    id: "2",
-    name: "Ayşe Demir",
-    email: "ayse@example.com",
-    phone: "0532 987 6543",
-    company: "XYZ A.Ş.",
-    serviceType: "Vergi Danışmanlığı",
-    message: "Kurumlar vergisi beyannamesinde danışmanlık ihtiyacımız var.",
-    status: "reviewed",
-    createdAt: "2024-01-14T14:20:00",
-  },
-  {
-    id: "3",
-    name: "Mehmet Kaya",
-    email: "mehmet@example.com",
-    phone: "0543 456 7890",
-    company: "DEF Ticaret",
-    serviceType: "Bordrolama",
-    message: "Aylık bordro ve SGK işlemleri için destek arıyoruz.",
-    status: "contacted",
-    createdAt: "2024-01-13T09:15:00",
-  },
-  {
-    id: "4",
-    name: "Fatma Özkan",
-    email: "fatma@example.com",
-    phone: "0533 234 5678",
-    company: "GHI Pazarlama",
-    serviceType: "Denetim",
-    message: "Yıllık mali tablolarımızın denetimi için teklif istiyoruz.",
-    status: "pending",
-    createdAt: "2024-01-12T16:45:00",
-  },
-  {
-    id: "5",
-    name: "Ali Şahin",
-    email: "ali@example.com",
-    phone: "0544 876 5432",
-    company: "JKL İnşaat",
-    serviceType: "Muhasebe",
-    message: "İnşaat sektörüne özel muhasebe danışmanlığı talep ediyoruz.",
-    status: "completed",
-    createdAt: "2024-01-11T11:00:00",
-  },
-]
 
 const statusColors = {
   NEW: "bg-blue-100 text-blue-800",
@@ -104,28 +47,31 @@ const statusLabels = {
 
 export default function QuoteRequestsPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState<"all" | QuoteRequestStatus>("all")
   const [serviceFilter, setServiceFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
-  const [selectedRequest, setSelectedRequest] = useState<any>(null)
+  const [selectedRequest, setSelectedRequest] = useState<QuoteRequest | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [requestToDelete, setRequestToDelete] = useState<any>(null)
+  const [requestToDelete, setRequestToDelete] = useState<QuoteRequest | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [requests, setRequests] = useState<any[]>([])
+  const [requests, setRequests] = useState<QuoteRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
 
-  // Fetch requests from API
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     setIsLoading(true)
     try {
       const response = await fetch('/api/quote-requests')
       if (response.ok) {
-        const data = await response.json()
-        setRequests(data)
+        const data: QuoteRequest[] = await response.json()
+        const normalized = data.map((r) => ({
+          ...r,
+          status: String(r.status).toUpperCase() as QuoteRequestStatus,
+        }))
+        setRequests(normalized)
       } else {
         toast.error('Teklif talepleri yüklenirken bir hata oluştu')
       }
@@ -135,7 +81,7 @@ export default function QuoteRequestsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   // Ensure component is mounted on client before fetching
   useEffect(() => {
@@ -146,7 +92,7 @@ export default function QuoteRequestsPage() {
     if (isMounted) {
       fetchRequests()
     }
-  }, [isMounted])
+  }, [isMounted, fetchRequests])
 
   // Filter data
   const filteredData = requests.filter((request) => {
@@ -166,17 +112,17 @@ export default function QuoteRequestsPage() {
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedData = filteredData.slice(startIndex, startIndex + itemsPerPage)
 
-  const handleViewDetails = (request: any) => {
+  const handleViewDetails = (request: QuoteRequest) => {
     setSelectedRequest(request)
     setIsModalOpen(true)
   }
 
-  const handleEditStatus = (request: any) => {
+  const handleEditStatus = (request: QuoteRequest) => {
     setSelectedRequest(request)
     setIsEditModalOpen(true)
   }
 
-  const handleStatusUpdate = async (requestId: string, newStatus: string) => {
+  const handleStatusUpdate = async (requestId: string, newStatus: QuoteRequestStatus) => {
     try {
       const response = await fetch('/api/quote-requests', {
         method: 'PATCH',
@@ -188,7 +134,7 @@ export default function QuoteRequestsPage() {
         setRequests(prev => 
           prev.map(req => 
             req.id === requestId 
-              ? { ...req, status: newStatus } 
+              ? { ...req, status: String(newStatus).toUpperCase() as QuoteRequestStatus } 
               : req
           )
         )
@@ -226,12 +172,12 @@ export default function QuoteRequestsPage() {
     }
   }
 
-  const confirmDelete = (request: any) => {
+  const confirmDelete = (request: QuoteRequest) => {
     setRequestToDelete(request)
     setIsDeleteDialogOpen(true)
   }
 
-  const handleExportPDF = (request: any) => {
+  const handleExportPDF = (request: QuoteRequest) => {
     try {
       exportQuoteRequestToPDF(request)
       toast.success('Teklif talebi başarıyla dışa aktarıldı!')
@@ -358,7 +304,7 @@ export default function QuoteRequestsPage() {
                 {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Yüklen iyor...
+                      Yükleniyor...
                     </TableCell>
                   </TableRow>
                 ) : paginatedData.length === 0 ? (

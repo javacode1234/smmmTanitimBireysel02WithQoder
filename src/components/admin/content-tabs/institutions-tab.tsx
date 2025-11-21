@@ -234,7 +234,7 @@ export function InstitutionsTab() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<Institution | null>(null)
-  const [isResetting, setIsResetting] = useState(false)
+  const [isResetting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [editingItem, setEditingItem] = useState<Institution | null>(null)
   const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false)
@@ -247,11 +247,6 @@ export function InstitutionsTab() {
     isActive: true,
     order: 0,
   })
-  
-  // Debug effect to log items changes
-  useEffect(() => {
-    console.log('Items state changed:', items)
-  }, [items])
   
   // Pagination and filtering states
   const [currentPage, setCurrentPage] = useState(1)
@@ -462,7 +457,7 @@ export function InstitutionsTab() {
     const currentIndex = items.findIndex(i => i.id === item.id)
     if (currentIndex === -1) return
 
-    let newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
     // Boundary checks
     if (newIndex < 0 || newIndex >= items.length) return
 
@@ -721,7 +716,7 @@ export function InstitutionsTab() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAndPaginatedItems.map((item, index) => {
+                filteredAndPaginatedItems.map((item) => {
                   // Calculate the actual index in the full items array for reordering
                   const actualIndex = items.findIndex(i => i.id === item.id)
                   return (
@@ -729,10 +724,13 @@ export function InstitutionsTab() {
                       <TableCell>
                         <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center p-2 border">
                           {item.logo && (
-                            <img
+                            <Image
                               src={item.logo}
                               alt={item.name}
+                              width={64}
+                              height={64}
                               className="max-w-full max-h-full object-contain"
+                              unoptimized
                             />
                           )}
                         </div>
@@ -942,10 +940,13 @@ export function InstitutionsTab() {
                   {formData.logo ? (
                     <div className="group relative">
                       <div className="relative w-full h-64 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300 overflow-hidden flex items-center justify-center p-8">
-                        <img
+                        <Image
                           src={formData.logo}
                           alt="Logo Preview"
+                          width={512}
+                          height={256}
                           className="max-w-full max-h-full object-contain"
+                          unoptimized
                         />
                       </div>
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-3">

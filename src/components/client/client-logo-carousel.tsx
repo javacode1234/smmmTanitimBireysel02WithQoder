@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef, useCallback } from "react"
+import Image from "next/image"
 import {
   Carousel,
   CarouselContent,
@@ -96,19 +97,20 @@ export function InstitutionLogoCarousel() {
                 <Card className="h-full flex items-center justify-center p-6 border-0 shadow-none">
                   <CardContent className="p-0 flex items-center justify-center">
                     {logo.logo.startsWith('data:') ? (
-                      <img 
-                        src={logo.logo} 
-                        alt={logo.name} 
+                      <Image
+                        src={logo.logo}
+                        alt={logo.name}
+                        width={64}
+                        height={64}
                         className="h-16 w-16 object-contain"
+                        unoptimized
                         onError={(e) => {
                           try {
-                            const target = e.target as HTMLImageElement;
+                            const target = e.target as HTMLImageElement
                             if (target && typeof target.style !== 'undefined') {
-                              target.style.display = 'none';
+                              target.style.display = 'none'
                             }
-                          } catch (error) {
-                            console.warn('Error hiding logo image:', error);
-                          }
+                          } catch {}
                         }}
                       />
                     ) : (
@@ -133,19 +135,20 @@ export function InstitutionLogoCarousel() {
           <Card key={logo.id} className="h-full flex items-center justify-center p-4 border-0 shadow-none">
             <CardContent className="p-0 flex items-center justify-center">
               {logo.logo.startsWith('data:') ? (
-                <img 
-                  src={logo.logo} 
-                  alt={logo.name} 
+                <Image
+                  src={logo.logo}
+                  alt={logo.name}
+                  width={48}
+                  height={48}
                   className="h-12 w-12 object-contain"
+                  unoptimized
                   onError={(e) => {
                     try {
-                      const target = e.target as HTMLImageElement;
+                      const target = e.target as HTMLImageElement
                       if (target && typeof target.style !== 'undefined') {
-                        target.style.display = 'none';
+                        target.style.display = 'none'
                       }
-                    } catch (error) {
-                      console.warn('Error hiding mobile logo image:', error);
-                    }
+                    } catch {}
                   }}
                 />
               ) : (

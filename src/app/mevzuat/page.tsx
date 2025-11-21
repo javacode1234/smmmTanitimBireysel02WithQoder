@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,11 +33,7 @@ export default function MevzuatPage() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    fetchCirculars()
-  }, [selectedCategory, searchTerm])
-
-  const fetchCirculars = async () => {
+  const fetchCirculars = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -47,7 +43,6 @@ export default function MevzuatPage() {
       if (searchTerm) {
         params.append('search', searchTerm)
       }
-      
       const response = await fetch(`/api/mevzuat?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
@@ -62,7 +57,13 @@ export default function MevzuatPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedCategory, searchTerm])
+
+  useEffect(() => {
+    fetchCirculars()
+  }, [fetchCirculars])
+
+  
 
   // Handle navigation with proper cleanup to prevent DOM errors
   const handleNavigation = (href: string, event?: React.MouseEvent) => {

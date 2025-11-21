@@ -14,10 +14,24 @@ import { Download, Mail, Phone, Building2, Briefcase, Calendar, FileText } from 
 import { Separator } from "@/components/ui/separator"
 
 interface QuoteRequestModalProps {
-  request: any
+  request: QuoteRequest | null
   isOpen: boolean
   onClose: () => void
-  onExportPDF: (request: any) => void
+  onExportPDF: (request: QuoteRequest) => void
+}
+
+export type QuoteRequestStatus = 'NEW' | 'PENDING' | 'REVIEWED' | 'CONTACTED' | 'COMPLETED' | 'new' | 'pending' | 'reviewed' | 'contacted' | 'completed'
+
+export interface QuoteRequest {
+  id: string
+  name: string
+  company: string
+  email: string
+  phone: string
+  serviceType: string
+  message: string
+  createdAt: string
+  status: QuoteRequestStatus
 }
 
 const statusColors = {

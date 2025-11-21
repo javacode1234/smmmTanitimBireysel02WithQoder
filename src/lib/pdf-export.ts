@@ -1,7 +1,44 @@
 // PDF Export Utilities using jsPDF
 import jsPDF from 'jspdf'
 
-export const exportContactMessageToPDF = (message: any) => {
+type ContactMessage = {
+  id: string
+  createdAt: string | number | Date
+  status: string
+  name: string
+  email: string
+  phone: string
+  subject: string
+  message: string
+}
+
+type JobApplication = {
+  id: string
+  createdAt: string | number | Date
+  status: string
+  name: string
+  email: string
+  phone: string
+  position: string
+  experience: string
+  education: string
+  coverLetter?: string
+  cvFileName?: string
+}
+
+type QuoteRequest = {
+  id: string
+  createdAt: string | number | Date
+  status: string
+  name: string
+  email: string
+  phone: string
+  company?: string
+  serviceType: string
+  message: string
+}
+
+export const exportContactMessageToPDF = (message: ContactMessage) => {
   const doc = new jsPDF()
   
   // Title
@@ -63,7 +100,7 @@ export const exportContactMessageToPDF = (message: any) => {
   doc.save(`mesaj_${message.id}.pdf`)
 }
 
-export const exportJobApplicationToPDF = (application: any) => {
+export const exportJobApplicationToPDF = (application: JobApplication) => {
   const doc = new jsPDF()
   
   // Title
@@ -141,7 +178,7 @@ export const exportJobApplicationToPDF = (application: any) => {
   doc.save(`basvuru_${application.id}.pdf`)
 }
 
-export const exportQuoteRequestToPDF = (request: any) => {
+export const exportQuoteRequestToPDF = (request: QuoteRequest) => {
   const doc = new jsPDF()
   
   // Title

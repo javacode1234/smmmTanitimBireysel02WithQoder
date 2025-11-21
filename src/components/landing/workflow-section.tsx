@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Phone, FileText, Users, CheckCircle2, ArrowRight, Briefcase, Target, TrendingUp } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { useState, useEffect } from "react"
 
 interface WorkflowStep {
@@ -19,7 +20,7 @@ interface SectionData {
   paragraph: string
 }
 
-const iconMap: { [key: string]: any } = {
+const iconMap: Record<string, LucideIcon> = {
   'Phone': Phone,
   'FileText': FileText,
   'Users': Users,
@@ -37,10 +38,6 @@ export function WorkflowSection() {
     title: "Çalışma Sürecimiz",
     paragraph: "Basit ve şeffaf süreçlerimiz ile işletmenizin mali yönetimini profesyonel ellere emanet edin."
   })
-
-  useEffect(() => {
-    fetchData()
-  }, [])
 
   const fetchData = async () => {
     try {
@@ -68,6 +65,13 @@ export function WorkflowSection() {
       console.error('Error fetching workflow data:', error)
     }
   }
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      fetchData()
+    }, 0)
+    return () => clearTimeout(id)
+  }, [])
 
   return (
     <section id="workflow" className="py-12 px-4 bg-gradient-to-b from-white to-blue-50">

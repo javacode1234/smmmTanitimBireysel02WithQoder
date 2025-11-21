@@ -24,7 +24,7 @@ import { toast } from "sonner"
 interface EditBusinessModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: any) => void
+  onSave: (data: BusinessUpdate) => void
   customerId: string
   initialData: {
     ledgerType: string | null
@@ -35,6 +35,16 @@ interface EditBusinessModalProps {
     status: "ACTIVE" | "INACTIVE"
     onboardingStage: "LEAD" | "PROSPECT" | "CUSTOMER"
   }
+}
+
+interface BusinessUpdate {
+  ledgerType: string
+  hasEmployees: boolean
+  subscriptionFee: string
+  establishmentDate: string
+  taxPeriodType: string | null
+  status: "ACTIVE" | "INACTIVE"
+  onboardingStage: "LEAD" | "PROSPECT" | "CUSTOMER"
 }
 
 export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initialData }: EditBusinessModalProps) {

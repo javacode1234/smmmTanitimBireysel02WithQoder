@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -163,12 +163,43 @@ export default function CircularPage({ params }: { params: Promise<{ id: string 
   const router = useRouter()
   const [circular, setCircular] = useState<Circular | null>(null)
   const [loading, setLoading] = useState(true)
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const unwrappedParams = typeof params === 'object' && params !== null && 'id' in params ? params : { id: '' }
+  
+
+  const fetchCircular = useCallback(() => {
+    setLoading(true)
+    try {
+      setTimeout(() => {
+        if (typeof params === 'object' && params !== null && 'id' in params) {
+          const foundCircular = MOCK_CIRCULARS.find(c => c.id === params.id)
+          if (foundCircular) {
+            setCircular(foundCircular)
+          } else {
+            toast.error("Sirküler bulunamadı")
+          }
+        } else {
+          Promise.resolve(params).then((resolvedParams) => {
+            const foundCircular = MOCK_CIRCULARS.find(c => c.id === resolvedParams.id)
+            if (foundCircular) {
+              setCircular(foundCircular)
+            } else {
+              toast.error("Sirküler bulunamadı")
+            }
+          }).catch(() => {
+            toast.error("Sirküler yüklenirken bir hata oluştu")
+          })
+        }
+        setLoading(false)
+      }, 500)
+    } catch (error) {
+      console.error("Error fetching circular:", error)
+      toast.error("Sirküler yüklenirken bir hata oluştu")
+      setLoading(false)
+    }
+  }, [params])
 
   useEffect(() => {
     fetchCircular()
-  }, [])
+  }, [fetchCircular])
 
   const fetchCircular = () => {
     setLoading(true)
@@ -298,7 +329,7 @@ export default function CircularPage({ params }: { params: Promise<{ id: string 
               </div>
               <Button onClick={openPdf}>
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Resmi PDF'i Aç
+                Resmi PDF&#39;i Aç
               </Button>
             </div>
           </CardHeader>

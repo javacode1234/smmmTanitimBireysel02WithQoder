@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,26 @@ import { toast } from "sonner"
 import { Pencil, Trash2, Plus } from "lucide-react"
 
 export default function DeclarationsPage() {
-  const [items, setItems] = useState<any[]>([])
+  interface DeclarationConfig {
+    id: string
+    type: string
+    frequency: 'MONTHLY' | 'QUARTERLY' | 'YEARLY'
+    enabled: boolean
+    dueDay?: number
+    dueHour?: number
+    dueMinute?: number
+    dueMonth?: number
+    quarterOffset?: number
+    yearlyCount?: number
+    skipQuarter?: boolean
+    optional?: boolean
+    quarters?: string
+    taxPeriodType?: string
+    createdAt: string
+    updatedAt: string
+  }
+
+  const [items, setItems] = useState<DeclarationConfig[]>([])
   const [loading, setLoading] = useState(true)
   const [declarationTypes, setDeclarationTypes] = useState<string[]>([])
   const [typeFilter, setTypeFilter] = useState<string>('all')
@@ -29,10 +48,7 @@ export default function DeclarationsPage() {
     return map[frequency] || frequency
   }
 
-  // Get unique declaration types
-  const getUniqueTypes = (items: any[]) => {
-    return Array.from(new Set(items.map(item => item.type).filter(Boolean)))
-  }
+  
 
   // form state
   const [type, setType] = useState("")
@@ -62,14 +78,14 @@ export default function DeclarationsPage() {
     setCurrentPage(1)
   }, [search, typeFilter])
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch("/api/declarations-config")
       if (res.ok) {
-        const data = await res.json()
+        const data: DeclarationConfig[] = await res.json()
         setItems(data)
-        setDeclarationTypes(getUniqueTypes(data))
+        setDeclarationTypes(Array.from(new Set(data.map(item => item.type).filter(Boolean))))
       } else {
         toast.error("Beyannameler yüklenemedi")
       }
@@ -79,9 +95,9 @@ export default function DeclarationsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => { fetchItems() }, [])
+  useEffect(() => { fetchItems() }, [fetchItems])
 
   const resetForm = () => {
     setType("")
@@ -206,7 +222,7 @@ export default function DeclarationsPage() {
       if (!res.ok) throw new Error("update failed")
       setItems(prev => prev.map(i => i.id === id ? { ...i, enabled: next } : i))
       toast.success(`Beyanname ${next ? 'aktif' : 'pasif'} hale getirildi`)
-    } catch (e) {
+    } catch {
       toast.error("Güncellenemedi")
     }
   }
@@ -217,7 +233,7 @@ export default function DeclarationsPage() {
       if (!res.ok) throw new Error("delete failed")
       toast.success("Beyanname başarıyla silindi")
       setItems(prev => prev.filter(i => i.id !== id))
-    } catch (e) {
+    } catch {
       toast.error("Silinemedi")
     }
   }

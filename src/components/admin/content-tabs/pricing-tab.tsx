@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -193,7 +193,8 @@ export function PricingTab() {
   const [planSearchTerm, setPlanSearchTerm] = useState("")
   const [planCurrentPage, setPlanCurrentPage] = useState(1)
   const [planItemsPerPage, setPlanItemsPerPage] = useState(5)
-  const [editingPlan, setEditingPlan] = useState<any>(null)
+  type EditablePlan = Omit<PricingPlan, 'id'> & { id?: string }
+  const [editingPlan, setEditingPlan] = useState<EditablePlan | null>(null)
   const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false)
   const [planToDelete, setPlanToDelete] = useState<PricingPlan | null>(null)
   const [isPlanDeleteDialogOpen, setIsPlanDeleteDialogOpen] = useState(false)
@@ -203,7 +204,8 @@ export function PricingTab() {
   const [serviceSearchTerm, setServiceSearchTerm] = useState("")
   const [serviceCurrentPage, setServiceCurrentPage] = useState(1)
   const [serviceItemsPerPage, setServiceItemsPerPage] = useState(5)
-  const [editingService, setEditingService] = useState<any>(null)
+  type EditableService = Omit<AdditionalService, 'id'> & { id?: string }
+  const [editingService, setEditingService] = useState<EditableService | null>(null)
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false)
   const [serviceToDelete, setServiceToDelete] = useState<AdditionalService | null>(null)
   const [isServiceDeleteDialogOpen, setIsServiceDeleteDialogOpen] = useState(false)
@@ -212,19 +214,7 @@ export function PricingTab() {
   const [isSavingDefaults, setIsSavingDefaults] = useState(false)
   const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false)
 
-  useEffect(() => {
-    fetchData()
-    
-    return () => {
-      setIsPlanDialogOpen(false)
-      setIsPlanDeleteDialogOpen(false)
-      setIsServiceDialogOpen(false)
-      setIsServiceDeleteDialogOpen(false)
-      setIsResetDialogOpen(false)
-    }
-  }, [])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       await Promise.all([
@@ -237,13 +227,27 @@ export function PricingTab() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+    
+    return () => {
+      setIsPlanDialogOpen(false)
+      setIsPlanDeleteDialogOpen(false)
+      setIsServiceDialogOpen(false)
+      setIsServiceDeleteDialogOpen(false)
+      setIsResetDialogOpen(false)
+    }
+  }, [fetchData])
+
+  
 
   const fetchSectionData = async () => {
     try {
       const response = await fetch('/api/content/pricing/section')
       if (response.ok) {
-        const data = await response.json()
+        const data: PricingPlan[] = await response.json()
         if (data && data.id) {
           setSectionData({
             title: data.title || DEFAULT_SECTION_DATA.title,
@@ -271,12 +275,16 @@ export function PricingTab() {
         const data = await response.json()
         
         if (data && data.length > 0) {
-          const allDefaults = data.every((p: any) => p.id?.startsWith('default-'))
-          
-          const parsedData = data.map((plan: any) => ({
+          const allDefaults = data.every((p: PricingPlan) => p.id?.startsWith('default-'))
+
+          const parsedData: PricingPlan[] = data.map((plan: PricingPlan) => ({
             ...plan,
-            features: plan.features && Array.isArray(plan.features)
-              ? plan.features.map((f: any) => f.text || f)
+            features: Array.isArray(plan.features)
+              ? plan.features.map((f: unknown) => {
+                  if (typeof f === 'string') return f
+                  const obj = f as { text?: unknown }
+                  return typeof obj.text === 'string' ? obj.text : ''
+                })
               : []
           }))
           
@@ -546,7 +554,7 @@ export function PricingTab() {
   const removeFeature = (index: number) => {
     setEditingPlan({
       ...editingPlan,
-      features: editingPlan.features.filter((_: any, i: number) => i !== index)
+      features: editingPlan.features.filter((_, i) => i !== index)
     })
   }
 

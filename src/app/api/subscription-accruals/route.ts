@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 // Generate monthly subscription accruals for all active customers
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Get the current date to determine which month to generate accruals for
     const now = new Date()
@@ -334,10 +334,11 @@ export async function PUT(request: NextRequest) {
       accruals: createdAccruals
     })
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error generating subscription accruals:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Aidat tahakkukları oluşturulurken hata oluştu: ' + error.message },
+      { error: 'Aidat tahakkukları oluşturulurken hata oluştu: ' + message },
       { status: 500 }
     )
   }

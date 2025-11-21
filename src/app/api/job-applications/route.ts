@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { randomUUID } from 'crypto'
 // import { JobApplicationStatus } from '@prisma/client' - using string literals instead
 
 export async function GET() {
@@ -79,7 +78,7 @@ export async function POST(request: NextRequest) {
         status: 'NEW',
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as any, // TypeScript cache issue workaround - Prisma schema is correct
+      }
     })
 
     return NextResponse.json(

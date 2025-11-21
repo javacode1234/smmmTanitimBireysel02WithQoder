@@ -16,9 +16,10 @@ export async function GET() {
     }
     
     return NextResponse.json(section)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching institutions section:', error)
-    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+    const err = error as { code?: string; message?: string }
+    if (err.code === 'P2021' || err.message?.includes('does not exist')) {
       return NextResponse.json(null)
     }
     return NextResponse.json(

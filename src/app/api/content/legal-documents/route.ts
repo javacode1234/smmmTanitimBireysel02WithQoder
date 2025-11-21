@@ -108,9 +108,7 @@ export async function GET(request: NextRequest) {
     } else {
       // Get all documents
       const documents = await prisma.legalDocument.findMany()
-      
-      // Create a map of existing documents
-      const existingDocs: Record<string, any> = {}
+      const existingDocs: Record<string, typeof documents[number] | undefined> = {}
       documents.forEach(doc => {
         existingDocs[doc.type] = doc
       })

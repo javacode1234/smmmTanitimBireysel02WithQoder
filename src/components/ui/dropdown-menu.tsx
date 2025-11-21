@@ -70,42 +70,6 @@ function DropdownMenuContent({
   )
 }
 
-function DropdownMenuSubTrigger({
-  className,
-  inset,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
-  inset?: boolean
-}) {
-  return (
-    <DropdownMenuPrimitive.SubTrigger
-      data-slot="dropdown-menu-sub-trigger"
-      className={cn(
-        "ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground flex cursor-default select-none items-center gap-2 rounded-xs px-2 py-1.5 outline-hidden focus:ring-2 focus:ring-offset-2",
-        inset && "pl-8",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function DropdownMenuSubContent({
-  className,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
-  return (
-    <DropdownMenuPrimitive.SubContent
-      data-slot="dropdown-menu-sub-content"
-      className={cn(
-        "bg-background text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 z-50 min-w-8 rounded-md border py-1 shadow-md will-change-transform",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
 function DropdownMenuRadioGroup({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioGroup>) {

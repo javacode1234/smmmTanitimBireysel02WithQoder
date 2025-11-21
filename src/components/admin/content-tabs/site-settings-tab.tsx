@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { Camera, Loader2, MapPin, RotateCcw, Save } from "lucide-react"
+import NextImage from "next/image"
 import { toast } from "sonner"
 
 // Default values
@@ -37,7 +38,6 @@ export function SiteSettingsTab() {
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [settingsId, setSettingsId] = useState<string | null>(null)
   const [mapModalOpen, setMapModalOpen] = useState(false)
-  const [tempCoordinates, setTempCoordinates] = useState({ lat: 41.0082, lng: 28.9784 }) // Default: Istanbul
   const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false)
   const [isSavingDefaults, setIsSavingDefaults] = useState(false)
   const [formData, setFormData] = useState(DEFAULT_SETTINGS)
@@ -48,37 +48,34 @@ export function SiteSettingsTab() {
 
   useEffect(() => {
     fetchSettings()
-    
-    // Listen for close-all-dialogs event
+
     const handleCloseAllDialogs = () => {
-      // Use requestAnimationFrame to ensure DOM is ready for updates
       requestAnimationFrame(() => {
         setMapModalOpen(false)
         setIsResetDialogOpen(false)
       })
     }
-    
+
     if (typeof window !== 'undefined') {
       window.addEventListener('close-all-dialogs', handleCloseAllDialogs)
     }
-    
-    // Cleanup function to prevent memory leaks and close dialogs
+
+    const faviconEl = faviconInputRef.current
+    const brandIconEl = brandIconInputRef.current
+
     return () => {
-      // Clear file input values
-      if (faviconInputRef.current) {
-        faviconInputRef.current.value = ''
+      if (faviconEl) {
+        faviconEl.value = ''
       }
-      if (brandIconInputRef.current) {
-        brandIconInputRef.current.value = ''
+      if (brandIconEl) {
+        brandIconEl.value = ''
       }
-      
-      // Close all dialogs safely
+
       requestAnimationFrame(() => {
         setMapModalOpen(false)
         setIsResetDialogOpen(false)
       })
-      
-      // Remove event listener
+
       if (typeof window !== 'undefined') {
         window.removeEventListener('close-all-dialogs', handleCloseAllDialogs)
       }
@@ -230,24 +227,7 @@ export function SiteSettingsTab() {
     }
   }
 
-  const handleMapClick = (e: any) => {
-    const lat = e.latlng.lat
-    const lng = e.latlng.lng
-    setTempCoordinates({ lat, lng })
-  }
-
-  const handleMapConfirm = () => {
-    if (!formData.mapEmbedUrl) {
-      toast.error('Lütfen Google Maps linkini girin')
-      return
-    }
-    setMapModalOpen(false)
-    toast.success('Harita linki kaydedildi!')
-  }
-
-  const openMapModal = () => {
-    setMapModalOpen(true)
-  }
+  
 
   // Reset to default values (state only - no database change)
   const handleReset = () => {
@@ -374,13 +354,18 @@ export function SiteSettingsTab() {
               <p className="text-xs text-muted-foreground">En iyi sonuç için 32x32 veya 64x64 piksel PNG/ICO kullanın</p>
               <div className="flex items-center gap-4">
                 {formData.favicon && (
-                  <img 
+                  <NextImage 
                     src={formData.favicon} 
                     alt="Favicon" 
+                    width={48}
+                    height={48}
                     className="h-12 w-12 rounded object-cover border" 
+                    unoptimized
                     onError={(e) => {
-                      // Handle broken image gracefully
-                      e.currentTarget.style.display = 'none'
+                      const target = e.target as HTMLImageElement
+                      if (target && typeof target.style !== 'undefined') {
+                        target.style.display = 'none'
+                      }
                     }}
                   />
                 )}
@@ -409,13 +394,18 @@ export function SiteSettingsTab() {
               <p className="text-xs text-muted-foreground">En iyi sonuç için 32x32 veya 64x64 piksel PNG/ICO kullanın</p>
               <div className="flex items-center gap-4">
                 {formData.brandIcon && (
-                  <img 
+                  <NextImage 
                     src={formData.brandIcon} 
                     alt="Brand Icon" 
+                    width={48}
+                    height={48}
                     className="h-12 w-12 rounded object-cover border" 
+                    unoptimized
                     onError={(e) => {
-                      // Handle broken image gracefully
-                      e.currentTarget.style.display = 'none'
+                      const target = e.target as HTMLImageElement
+                      if (target && typeof target.style !== 'undefined') {
+                        target.style.display = 'none'
+                      }
                     }}
                   />
                 )}
@@ -499,7 +489,7 @@ export function SiteSettingsTab() {
                         <div className="flex gap-3">
                           <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">1</div>
                           <div>
-                            <h3 className="font-semibold text-blue-900 mb-1">Google Maps'i Açın</h3>
+                            <h3 className="font-semibold text-blue-900 mb-1">Google Maps&rsquo;i Açın</h3>
                             <p className="text-sm text-blue-800">
                               <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="underline">https://www.google.com/maps</a> adresine gidin
                             </p>
@@ -521,8 +511,8 @@ export function SiteSettingsTab() {
                         <div className="flex gap-3">
                           <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">3</div>
                           <div>
-                            <h3 className="font-semibold text-purple-900 mb-1">"Paylaş" Butonuna Tıklayın</h3>
-                            <p className="text-sm text-purple-800">Sol taraftaki yan panelde <strong>"Paylaş"</strong> veya <strong>"Share"</strong> butonunu bulun</p>
+                            <h3 className="font-semibold text-purple-900 mb-1">&quot;Paylaş&quot; Butonuna Tıklayın</h3>
+                            <p className="text-sm text-purple-800">Sol taraftaki yan panelde <strong>&quot;Paylaş&quot;</strong> veya <strong>&quot;Share&quot;</strong> butonunu bulun</p>
                           </div>
                         </div>
                       </div>
@@ -531,8 +521,8 @@ export function SiteSettingsTab() {
                         <div className="flex gap-3">
                           <div className="w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">4</div>
                           <div>
-                            <h3 className="font-semibold text-orange-900 mb-1">"Harita Göm" Sekmesine Geçin</h3>
-                            <p className="text-sm text-orange-800"><strong>"Harita göm"</strong> veya <strong>"Embed a map"</strong> sekmesine tıklayın</p>
+                            <h3 className="font-semibold text-orange-900 mb-1">&quot;Harita Göm&quot; Sekmesine Geçin</h3>
+                            <p className="text-sm text-orange-800"><strong>&quot;Harita göm&quot;</strong> veya <strong>&quot;Embed a map&quot;</strong> sekmesine tıklayın</p>
                           </div>
                         </div>
                       </div>
@@ -541,8 +531,8 @@ export function SiteSettingsTab() {
                         <div className="flex gap-3">
                           <div className="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">5</div>
                           <div>
-                            <h3 className="font-semibold text-red-900 mb-1">Link'i Kopyalayın</h3>
-                            <p className="text-sm text-red-800 mb-2">HTML kodundaki <code className="bg-red-100 px-1 rounded">src="..."</code> içindeki linki kopyalayın</p>
+                            <h3 className="font-semibold text-red-900 mb-1">Link&rsquo;i Kopyalayın</h3>
+                            <p className="text-sm text-red-800 mb-2">HTML kodundaki <code className="bg-red-100 px-1 rounded">src=&quot;...&quot;</code> içindeki linki kopyalayın</p>
                             <p className="text-xs text-red-700"><strong>Örnek:</strong> <code className="bg-red-100 px-1 rounded text-[10px]">https://www.google.com/maps/embed?pb=...</code></p>
                           </div>
                         </div>
@@ -564,7 +554,7 @@ export function SiteSettingsTab() {
                                 loading="lazy"
                                 referrerPolicy="no-referrer-when-downgrade"
                                 title="Map Preview"
-                                onError={(e) => {
+                                onError={() => {
                                   // Handle iframe loading errors
                                   console.error('Map iframe failed to load')
                                 }}

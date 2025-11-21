@@ -25,7 +25,7 @@ interface TaxOffice {
 interface EditContactModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: any) => void
+  onSave: (data: ContactUpdate) => void
   customerId: string
   initialData: {
     phone: string | null
@@ -34,6 +34,13 @@ interface EditContactModalProps {
     address: string | null
   }
   taxOffices?: TaxOffice[]
+}
+
+interface ContactUpdate {
+  phone: string
+  email: string
+  taxOffice: string
+  address: string
 }
 
 export function EditContactModal({ isOpen, onClose, onSave, customerId, initialData, taxOffices }: EditContactModalProps) {

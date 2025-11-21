@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Otherwise, return list of customers
-    const where: any = {}
+    const where: Record<string, unknown> = {}
 
     if (search) {
       where.OR = [
@@ -78,9 +79,10 @@ export async function GET(request: NextRequest) {
     ])
 
     return NextResponse.json({ items: customers, total, page, pageSize })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching customers:', error)
-    return NextResponse.json({ error: 'Müşteri listesi alınamadı: ' + error.message }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: 'Müşteri listesi alınamadı: ' + message }, { status: 500 })
   }
 }
 
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
     console.log('Creating customer with companyName:', data.companyName)
     
     // hasEmployees alanını kontrol et
-    const createData: any = {
+    const createData: Record<string, unknown> = {
       logo: data.logo || null,
       companyName: String(data.companyName),
       taxNumber: data.taxNumber || null,
@@ -153,28 +155,28 @@ export async function POST(request: NextRequest) {
     console.log('Creating customer with data:', JSON.stringify(createData, null, 2))
     
     const customer = await prisma.customer.create({
-      data: createData,
+      data: createData as Prisma.CustomerCreateInput,
     })
     
     console.log('Customer created successfully:', customer.id)
 
     return NextResponse.json(customer)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating customer:', error)
-    console.error('Error message:', error.message)
-    console.error('Error stack:', error.stack)
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    const stack = error instanceof Error ? error.stack : undefined
     
     // More detailed error response
     let errorMessage = 'Müşteri oluşturulamadı'
-    if (error.message) {
-      errorMessage += ': ' + error.message
+    if (message) {
+      errorMessage += ': ' + message
     }
     
     return NextResponse.json(
       { 
         error: errorMessage,
-        details: error.message || 'Unknown error',
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        details: message,
+        stack: process.env.NODE_ENV === 'development' ? stack : undefined
       }, 
       { status: 500 }
     )
@@ -204,7 +206,7 @@ export async function PATCH(request: NextRequest) {
     console.log('Received update data:', JSON.stringify(data, null, 2))
 
     // hasEmployees alanını kontrol et
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       logo: data.logo,
       companyName: data.companyName,
       taxNumber: data.taxNumber,
@@ -252,26 +254,26 @@ export async function PATCH(request: NextRequest) {
 
     const customer = await prisma.customer.update({
       where: { id },
-      data: updateData,
+      data: updateData as Prisma.CustomerUpdateInput,
     })
 
     return NextResponse.json(customer)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating customer:', error)
-    console.error('Error message:', error.message)
-    console.error('Error stack:', error.stack)
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    const stack = error instanceof Error ? error.stack : undefined
     
     // More detailed error response
     let errorMessage = 'Müşteri güncellenemedi'
-    if (error.message) {
-      errorMessage += ': ' + error.message
+    if (message) {
+      errorMessage += ': ' + message
     }
     
     return NextResponse.json(
       { 
         error: errorMessage,
-        details: error.message || 'Unknown error',
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        details: message,
+        stack: process.env.NODE_ENV === 'development' ? stack : undefined
       }, 
       { status: 500 }
     )
@@ -297,22 +299,22 @@ export async function DELETE(request: NextRequest) {
 
     await prisma.customer.delete({ where: { id } })
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting customer:', error)
-    console.error('Error message:', error.message)
-    console.error('Error stack:', error.stack)
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    const stack = error instanceof Error ? error.stack : undefined
     
     // More detailed error response
     let errorMessage = 'Müşteri silinemedi'
-    if (error.message) {
-      errorMessage += ': ' + error.message
+    if (message) {
+      errorMessage += ': ' + message
     }
     
     return NextResponse.json(
       { 
         error: errorMessage,
-        details: error.message || 'Unknown error',
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        details: message,
+        stack: process.env.NODE_ENV === 'development' ? stack : undefined
       }, 
       { status: 500 }
     )

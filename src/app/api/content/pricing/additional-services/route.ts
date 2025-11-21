@@ -46,9 +46,10 @@ export async function GET() {
     }
 
     return NextResponse.json(services)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching additional services:', error)
-    if (error.code === 'P2021' || error.message?.includes('does not exist')) {
+    const err = error as { code?: string; message?: string }
+    if (err.code === 'P2021' || err.message?.includes('does not exist')) {
       return NextResponse.json(getDefaultServices())
     }
     return NextResponse.json(getDefaultServices())

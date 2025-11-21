@@ -35,19 +35,17 @@ export function DeleteConfirmationDialog({
     ? `"${itemName}" kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`
     : "Bu kaydı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
-  // Safe close handler
-  const handleClose = () => {
+  const handleClose = React.useCallback(() => {
     if (!isDeleting && onClose) {
       onClose()
     }
-  }
+  }, [isDeleting, onClose])
 
-  // Safe confirm handler
-  const handleConfirm = () => {
+  const handleConfirm = React.useCallback(() => {
     if (!isDeleting && onConfirm) {
       onConfirm()
     }
-  }
+  }, [isDeleting, onConfirm])
 
   // Handle escape key and other close events
   useEffect(() => {
@@ -66,7 +64,7 @@ export function DeleteConfirmationDialog({
         window.removeEventListener('keydown', handleKeyDown)
       }
     }
-  }, [isOpen, isDeleting])
+  }, [isOpen, isDeleting, handleClose])
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {

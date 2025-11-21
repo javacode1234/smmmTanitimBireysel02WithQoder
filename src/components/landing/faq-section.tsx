@@ -42,17 +42,6 @@ export function FAQSection() {
   const [isVisible, setIsVisible] = useState(false)
   const isMountedRef = useRef(true)
 
-  useEffect(() => {
-    isMountedRef.current = true
-    setIsVisible(true)
-    fetchData()
-
-    return () => {
-      isMountedRef.current = false
-      setIsVisible(false)
-    }
-  }, [])
-
   const fetchData = async () => {
     try {
       // Fetch categories, FAQs, and section data in parallel
@@ -87,6 +76,23 @@ export function FAQSection() {
       console.error('Error fetching FAQ data:', error)
     }
   }
+
+  useEffect(() => {
+    isMountedRef.current = true
+    const visId = setTimeout(() => {
+      setIsVisible(true)
+    }, 0)
+    const id = setTimeout(() => {
+      fetchData()
+    }, 0)
+
+    return () => {
+      isMountedRef.current = false
+      setIsVisible(false)
+      clearTimeout(id)
+      clearTimeout(visId)
+    }
+  }, [])
 
   const filterByDate = (faq: FAQ) => {
     if (!startDate) return true
@@ -269,7 +275,7 @@ export function FAQSection() {
                   </div>
 
                   {/* Answer */}
-                  {openIndex === index && isMountedRef.current && (
+                  {openIndex === index && (
                     <div className="overflow-hidden">
                       <div className="px-4 pb-4 pt-0 border-t bg-blue-50/30">
                         <p className="text-xs text-gray-700 leading-relaxed pt-3">

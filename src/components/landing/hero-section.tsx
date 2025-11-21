@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { ArrowRight, TrendingUp } from "lucide-react"
 import Image from "next/image"
@@ -19,14 +18,12 @@ interface HeroData {
 
 export function HeroSection() {
   const [heroData, setHeroData] = useState<HeroData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const scrollingRef = useRef(false)
+  
 
-  useEffect(() => {
-    fetchHeroData()
-  }, [])
+  
 
-  const fetchHeroData = async () => {
+  async function fetchHeroData() {
     try {
       const response = await fetch('/api/content/hero')
       if (response.ok) {
@@ -37,10 +34,16 @@ export function HeroSection() {
       }
     } catch (error) {
       console.error('Error fetching hero data:', error)
-    } finally {
-      setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      fetchHeroData()
+    }, 0)
+    return () => clearTimeout(id)
+  }, [])
+  
 
   // Default values
   const title = heroData?.title || "Profesyonel Mali Müşavirlik Hizmetleri"
@@ -158,10 +161,13 @@ export function HeroSection() {
           >
             <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-2xl">
               {heroData?.image ? (
-                <img 
-                  src={heroData.image} 
+                <Image
+                  src={heroData.image}
                   alt={title}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+                  unoptimized
+                  className="object-cover"
                 />
               ) : (
                 <Image

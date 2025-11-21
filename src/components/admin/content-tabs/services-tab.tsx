@@ -79,6 +79,22 @@ interface Service {
   order: number
 }
 
+interface ServiceValue {
+  id: string
+  text: string
+  isActive: boolean
+  order: number
+}
+
+interface SectionData {
+  title: string
+  paragraph?: string
+  valuesTitle?: string
+  footerText?: string
+  footerSignature?: string
+  values: ServiceValue[]
+}
+
 // Default services
 const DEFAULT_SERVICES: Service[] = [
   {
@@ -173,7 +189,7 @@ const DEFAULT_SERVICES: Service[] = [
   }
 ]
 
-const DEFAULT_SECTION_DATA = {
+const DEFAULT_SECTION_DATA: SectionData = {
   title: "Hizmetlerimiz",
   paragraph: "İşletmenizin tüm mali ihtiyaçları için kapsamlı ve profesyonel çözümler sunuyoruz.",
   valuesTitle: "Hizmet Değerlerimiz",
@@ -189,21 +205,21 @@ const DEFAULT_SECTION_DATA = {
 
 export function ServicesTab() {
   const [services, setServices] = useState<Service[]>(DEFAULT_SERVICES)
-  const [sectionData, setSectionData] = useState(DEFAULT_SECTION_DATA)
+  const [sectionData, setSectionData] = useState<SectionData>(DEFAULT_SECTION_DATA)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [editingService, setEditingService] = useState<any>(null)
+  const [editingService, setEditingService] = useState<Service | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [featureInput, setFeatureInput] = useState("")
-  const [editingValue, setEditingValue] = useState<any>(null)
+  const [editingValue, setEditingValue] = useState<ServiceValue | null>(null)
   const [isValueDialogOpen, setIsValueDialogOpen] = useState(false)
-  const [valueToDelete, setValueToDelete] = useState<any>(null)
+  const [valueToDelete, setValueToDelete] = useState<ServiceValue | null>(null)
   const [isDeleteValueDialogOpen, setIsDeleteValueDialogOpen] = useState(false)
   const [valueSearchTerm, setValueSearchTerm] = useState("")
   const [valueCurrentPage, setValueCurrentPage] = useState(1)
@@ -332,7 +348,7 @@ export function ServicesTab() {
           let errorData
           try {
             errorData = JSON.parse(errorText)
-          } catch (e) {
+          } catch {
             errorData = { error: 'Parse error', details: errorText }
           }
           
@@ -354,7 +370,7 @@ export function ServicesTab() {
       })
 
       if (sectionResponse.ok) {
-        const savedData = await sectionResponse.json()
+        await sectionResponse.json()
         console.log('All changes saved successfully!')
         toast.success('Tüm değişiklikler başarıyla kaydedildi!')
         setIsDatabaseEmpty(false)
@@ -449,10 +465,9 @@ export function ServicesTab() {
         
         // Eğer gerçek veri varsa kullan, yoksa default'ları kullan
         if (data && data.length > 0) {
-          // Check if all services are defaults (id starts with 'default-')
-          const allDefaults = data.every((s: any) => s.id?.startsWith('default-'))
-          
-          const parsedData = data.map((service: any) => ({
+          type ServiceApi = Omit<Service, 'features'> & { features: string[] | string }
+          const allDefaults = (data as ServiceApi[]).every((s) => typeof s.id === 'string' && s.id.startsWith('default-'))
+          const parsedData: Service[] = (data as ServiceApi[]).map((service) => ({
             ...service,
             features: typeof service.features === 'string' 
               ? JSON.parse(service.features) 
@@ -614,7 +629,7 @@ export function ServicesTab() {
   const removeFeature = (index: number) => {
     setEditingService({
       ...editingService,
-      features: editingService.features.filter((_: any, i: number) => i !== index)
+      features: editingService.features.filter((_, i) => i !== index)
     })
   }
 
@@ -625,12 +640,13 @@ export function ServicesTab() {
     setEditingValue({
       id: `value-${Date.now()}`,
       text: "",
-      isActive: true
+      isActive: true,
+      order: sectionData.values.length
     })
     setIsValueDialogOpen(true)
   }
 
-  const editValueDialog = (value: any) => {
+  const editValueDialog = (value: ServiceValue) => {
     setEditingValue({ ...value })
     setIsValueDialogOpen(true)
   }
@@ -641,10 +657,10 @@ export function ServicesTab() {
       return
     }
 
-    const isExistingValue = sectionData.values.some((v: any) => v.id === editingValue.id)
+    const isExistingValue = sectionData.values.some((v) => v.id === editingValue.id)
     
     if (isExistingValue) {
-      const updatedValues = sectionData.values.map((v: any) =>
+      const updatedValues = sectionData.values.map((v) =>
         v.id === editingValue.id ? { ...editingValue } : v
       )
       setSectionData({ ...sectionData, values: updatedValues })
@@ -661,7 +677,7 @@ export function ServicesTab() {
     setEditingValue(null)
   }
 
-  const openDeleteValueDialog = (value: any) => {
+  const openDeleteValueDialog = (value: ServiceValue) => {
     setValueToDelete(value)
     setIsDeleteValueDialogOpen(true)
   }
@@ -670,7 +686,7 @@ export function ServicesTab() {
     if (valueToDelete) {
       setSectionData({
         ...sectionData,
-        values: sectionData.values.filter((v: any) => v.id !== valueToDelete.id)
+        values: sectionData.values.filter((v) => v.id !== valueToDelete.id)
       })
       toast.success("Değer silindi")
     }
@@ -1008,10 +1024,9 @@ export function ServicesTab() {
             </TableHeader>
             <TableBody>
               {(() => {
-                const filteredValues = (sectionData.values || []).filter((value: any) =>
+                const filteredValues = sectionData.values.filter((value) =>
                   value.text.toLowerCase().includes(valueSearchTerm.toLowerCase())
                 )
-                const totalValuePages = Math.ceil(filteredValues.length / valueItemsPerPage)
                 const startValueIndex = (valueCurrentPage - 1) * valueItemsPerPage
                 const paginatedValues = filteredValues.slice(startValueIndex, startValueIndex + valueItemsPerPage)
 
@@ -1023,7 +1038,7 @@ export function ServicesTab() {
                   </TableRow>
                 ) : (
                   <>
-                    {paginatedValues.map((value: any) => (
+                    {paginatedValues.map((value) => (
                       <TableRow key={value.id}>
                         <TableCell className="font-medium">{value.text}</TableCell>
                         <TableCell>
@@ -1065,7 +1080,7 @@ export function ServicesTab() {
 
           {/* Pagination */}
           {(() => {
-            const filteredValues = (sectionData.values || []).filter((value: any) =>
+            const filteredValues = sectionData.values.filter((value) =>
               value.text.toLowerCase().includes(valueSearchTerm.toLowerCase())
             )
             const totalValuePages = Math.ceil(filteredValues.length / valueItemsPerPage)
