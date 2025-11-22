@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useCallback } from "react"
 import {
   Dialog,
   DialogContent,
@@ -35,13 +35,13 @@ export function DeleteConfirmationDialog({
     ? `"${itemName}" kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`
     : "Bu kaydı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
-  const handleClose = React.useCallback(() => {
+  const handleClose = useCallback(() => {
     if (!isDeleting && onClose) {
       onClose()
     }
   }, [isDeleting, onClose])
 
-  const handleConfirm = React.useCallback(() => {
+  const handleConfirm = useCallback(() => {
     if (!isDeleting && onConfirm) {
       onConfirm()
     }

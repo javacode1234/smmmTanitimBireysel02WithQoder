@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 // Default pricing plans
 function getDefaultPlans() {
@@ -73,9 +72,9 @@ function getDefaultPlans() {
 
 export async function GET() {
   try {
-    const plans = await prisma.pricingPlan.findMany({
+    const plans = await prisma.pricingplan.findMany({
       include: {
-        features: {
+        pricingfeature: {
           orderBy: {
             order: 'asc'
           }
@@ -90,7 +89,12 @@ export async function GET() {
       return NextResponse.json(getDefaultPlans())
     }
 
-    return NextResponse.json(plans)
+    const normalized = plans.map((p) => {
+      const featuresArr = (p as { pricingfeature?: { text: string }[] }).pricingfeature
+      const features = Array.isArray(featuresArr) ? featuresArr.map((f) => f.text) : []
+      return { ...p, features }
+    })
+    return NextResponse.json(normalized)
   } catch (error: unknown) {
     console.error('Error fetching pricing plans:', error)
     const err = error as { code?: string; message?: string }
@@ -116,8 +120,9 @@ export async function POST(request: NextRequest) {
     }
     
     // Create plan without features first
-    const plan = await prisma.pricingPlan.create({
+    const plan = await prisma.pricingplan.create({
       data: {
+        id: randomUUID(),
         name: String(data.name),
         icon: String(data.icon || 'Star'),
         price: String(data.price),
@@ -126,15 +131,17 @@ export async function POST(request: NextRequest) {
         color: String(data.color || 'from-blue-500 to-blue-600'),
         isPopular: Boolean(data.isPopular ?? false),
         isActive: Boolean(data.isActive ?? true),
-        order: Number(data.order ?? 0)
+        order: Number(data.order ?? 0),
+        updatedAt: new Date()
       }
     })
 
     // Add features if provided
     if (data.features && Array.isArray(data.features)) {
       for (let i = 0; i < data.features.length; i++) {
-        await prisma.pricingFeature.create({
+        await prisma.pricingfeature.create({
           data: {
+            id: randomUUID(),
             planId: plan.id,
             text: String(data.features[i]),
             isIncluded: true,
@@ -145,10 +152,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the complete plan with features
-    const completePlan = await prisma.pricingPlan.findUnique({
+    const completePlan = await prisma.pricingplan.findUnique({
       where: { id: plan.id },
       include: {
-        features: {
+        pricingfeature: {
           orderBy: {
             order: 'asc'
           }
@@ -157,7 +164,13 @@ export async function POST(request: NextRequest) {
     })
 
     console.log('POST /api/content/pricing - Plan created successfully:', plan.id)
-    return NextResponse.json(completePlan)
+    const normalized = completePlan ? {
+      ...completePlan,
+      features: Array.isArray((completePlan as { pricingfeature?: { text: string }[] }).pricingfeature)
+        ? ((completePlan as { pricingfeature?: { text: string }[] }).pricingfeature as { text: string }[]).map((f) => f.text)
+        : []
+    } : completePlan
+    return NextResponse.json(normalized)
   } catch (error) {
     console.error('POST /api/content/pricing - Error creating plan:', error)
     return NextResponse.json(
@@ -184,22 +197,33 @@ export async function PATCH(request: NextRequest) {
 
     const data = await request.json()
     
-    const plan = await prisma.pricingPlan.update({
-      where: { id },
-      data: {
-        name: data.name,
-        icon: data.icon || 'Star',
-        price: data.price,
-        period: data.period || '/ay',
-        description: data.description,
-        color: data.color || 'from-blue-500 to-blue-600',
-        isPopular: data.isPopular,
-        isActive: data.isActive,
-        order: data.order
+    try {
+      const plan = await prisma.pricingplan.update({
+        where: { id },
+        data: {
+          name: data.name,
+          icon: data.icon || 'Star',
+          price: data.price,
+          period: data.period || '/ay',
+          description: data.description,
+          color: data.color || 'from-blue-500 to-blue-600',
+          isPopular: data.isPopular,
+          isActive: data.isActive,
+          order: data.order,
+          updatedAt: new Date()
+        }
+      })
+      return NextResponse.json(plan)
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to update does not exist')) {
+        return NextResponse.json(
+          { error: 'Plan bulunamadı' },
+          { status: 404 }
+        )
       }
-    })
-
-    return NextResponse.json(plan)
+      throw err
+    }
   } catch (error) {
     console.error('Error updating pricing plan:', error)
     return NextResponse.json(
@@ -221,9 +245,20 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.pricingPlan.delete({
-      where: { id }
-    })
+    try {
+      await prisma.pricingplan.delete({
+        where: { id }
+      })
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to delete does not exist')) {
+        return NextResponse.json(
+          { error: 'Plan bulunamadı' },
+          { status: 404 }
+        )
+      }
+      throw err
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

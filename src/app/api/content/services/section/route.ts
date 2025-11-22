@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 // IMPORTANT: Before using this endpoint, run the following commands:
 // 1. Stop the dev server (Ctrl+C)
@@ -9,9 +10,9 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
-    const section = await prisma.servicesSection.findFirst({
+    const section = await prisma.servicessection.findFirst({
       include: {
-        values: {
+        servicevalue: {
           orderBy: {
             order: 'asc'
           }
@@ -35,6 +36,12 @@ export async function GET() {
       })
     }
     
+    if (section) {
+      return NextResponse.json({
+        ...section,
+        values: (section as unknown as { servicevalue: unknown[] }).servicevalue
+      })
+    }
     return NextResponse.json(section)
   } catch (error: unknown) {
     console.error('Error fetching services section:', error)
@@ -58,31 +65,33 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     
-    const existingSection = await prisma.servicesSection.findFirst()
+    const existingSection = await prisma.servicessection.findFirst()
     
     if (existingSection) {
       // Update section
-      await prisma.servicesSection.update({
+      await prisma.servicessection.update({
         where: { id: existingSection.id },
         data: {
           title: data.title,
           paragraph: data.paragraph,
           valuesTitle: data.valuesTitle,
           footerText: data.footerText,
-          footerSignature: data.footerSignature
+          footerSignature: data.footerSignature,
+          updatedAt: new Date()
         }
       })
       
       // Delete existing values
-      await prisma.serviceValue.deleteMany({
+      await prisma.servicevalue.deleteMany({
         where: { sectionId: existingSection.id }
       })
       
       // Create new values
       if (data.values && data.values.length > 0) {
         type ValueInput = { text: string; isActive?: boolean }
-        await prisma.serviceValue.createMany({
+        await prisma.servicevalue.createMany({
           data: (data.values as ValueInput[]).map((value, index: number) => ({
+            id: randomUUID(),
             sectionId: existingSection.id,
             text: value.text,
             isActive: value.isActive !== undefined ? value.isActive : true,
@@ -92,25 +101,33 @@ export async function POST(request: NextRequest) {
       }
       
       // Return updated section with values
-      const updatedSection = await prisma.servicesSection.findUnique({
+      const updatedSection = await prisma.servicessection.findUnique({
         where: { id: existingSection.id },
         include: {
-          values: { orderBy: { order: 'asc' } }
+          servicevalue: { orderBy: { order: 'asc' } }
         }
       })
-      
+      if (updatedSection) {
+        return NextResponse.json({
+          ...updatedSection,
+          values: (updatedSection as unknown as { servicevalue: unknown[] }).servicevalue
+        })
+      }
       return NextResponse.json(updatedSection)
     } else {
       // Create new section
-      const section = await prisma.servicesSection.create({
+      const section = await prisma.servicessection.create({
         data: {
+          id: randomUUID(),
           title: data.title,
           paragraph: data.paragraph,
           valuesTitle: data.valuesTitle,
           footerText: data.footerText,
           footerSignature: data.footerSignature,
-          values: {
+          updatedAt: new Date(),
+          servicevalue: {
             create: data.values ? (data.values as { text: string; isActive?: boolean }[]).map((value, index: number) => ({
+              id: randomUUID(),
               text: value.text,
               isActive: value.isActive !== undefined ? value.isActive : true,
               order: index
@@ -118,9 +135,15 @@ export async function POST(request: NextRequest) {
           }
         },
         include: {
-          values: true
+          servicevalue: true
         }
       })
+      if (section) {
+        return NextResponse.json({
+          ...section,
+          values: (section as unknown as { servicevalue: unknown[] }).servicevalue
+        })
+      }
       return NextResponse.json(section)
     }
   } catch (error: unknown) {

@@ -298,19 +298,20 @@ export function ServicesTab() {
       console.log('Starting save process...')
       console.log('Current services:', services)
       
-      // 1. Önce TÜM hizmetleri sil (default dahil)
-      const existingServices = await fetch('/api/content/services')
-      if (existingServices.ok) {
-        const existingData = await existingServices.json()
-        console.log('Existing services from DB:', existingData)
-        
-        for (const service of existingData) {
-          console.log('Deleting service:', service.id)
-          const deleteResponse = await fetch(`/api/content/services?id=${service.id}`, {
-            method: 'DELETE'
-          })
-          if (!deleteResponse.ok) {
-            console.error('Failed to delete service:', service.id)
+      // 1. Önce TÜM hizmetleri sil (sadece database doluysa)
+      if (!isDatabaseEmpty) {
+        const existingServices = await fetch('/api/content/services')
+        if (existingServices.ok) {
+          const existingData = await existingServices.json()
+          console.log('Existing services from DB:', existingData)
+          for (const service of existingData) {
+            console.log('Deleting service:', service.id)
+            const deleteResponse = await fetch(`/api/content/services?id=${service.id}`, {
+              method: 'DELETE'
+            })
+            if (!deleteResponse.ok && deleteResponse.status !== 404) {
+              console.error('Failed to delete service:', service.id)
+            }
           }
         }
       }

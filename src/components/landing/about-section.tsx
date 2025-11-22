@@ -205,7 +205,7 @@ export function AboutSection() {
 
   if (loading) {
     return (
-      <section id="about" className="py-12 px-4 bg-white">
+      <section id="about" className="py-12 px-4 bg-gradient-to-b from-amber-50 via-white to-lime-50">
         <div className="container mx-auto">
           <div className="text-center mb-10">
             <div className="h-8 bg-gray-200 rounded w-48 mx-auto mb-4 animate-pulse"></div>
@@ -222,7 +222,7 @@ export function AboutSection() {
   }
 
   return (
-    <section id="about" className="py-12 px-4 bg-white">
+      <section id="about" className="py-12 px-4 bg-gradient-to-b from-amber-50 via-white to-lime-50">
       <div className="container mx-auto">
         {/* Header */}
         {isVisible && (

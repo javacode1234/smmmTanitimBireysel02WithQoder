@@ -245,11 +245,11 @@ export function InstitutionsSection() {
   }
 
   return (
-    <section id="clients" className="py-16 px-4 bg-gradient-to-b from-white via-blue-50/30 to-white relative overflow-hidden">
+    <section id="clients" className="py-16 px-4 bg-gradient-to-b from-emerald-50 via-white to-teal-50 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-teal-100 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
       </div>
       
       <div className="container mx-auto relative z-10">

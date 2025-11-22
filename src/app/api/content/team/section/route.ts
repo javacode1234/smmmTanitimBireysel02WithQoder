@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 const DEFAULT_SECTION_DATA = {
   title: "Uzman Ekibimiz",
@@ -10,7 +9,7 @@ const DEFAULT_SECTION_DATA = {
 
 export async function GET() {
   try {
-    const section = await prisma.teamSection.findFirst()
+    const section = await prisma.teamsection.findFirst()
     
     if (!section) {
       return NextResponse.json(DEFAULT_SECTION_DATA)
@@ -27,22 +26,25 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     
-    const existingSection = await prisma.teamSection.findFirst()
+    const existingSection = await prisma.teamsection.findFirst()
     
     let section
     if (existingSection) {
-      section = await prisma.teamSection.update({
+      section = await prisma.teamsection.update({
         where: { id: existingSection.id },
         data: {
           title: data.title,
-          paragraph: data.paragraph
+          paragraph: data.paragraph,
+          updatedAt: new Date()
         }
       })
     } else {
-      section = await prisma.teamSection.create({
+      section = await prisma.teamsection.create({
         data: {
+          id: randomUUID(),
           title: data.title,
-          paragraph: data.paragraph
+          paragraph: data.paragraph,
+          updatedAt: new Date()
         }
       })
     }

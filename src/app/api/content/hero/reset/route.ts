@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 export async function DELETE() {
   try {
     // Delete all hero items
-    await prisma.heroSection.deleteMany({})
+    await prisma.herosection.deleteMany({})
     
     return NextResponse.json({
       success: true,

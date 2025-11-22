@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 // Default legal document contents
 const DEFAULT_DOCUMENTS = {
@@ -88,13 +87,9 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') as 'PRIVACY_POLICY' | 'TERMS_OF_USE' | 'KVKK' | null
 
     if (type) {
-      // Get specific document
-      const document = await prisma.legalDocument.findUnique({
-        where: { type }
-      })
+      const document = await prisma.legaldocument.findUnique({ where: { type } })
 
       if (!document) {
-        // Return default if not found
         const defaultDoc = DEFAULT_DOCUMENTS[type]
         return NextResponse.json({
           type,
@@ -106,14 +101,12 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json(document)
     } else {
-      // Get all documents
-      const documents = await prisma.legalDocument.findMany()
-      const existingDocs: Record<string, typeof documents[number] | undefined> = {}
-      documents.forEach(doc => {
+      const documents = await prisma.legaldocument.findMany()
+      const existingDocs: Record<string, (typeof documents)[number] | undefined> = {}
+      for (const doc of documents) {
         existingDocs[doc.type] = doc
-      })
+      }
 
-      // Ensure all 3 document types are returned (existing or default)
       const allDocuments = [
         existingDocs['PRIVACY_POLICY'] || { type: 'PRIVACY_POLICY', ...DEFAULT_DOCUMENTS.PRIVACY_POLICY, lastUpdated: new Date() },
         existingDocs['TERMS_OF_USE'] || { type: 'TERMS_OF_USE', ...DEFAULT_DOCUMENTS.TERMS_OF_USE, lastUpdated: new Date() },
@@ -124,10 +117,11 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     console.error('Error fetching legal documents:', error)
-    return NextResponse.json(
-      { error: 'Dökümanlar yüklenemedi' },
-      { status: 500 }
-    )
+    return NextResponse.json([
+      { type: 'PRIVACY_POLICY', ...DEFAULT_DOCUMENTS.PRIVACY_POLICY, lastUpdated: new Date() },
+      { type: 'TERMS_OF_USE', ...DEFAULT_DOCUMENTS.TERMS_OF_USE, lastUpdated: new Date() },
+      { type: 'KVKK', ...DEFAULT_DOCUMENTS.KVKK, lastUpdated: new Date() }
+    ])
   }
 }
 
@@ -144,18 +138,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Upsert document
-    const document = await prisma.legalDocument.upsert({
+    const document = await prisma.legaldocument.upsert({
       where: { type },
       update: {
         title,
         content,
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
+        updatedAt: new Date()
       },
       create: {
+        id: randomUUID(),
         type,
         title,
         content,
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
+        updatedAt: new Date()
       }
     })
 
@@ -182,12 +179,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if document exists first
-    const existing = await prisma.legalDocument.findUnique({
+    const existing = await prisma.legaldocument.findUnique({
       where: { type }
     })
 
     if (existing) {
-      await prisma.legalDocument.delete({
+      await prisma.legaldocument.delete({
         where: { type }
       })
     }

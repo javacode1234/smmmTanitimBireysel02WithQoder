@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 // Default additional services
 function getDefaultServices() {
@@ -67,11 +66,13 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const service = await prisma.additionalService.create({
+    const service = await prisma.additionalservice.create({
       data: {
+        id: randomUUID(),
         text: String(data.text),
         isActive: Boolean(data.isActive ?? true),
-        order: Number(data.order ?? 0)
+        order: Number(data.order ?? 0),
+        updatedAt: new Date()
       }
     })
 
@@ -99,16 +100,27 @@ export async function PATCH(request: NextRequest) {
 
     const data = await request.json()
     
-    const service = await prisma.additionalService.update({
-      where: { id },
-      data: {
-        text: data.text,
-        isActive: data.isActive,
-        order: data.order
+    try {
+      const service = await prisma.additionalservice.update({
+        where: { id },
+        data: {
+          text: data.text,
+          isActive: data.isActive,
+          order: data.order,
+          updatedAt: new Date()
+        }
+      })
+      return NextResponse.json(service)
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to update does not exist')) {
+        return NextResponse.json(
+          { error: 'Hizmet bulunamadı' },
+          { status: 404 }
+        )
       }
-    })
-
-    return NextResponse.json(service)
+      throw err
+    }
   } catch (error) {
     console.error('Error updating additional service:', error)
     return NextResponse.json(
@@ -130,9 +142,20 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.additionalService.delete({
-      where: { id }
-    })
+    try {
+      await prisma.additionalservice.delete({
+        where: { id }
+      })
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to delete does not exist')) {
+        return NextResponse.json(
+          { error: 'Hizmet bulunamadı' },
+          { status: 404 }
+        )
+      }
+      throw err
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

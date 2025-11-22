@@ -77,7 +77,7 @@ export function TeamSection() {
   }, [])
 
   return (
-    <section id="team" className="py-12 px-4 bg-gradient-to-b from-gray-50 to-white">
+    <section id="team" className="py-12 px-4 bg-gradient-to-b from-violet-50 via-white to-indigo-50">
       <div className="container mx-auto">
         {/* Header */}
         <motion.div

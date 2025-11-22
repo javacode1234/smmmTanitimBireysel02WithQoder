@@ -109,7 +109,7 @@ export function TestimonialsSection() {
   }
 
   return (
-    <section id="testimonials" className="py-12 px-4 bg-gradient-to-b from-white to-gray-50">
+    <section id="testimonials" className="py-12 px-4 bg-gradient-to-b from-violet-50 via-white to-pink-50">
       <div className="container mx-auto">
         {/* Header */}
         <motion.div

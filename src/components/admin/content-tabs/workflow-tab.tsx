@@ -272,14 +272,19 @@ export function WorkflowTab() {
     try {
       console.log('Saving default values to database...')
       
-      // 1. Delete all existing steps
-      const existingSteps = await fetch('/api/content/workflow')
-      if (existingSteps.ok) {
-        const existingData = await existingSteps.json()
-        for (const step of existingData) {
-          await fetch(`/api/content/workflow?id=${step.id}`, {
-            method: 'DELETE'
-          })
+      // 1. Mevcut adımları sil (sadece veritabanı doluysa), 404'leri göz ardı et
+      if (!isDatabaseEmpty) {
+        const existingSteps = await fetch('/api/content/workflow')
+        if (existingSteps.ok) {
+          const existingData = await existingSteps.json()
+          for (const step of existingData) {
+            const resp = await fetch(`/api/content/workflow?id=${step.id}`, {
+              method: 'DELETE'
+            })
+            if (!resp.ok && resp.status !== 404) {
+              console.error('Failed to delete workflow step:', step.id)
+            }
+          }
         }
       }
 

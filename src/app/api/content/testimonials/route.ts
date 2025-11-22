@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 // Default testimonials
 function getDefaultTestimonials() {
@@ -126,6 +125,7 @@ export async function POST(request: NextRequest) {
     
     const testimonial = await prisma.testimonial.create({
       data: {
+        id: randomUUID(),
         name: String(data.name),
         position: String(data.position || ''),
         company: data.company ? String(data.company) : null,
@@ -135,7 +135,8 @@ export async function POST(request: NextRequest) {
         color: String(data.color || 'from-blue-500 to-blue-600'),
         rating: Number(data.rating ?? 5),
         isActive: Boolean(data.isActive ?? true),
-        order: Number(data.order ?? 0)
+        order: Number(data.order ?? 0),
+        updatedAt: new Date()
       }
     })
 
@@ -167,23 +168,34 @@ export async function PATCH(request: NextRequest) {
 
     const data = await request.json()
     
-    const testimonial = await prisma.testimonial.update({
-      where: { id },
-      data: {
-        name: data.name,
-        position: data.position,
-        company: data.company,
-        content: data.content,
-        avatar: data.avatar,
-        initials: data.initials || '??',
-        color: data.color || 'from-blue-500 to-blue-600',
-        rating: data.rating,
-        isActive: data.isActive,
-        order: data.order
+    try {
+      const testimonial = await prisma.testimonial.update({
+        where: { id },
+        data: {
+          name: data.name,
+          position: data.position,
+          company: data.company,
+          content: data.content,
+          avatar: data.avatar,
+          initials: data.initials || '??',
+          color: data.color || 'from-blue-500 to-blue-600',
+          rating: data.rating,
+          isActive: data.isActive,
+          order: data.order,
+          updatedAt: new Date()
+        }
+      })
+      return NextResponse.json(testimonial)
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to update does not exist')) {
+        return NextResponse.json(
+          { error: 'Yorum bulunamadı' },
+          { status: 404 }
+        )
       }
-    })
-
-    return NextResponse.json(testimonial)
+      throw err
+    }
   } catch (error) {
     console.error('Error updating testimonial:', error)
     return NextResponse.json(
@@ -205,9 +217,20 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.testimonial.delete({
-      where: { id }
-    })
+    try {
+      await prisma.testimonial.delete({
+        where: { id }
+      })
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to delete does not exist')) {
+        return NextResponse.json(
+          { error: 'Yorum bulunamadı' },
+          { status: 404 }
+        )
+      }
+      throw err
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

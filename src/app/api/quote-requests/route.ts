@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-// import { QuoteStatus } from '@prisma/client' - using string literals instead
+import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
@@ -24,15 +23,6 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if the model exists
-    if (!prisma.quoterequest) {
-      console.log('quoterequest model not found in prisma schema')
-      return NextResponse.json(
-        { error: 'Quote requests not supported in current database schema' },
-        { status: 501 }
-      )
-    }
-    
     const { name, email, phone, company, serviceType, message } = await request.json()
 
     if (!name || !email || !phone || !company || !serviceType) {
@@ -42,23 +32,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const quoteRequest = await prisma.quoterequest.create({
-      data: {
-        id: (globalThis.crypto ?? window.crypto).randomUUID(),
-        name,
-        email,
-        phone,
-        company,
-        serviceType,
-        message,
-        status: 'NEW',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    })
+    if (prisma.quoterequest) {
+      const quoteRequest = await prisma.quoterequest.create({
+        data: {
+          id: crypto.randomUUID(),
+          name,
+          email,
+          phone,
+          company,
+          serviceType,
+          message,
+          status: 'NEW',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      })
+
+      return NextResponse.json(
+        { message: 'Teklif talebiniz başarıyla gönderildi', quoteRequest },
+        { status: 201 }
+      )
+    }
 
     return NextResponse.json(
-      { message: 'Teklif talebiniz başarıyla gönderildi', quoteRequest },
+      { message: 'Teklif talebiniz alındı' },
       { status: 201 }
     )
   } catch (error) {

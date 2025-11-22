@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 const DEFAULT_SECTION_DATA = {
   title: "Çalışma Sürecimiz",
@@ -10,7 +9,7 @@ const DEFAULT_SECTION_DATA = {
 
 export async function GET() {
   try {
-    const section = await prisma.workflowSection.findFirst()
+    const section = await prisma.workflowsection.findFirst()
     
     if (!section) {
       return NextResponse.json(DEFAULT_SECTION_DATA)
@@ -28,24 +27,27 @@ export async function POST(request: NextRequest) {
     const data = await request.json()
     
     // Check if section already exists
-    const existingSection = await prisma.workflowSection.findFirst()
+    const existingSection = await prisma.workflowsection.findFirst()
     
     let section
     if (existingSection) {
       // Update existing
-      section = await prisma.workflowSection.update({
+      section = await prisma.workflowsection.update({
         where: { id: existingSection.id },
         data: {
           title: data.title,
-          paragraph: data.paragraph
+          paragraph: data.paragraph,
+          updatedAt: new Date()
         }
       })
     } else {
       // Create new
-      section = await prisma.workflowSection.create({
+      section = await prisma.workflowsection.create({
         data: {
+          id: randomUUID(),
           title: data.title,
-          paragraph: data.paragraph
+          paragraph: data.paragraph,
+          updatedAt: new Date()
         }
       })
     }

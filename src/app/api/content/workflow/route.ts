@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 // Default workflow steps
 function getDefaultSteps() {
@@ -51,7 +50,7 @@ function getDefaultSteps() {
 
 export async function GET() {
   try {
-    const steps = await prisma.workflowStep.findMany({
+    const steps = await prisma.workflowstep.findMany({
       orderBy: {
         order: 'asc'
       }
@@ -92,15 +91,17 @@ export async function POST(request: NextRequest) {
     
     console.log('POST /api/content/workflow - Creating workflow step')
     
-    const step = await prisma.workflowStep.create({
+    const step = await prisma.workflowstep.create({
       data: {
+        id: randomUUID(),
         number: String(data.number),
         icon: String(data.icon || 'Phone'),
         title: String(data.title),
         description: String(data.description),
         color: String(data.color || 'from-blue-500 to-blue-600'),
         isActive: Boolean(data.isActive ?? true),
-        order: Number(data.order ?? 0)
+        order: Number(data.order ?? 0),
+        updatedAt: new Date()
       }
     })
 
@@ -138,20 +139,31 @@ export async function PATCH(request: NextRequest) {
 
     const data = await request.json()
     
-    const step = await prisma.workflowStep.update({
-      where: { id },
-      data: {
-        number: data.number,
-        icon: data.icon || 'Phone',
-        title: data.title,
-        description: data.description,
-        color: data.color || 'from-blue-500 to-blue-600',
-        isActive: data.isActive,
-        order: data.order
+    try {
+      const step = await prisma.workflowstep.update({
+        where: { id },
+        data: {
+          number: data.number,
+          icon: data.icon || 'Phone',
+          title: data.title,
+          description: data.description,
+          color: data.color || 'from-blue-500 to-blue-600',
+          isActive: data.isActive,
+          order: data.order,
+          updatedAt: new Date()
+        }
+      })
+      return NextResponse.json(step)
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to update does not exist')) {
+        return NextResponse.json(
+          { error: 'Adım bulunamadı' },
+          { status: 404 }
+        )
       }
-    })
-
-    return NextResponse.json(step)
+      throw err
+    }
   } catch (error) {
     console.error('Error updating workflow step:', error)
     return NextResponse.json(
@@ -173,9 +185,20 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.workflowStep.delete({
-      where: { id }
-    })
+    try {
+      await prisma.workflowstep.delete({
+        where: { id }
+      })
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to delete does not exist')) {
+        return NextResponse.json(
+          { error: 'Adım bulunamadı' },
+          { status: 404 }
+        )
+      }
+      throw err
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

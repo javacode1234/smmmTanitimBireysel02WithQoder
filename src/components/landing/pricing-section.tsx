@@ -142,7 +142,7 @@ export function PricingSection() {
   }
 
   return (
-    <section id="pricing" className="py-12 px-4 bg-gradient-to-b from-gray-50 to-white">
+    <section id="pricing" className="py-12 px-4 bg-gradient-to-b from-amber-50 via-white to-orange-50">
       <div className="container mx-auto">
         {/* Header */}
         <motion.div

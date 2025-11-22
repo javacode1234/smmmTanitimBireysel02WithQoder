@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 export async function GET() {
   try {
-    const faqs = await prisma.fAQ.findMany({
+    const faqs = await prisma.faq.findMany({
       include: {
-        category: true
+        faqcategory: true
       },
       orderBy: {
         order: 'asc'
       }
     })
 
-    return NextResponse.json(faqs)
+    const normalized = faqs.map((f) => {
+      const category = (f as { faqcategory?: unknown }).faqcategory
+      return { ...f, category }
+    })
+    return NextResponse.json(normalized)
   } catch (error: unknown) {
     console.error('Error fetching FAQs:', error)
     return NextResponse.json([])
@@ -35,21 +38,23 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const faq = await prisma.fAQ.create({
+    const faq = await prisma.faq.create({
       data: {
+        id: randomUUID(),
         categoryId: String(data.categoryId),
         question: String(data.question),
         answer: String(data.answer),
         isActive: Boolean(data.isActive ?? true),
-        order: Number(data.order ?? 0)
+        order: Number(data.order ?? 0),
+        updatedAt: new Date()
       },
       include: {
-        category: true
+        faqcategory: true
       }
     })
 
     console.log('POST /api/content/faq - FAQ created successfully:', faq.id)
-    return NextResponse.json(faq)
+    return NextResponse.json({ ...faq, category: (faq as { faqcategory?: unknown }).faqcategory })
   } catch (error) {
     console.error('POST /api/content/faq - Error creating FAQ:', error)
     return NextResponse.json(
@@ -76,21 +81,32 @@ export async function PATCH(request: NextRequest) {
 
     const data = await request.json()
     
-    const faq = await prisma.fAQ.update({
-      where: { id },
-      data: {
-        categoryId: data.categoryId,
-        question: data.question,
-        answer: data.answer,
-        isActive: data.isActive,
-        order: data.order
-      },
-      include: {
-        category: true
+    try {
+      const faq = await prisma.faq.update({
+        where: { id },
+        data: {
+          categoryId: data.categoryId,
+          question: data.question,
+          answer: data.answer,
+          isActive: data.isActive,
+          order: data.order,
+          updatedAt: new Date()
+        },
+        include: {
+          faqcategory: true
+        }
+      })
+      return NextResponse.json({ ...faq, category: (faq as { faqcategory?: unknown }).faqcategory })
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to update does not exist')) {
+        return NextResponse.json(
+          { error: 'Soru bulunamadı' },
+          { status: 404 }
+        )
       }
-    })
-
-    return NextResponse.json(faq)
+      throw err
+    }
   } catch (error) {
     console.error('Error updating FAQ:', error)
     return NextResponse.json(
@@ -112,9 +128,20 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.fAQ.delete({
-      where: { id }
-    })
+    try {
+      await prisma.faq.delete({
+        where: { id }
+      })
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to delete does not exist')) {
+        return NextResponse.json(
+          { error: 'Soru bulunamadı' },
+          { status: 404 }
+        )
+      }
+      throw err
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

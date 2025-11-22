@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { 
   Plus,
   Trash2,
@@ -19,7 +19,8 @@ import {
   ArrowDown,
   Loader2,
   Mail,
-  Phone
+  Phone,
+  Upload
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -404,6 +405,44 @@ export function TeamTab() {
     setIsDialogOpen(true)
   }
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const processAvatarFile = (file: File) => {
+    if (!editingMember) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Lütfen sadece resim dosyası yükleyin')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Resim boyutu en fazla 2MB olabilir')
+      return
+    }
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const base64String = reader.result as string
+      setEditingMember({ ...editingMember, avatar: base64String })
+      toast.success('Resim yüklendi')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    processAvatarFile(file)
+  }
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleAvatarDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+    processAvatarFile(file)
+  }
+
   const handleSave = () => {
     if (!editingMember.name || !editingMember.position) {
       toast.error('İsim ve pozisyon zorunludur')
@@ -563,6 +602,9 @@ export function TeamTab() {
                     <TableRow key={member.id}>
                       <TableCell>
                         <Avatar className="h-12 w-12">
+                          {member.avatar ? (
+                            <AvatarImage src={member.avatar} />
+                          ) : null}
                           <AvatarFallback className={`bg-gradient-to-br ${member.color} text-white font-semibold text-lg`}>
                             {member.initials}
                           </AvatarFallback>
@@ -723,6 +765,46 @@ export function TeamTab() {
           
           {editingMember && (
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div className="space-y-3">
+                <Label>Avatar</Label>
+                <div
+                  className="rounded-xl border-2 border-dashed p-4 flex items-center justify-between gap-4 hover:border-blue-400 transition-colors"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleAvatarDrop}
+                >
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-20 w-20 ring-4 ring-gray-100">
+                      {editingMember.avatar ? (
+                        <AvatarImage src={editingMember.avatar} />
+                      ) : null}
+                      <AvatarFallback className={`bg-gradient-to-br ${editingMember.color} text-white text-xl font-bold`}>
+                        {editingMember.initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-sm text-muted-foreground">
+                      Resmi sürükleyip bırakın veya yükleyin
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                    />
+                    <Button variant="outline" onClick={handleAvatarClick}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Yükle
+                    </Button>
+                    {editingMember.avatar && (
+                      <Button variant="ghost" onClick={() => setEditingMember({ ...editingMember, avatar: "" })}>
+                        Kaldır
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label>İsim *</Label>
@@ -752,6 +834,7 @@ export function TeamTab() {
                   rows={3}
                 />
               </div>
+
               
               <div className="grid gap-4 md:grid-cols-2">
                 <div>

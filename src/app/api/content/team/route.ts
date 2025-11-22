@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 // Default team members
 function getDefaultTeamMembers() {
@@ -119,7 +118,7 @@ function getDefaultTeamMembers() {
 
 export async function GET() {
   try {
-    const members = await prisma.teamMember.findMany({
+    const members = await prisma.teammember.findMany({
       orderBy: {
         order: 'asc'
       }
@@ -154,8 +153,9 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const member = await prisma.teamMember.create({
+    const member = await prisma.teammember.create({
       data: {
+        id: randomUUID(),
         name: String(data.name),
         position: String(data.position),
         bio: data.bio ? String(data.bio) : null,
@@ -170,7 +170,8 @@ export async function POST(request: NextRequest) {
         instagramUrl: data.instagramUrl ? String(data.instagramUrl) : null,
         threadsUrl: data.threadsUrl ? String(data.threadsUrl) : null,
         isActive: Boolean(data.isActive ?? true),
-        order: Number(data.order ?? 0)
+        order: Number(data.order ?? 0),
+        updatedAt: new Date()
       }
     })
 
@@ -202,28 +203,39 @@ export async function PATCH(request: NextRequest) {
 
     const data = await request.json()
     
-    const member = await prisma.teamMember.update({
-      where: { id },
-      data: {
-        name: data.name,
-        position: data.position,
-        bio: data.bio,
-        avatar: data.avatar,
-        initials: data.initials || '??',
-        color: data.color || 'from-blue-500 to-blue-600',
-        email: data.email,
-        phone: data.phone,
-        linkedinUrl: data.linkedinUrl,
-        xUrl: data.xUrl,
-        facebookUrl: data.facebookUrl,
-        instagramUrl: data.instagramUrl,
-        threadsUrl: data.threadsUrl,
-        isActive: data.isActive,
-        order: data.order
+    try {
+      const member = await prisma.teammember.update({
+        where: { id },
+        data: {
+          name: data.name,
+          position: data.position,
+          bio: data.bio,
+          avatar: data.avatar,
+          initials: data.initials || '??',
+          color: data.color || 'from-blue-500 to-blue-600',
+          email: data.email,
+          phone: data.phone,
+          linkedinUrl: data.linkedinUrl,
+          xUrl: data.xUrl,
+          facebookUrl: data.facebookUrl,
+          instagramUrl: data.instagramUrl,
+          threadsUrl: data.threadsUrl,
+          isActive: data.isActive,
+          order: data.order,
+          updatedAt: new Date()
+        }
+      })
+      return NextResponse.json(member)
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to update does not exist')) {
+        return NextResponse.json(
+          { error: 'Ekip üyesi bulunamadı' },
+          { status: 404 }
+        )
       }
-    })
-
-    return NextResponse.json(member)
+      throw err
+    }
   } catch (error) {
     console.error('Error updating team member:', error)
     return NextResponse.json(
@@ -245,9 +257,20 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.teamMember.delete({
-      where: { id }
-    })
+    try {
+      await prisma.teammember.delete({
+        where: { id }
+      })
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to delete does not exist')) {
+        return NextResponse.json(
+          { error: 'Ekip üyesi bulunamadı' },
+          { status: 404 }
+        )
+      }
+      throw err
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

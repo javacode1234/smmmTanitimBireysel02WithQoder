@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 // Default services
 function getDefaultServices() {
@@ -156,13 +155,15 @@ export async function POST(request: NextRequest) {
     // Include color field - it now exists in database
     const service = await prisma.service.create({
       data: {
+        id: data.id ?? randomUUID(),
         icon: String(data.icon || 'FileText'),
         title: String(data.title),
         description: String(data.description),
         features: featuresString,
         color: String(data.color || 'from-blue-500 to-blue-600'),
         isActive: Boolean(data.isActive ?? true),
-        order: Number(data.order ?? 0)
+        order: Number(data.order ?? 0),
+        updatedAt: new Date()
       }
     })
 
@@ -205,20 +206,31 @@ export async function PATCH(request: NextRequest) {
       ? data.features 
       : JSON.stringify(data.features || [])
     
-    const service = await prisma.service.update({
-      where: { id },
-      data: {
-        icon: data.icon || 'FileText',
-        title: data.title,
-        description: data.description,
-        features: features,
-        color: data.color || 'from-blue-500 to-blue-600',
-        isActive: data.isActive,
-        order: data.order
+    try {
+      const service = await prisma.service.update({
+        where: { id },
+        data: {
+          icon: data.icon || 'FileText',
+          title: data.title,
+          description: data.description,
+          features: features,
+          color: data.color || 'from-blue-500 to-blue-600',
+          isActive: data.isActive,
+          order: data.order,
+          updatedAt: new Date()
+        }
+      })
+      return NextResponse.json(service)
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to update does not exist')) {
+        return NextResponse.json(
+          { error: 'Hizmet bulunamadı' },
+          { status: 404 }
+        )
       }
-    })
-
-    return NextResponse.json(service)
+      throw err
+    }
   } catch (error) {
     console.error('Error updating service:', error)
     return NextResponse.json(
@@ -240,9 +252,20 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.service.delete({
-      where: { id }
-    })
+    try {
+      await prisma.service.delete({
+        where: { id }
+      })
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to delete does not exist')) {
+        return NextResponse.json(
+          { error: 'Hizmet bulunamadı' },
+          { status: 404 }
+        )
+      }
+      throw err
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -75,7 +75,7 @@ export function ContactSection() {
   }
 
   return (
-    <section id="contact" className="py-12 px-4 bg-gradient-to-b from-white to-gray-50">
+    <section id="contact" className="py-12 px-4 bg-gradient-to-b from-cyan-50 via-white to-sky-50">
       <div className="container mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">

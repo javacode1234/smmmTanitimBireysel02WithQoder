@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 export async function GET() {
   try {
-    const items = await prisma.heroSection.findMany({
+    const items = await prisma.herosection.findMany({
       orderBy: { order: 'asc' },
     })
     return NextResponse.json(items)
@@ -16,8 +17,19 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
-    const item = await prisma.heroSection.create({
-      data,
+    const item = await prisma.herosection.create({
+      data: {
+        id: data.id ?? randomUUID(),
+        title: String(data.title ?? 'Hero Başlık'),
+        subtitle: String(data.subtitle ?? ''),
+        description: data.description ?? null,
+        buttonText: data.buttonText ?? null,
+        buttonUrl: data.buttonUrl ?? null,
+        image: data.image ?? null,
+        isActive: Boolean(data.isActive ?? true),
+        order: Number(data.order ?? 0),
+        updatedAt: new Date(),
+      },
     })
     return NextResponse.json(item)
   } catch (error: unknown) {
@@ -49,7 +61,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const data = await request.json()
-    const item = await prisma.heroSection.update({
+    const item = await prisma.herosection.update({
       where: { id },
       data,
     })
@@ -83,7 +95,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.heroSection.delete({
+    await prisma.herosection.delete({
       where: { id },
     })
 

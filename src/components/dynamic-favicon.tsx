@@ -33,40 +33,53 @@ export function DynamicFavicon() {
         if (!isMountedRef.current || !document || !document.head) return
         
         // Do NOT remove existing favicon links; update or append to avoid React DOM conflicts
-        let existingLink: HTMLLinkElement | null = null
+        let existingLinks: NodeListOf<HTMLLinkElement> | null = null
         try {
-          existingLink = document.head.querySelector("link[rel*='icon']") as HTMLLinkElement | null
+          existingLinks = document.head.querySelectorAll("link[rel*='icon']") as NodeListOf<HTMLLinkElement>
         } catch (e) {
-          console.warn('Error querying favicon link:', e)
+          console.warn('Error querying favicon links:', e)
         }
         
         if (!isMountedRef.current || !document || !document.head) return
 
         // Prepare favicon URL
         const timestamp = Date.now()
-        let href = `/favicon.svg?t=${timestamp}`
+        let href = `/favicon.ico?t=${timestamp}`
+        let type = 'image/x-icon'
         if (data?.favicon) {
-          const isValidBase64 = data.favicon.startsWith('data:image/')
-          href = isValidBase64 ? `${data.favicon}#${timestamp}` : `/favicon.svg?t=${timestamp}`
+          const isValidBase64 = typeof data.favicon === 'string' && data.favicon.startsWith('data:image/')
+          if (isValidBase64) {
+            href = `${data.favicon}#${timestamp}`
+            // Infer MIME type from data URL
+            if (data.favicon.includes('image/png')) type = 'image/png'
+            else if (data.favicon.includes('image/svg+xml')) type = 'image/svg+xml'
+            else if (data.favicon.includes('image/x-icon') || data.favicon.includes('image/vnd.microsoft.icon')) type = 'image/x-icon'
+          } else {
+            href = `/favicon.ico?t=${timestamp}`
+            type = 'image/x-icon'
+          }
         }
 
         // Update existing or append new link safely
         try {
-          if (existingLink) {
-            existingLink.href = href
-            existingLink.type = 'image/x-icon'
-            existingLink.rel = 'icon'
+          const updateLink = (link: HTMLLinkElement) => {
+            link.href = href
+            link.type = type
+            link.rel = 'icon'
+          }
+          if (existingLinks && existingLinks.length > 0) {
+            existingLinks.forEach(updateLink)
           } else {
             const link = document.createElement('link')
             link.rel = 'icon'
-            link.type = 'image/x-icon'
+            link.type = type
             link.href = href
             if (document.head && isMountedRef.current) {
               document.head.appendChild(link)
             }
           }
         } catch (e) {
-          console.warn('Error updating/appending favicon link:', e)
+          console.warn('Error updating/appending favicon links:', e)
         }
 
         // Update title safely

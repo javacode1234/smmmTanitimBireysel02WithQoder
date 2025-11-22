@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 const DEFAULT_SECTION_DATA = {
   title: "Müşterilerimiz Ne Diyor?",
@@ -10,7 +9,7 @@ const DEFAULT_SECTION_DATA = {
 
 export async function GET() {
   try {
-    const section = await prisma.testimonialsSection.findFirst()
+    const section = await prisma.testimonialssection.findFirst()
     
     if (!section) {
       return NextResponse.json(DEFAULT_SECTION_DATA)
@@ -27,22 +26,25 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     
-    const existingSection = await prisma.testimonialsSection.findFirst()
+    const existingSection = await prisma.testimonialssection.findFirst()
     
     let section
     if (existingSection) {
-      section = await prisma.testimonialsSection.update({
+      section = await prisma.testimonialssection.update({
         where: { id: existingSection.id },
         data: {
           title: data.title,
-          paragraph: data.paragraph
+          paragraph: data.paragraph,
+          updatedAt: new Date()
         }
       })
     } else {
-      section = await prisma.testimonialsSection.create({
+      section = await prisma.testimonialssection.create({
         data: {
+          id: randomUUID(),
           title: data.title,
-          paragraph: data.paragraph
+          paragraph: data.paragraph,
+          updatedAt: new Date()
         }
       })
     }

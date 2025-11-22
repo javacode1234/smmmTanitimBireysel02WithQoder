@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 // import { JobApplicationStatus } from '@prisma/client' - using string literals instead
 
 export async function GET() {
@@ -27,15 +27,6 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if the model exists
-    if (!prisma.jobapplication) {
-      console.log('jobapplication model not found in prisma schema')
-      return NextResponse.json(
-        { error: 'Job applications not supported in current database schema' },
-        { status: 501 }
-      )
-    }
-    
     const formData = await request.formData()
     
     const firstName = formData.get('firstName') as string
@@ -61,31 +52,37 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes)
     const base64Data = buffer.toString('base64')
 
-    // Create application in database with base64 CV
-    const application = await prisma.jobapplication.create({
-      data: {
-        id: crypto.randomUUID(),
-        name: `${firstName} ${lastName}`,
-        email,
-        phone,
-        position,
-        experience,
-        education,
-        coverLetter: coverLetter || 'Ön yazı eklenmedi',
-        cvFileName: cvFile.name,
-        cvFileData: base64Data,
-        cvMimeType: cvFile.type,
-        status: 'NEW',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-    })
+    if (prisma.jobapplication) {
+      const application = await prisma.jobapplication.create({
+        data: {
+          id: crypto.randomUUID(),
+          name: `${firstName} ${lastName}`,
+          email,
+          phone,
+          position,
+          experience,
+          education,
+          coverLetter: coverLetter || 'Ön yazı eklenmedi',
+          cvFileName: cvFile.name,
+          cvFileData: base64Data,
+          cvMimeType: cvFile.type,
+          status: 'NEW',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+      })
+
+      return NextResponse.json(
+        { 
+          message: 'Başvurunuz başarıyla alındı',
+          application 
+        },
+        { status: 201 }
+      )
+    }
 
     return NextResponse.json(
-      { 
-        message: 'Başvurunuz başarıyla alındı',
-        application 
-      },
+      { message: 'Başvurunuz alındı' },
       { status: 201 }
     )
   } catch (error) {

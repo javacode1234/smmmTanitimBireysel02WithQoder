@@ -85,7 +85,7 @@ export function HeroSection() {
   }
 
   return (
-    <section className="pt-24 pb-12 px-4 bg-gradient-to-b from-blue-500 via-white to-blue-100">
+    <section className="pt-24 pb-12 px-4 bg-gradient-to-b from-blue-50 via-white to-cyan-50">
       <div className="container mx-auto">
         <div className="grid lg:grid-cols-2 gap-6 items-center">
           {/* Left Side - Text and Buttons */}

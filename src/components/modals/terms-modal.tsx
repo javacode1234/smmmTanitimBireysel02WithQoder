@@ -46,9 +46,13 @@ export function TermsModal({ open, onOpenChange }: TermsModalProps) {
           <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             {title}
           </DialogTitle>
-          {lastUpdated && (
+          {lastUpdated ? (
             <DialogDescription>
               Son Güncelleme: {lastUpdated}
+            </DialogDescription>
+          ) : (
+            <DialogDescription>
+              Kullanım koşulları içeriğini aşağıda görüntüleyebilirsiniz.
             </DialogDescription>
           )}
         </DialogHeader>

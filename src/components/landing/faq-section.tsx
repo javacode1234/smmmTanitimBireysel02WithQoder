@@ -114,7 +114,7 @@ export function FAQSection() {
   }
 
   return (
-    <section id="faq" className="py-12 px-4 bg-gradient-to-b from-white to-blue-50">
+    <section id="faq" className="py-12 px-4 bg-gradient-to-b from-rose-50 via-white to-pink-50">
       <div className="container mx-auto max-w-4xl">
         {/* Header */}
         {isVisible && (

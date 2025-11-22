@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "SMMM - Profesyonel Mali Müşavirlik Hizmetleri",
   description: "Serbest Muhasebeci Mali Müşavir - Güvenilir mali danışmanlık ve muhasebe hizmetleri",
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.ico',
   },
 };
 

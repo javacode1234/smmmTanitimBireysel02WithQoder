@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 // Default categories
 function getDefaultCategories() {
@@ -16,7 +15,7 @@ function getDefaultCategories() {
 
 export async function GET() {
   try {
-    const categories = await prisma.fAQCategory.findMany({
+    const categories = await prisma.faqcategory.findMany({
       orderBy: {
         order: 'asc'
       }
@@ -48,11 +47,13 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const category = await prisma.fAQCategory.create({
+    const category = await prisma.faqcategory.create({
       data: {
+        id: randomUUID(),
         name: String(data.name),
         slug: String(data.slug),
-        order: Number(data.order ?? 0)
+        order: Number(data.order ?? 0),
+        updatedAt: new Date()
       }
     })
 
@@ -80,16 +81,27 @@ export async function PATCH(request: NextRequest) {
 
     const data = await request.json()
     
-    const category = await prisma.fAQCategory.update({
-      where: { id },
-      data: {
-        name: data.name,
-        slug: data.slug,
-        order: data.order
+    try {
+      const category = await prisma.faqcategory.update({
+        where: { id },
+        data: {
+          name: data.name,
+          slug: data.slug,
+          order: data.order,
+          updatedAt: new Date()
+        }
+      })
+      return NextResponse.json(category)
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to update does not exist')) {
+        return NextResponse.json(
+          { error: 'Kategori bulunamadı' },
+          { status: 404 }
+        )
       }
-    })
-
-    return NextResponse.json(category)
+      throw err
+    }
   } catch (error) {
     console.error('Error updating FAQ category:', error)
     return NextResponse.json(
@@ -111,9 +123,20 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    await prisma.fAQCategory.delete({
-      where: { id }
-    })
+    try {
+      await prisma.faqcategory.delete({
+        where: { id }
+      })
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to delete does not exist')) {
+        return NextResponse.json(
+          { error: 'Kategori bulunamadı' },
+          { status: 404 }
+        )
+      }
+      throw err
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -74,7 +74,7 @@ export function WorkflowSection() {
   }, [])
 
   return (
-    <section id="workflow" className="py-12 px-4 bg-gradient-to-b from-white to-blue-50">
+    <section id="workflow" className="py-12 px-4 bg-gradient-to-b from-slate-50 via-white to-slate-100">
       <div className="container mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

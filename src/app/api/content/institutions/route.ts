@@ -92,27 +92,28 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    const item = await prisma.$transaction(async (tx) => {
+      let section = await tx.institutionsSection.findFirst()
+      if (!section) {
+        section = await tx.institutionsSection.create({
+          data: {
+            title: "İş Birliği Yaptığımız Kurumlar",
+            paragraph: "Güçlü kurum ortaklıklarımız sayesinde size en kaliteli mali müşavirlik hizmetini sunuyoruz.",
+          },
+        })
+      }
 
-    let section = await prisma.institutionsSection.findFirst()
-    if (!section) {
-      section = await prisma.institutionsSection.create({
+      return tx.institutionItem.create({
         data: {
-          title: "İş Birliği Yaptığımız Kurumlar",
-          paragraph: "Güçlü kurum ortaklıklarımız sayesinde size en kaliteli mali müşavirlik hizmetini sunuyoruz.",
+          sectionId: section.id,
+          name: data.name,
+          description: data.description,
+          url: data.url,
+          logo: data.logo,
+          isActive: data.isActive !== undefined ? data.isActive : true,
+          order: data.order !== undefined ? data.order : 0,
         },
       })
-    }
-
-    const item = await prisma.institutionItem.create({
-      data: {
-        sectionId: section.id,
-        name: data.name,
-        description: data.description,
-        url: data.url,
-        logo: data.logo,
-        isActive: data.isActive !== undefined ? data.isActive : true,
-        order: data.order !== undefined ? data.order : 0,
-      },
     })
     return NextResponse.json(item)
   } catch {
@@ -136,12 +137,22 @@ export async function PATCH(request: NextRequest) {
     }
 
     const data: Partial<InstitutionPayload> = await request.json()
-    const item = await prisma.institutionItem.update({
-      where: { id },
-      data,
-    })
-
-    return NextResponse.json(item)
+    try {
+      const item = await prisma.institutionItem.update({
+        where: { id },
+        data,
+      })
+      return NextResponse.json(item)
+    } catch (err) {
+      const e = err as { code?: string; message?: string }
+      if (e.code === 'P2025' || e.message?.includes('Record to update does not exist')) {
+        return NextResponse.json(
+          { error: 'Kurum bulunamadı' },
+          { status: 404 }
+        )
+      }
+      throw err
+    }
   } catch (error) {
     console.error('Error updating institution:', error)
     return NextResponse.json(
@@ -169,6 +180,13 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    const err = error as { code?: string; message?: string }
+    if (err.code === 'P2025' || err.message?.includes('Record to delete does not exist')) {
+      return NextResponse.json(
+        { error: 'Kurum bulunamadı' },
+        { status: 404 }
+      )
+    }
     console.error('Error deleting institution:', error)
     return NextResponse.json(
       { error: 'Kurum silinemedi' },

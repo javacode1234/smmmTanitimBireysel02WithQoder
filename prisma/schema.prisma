@@ -508,12 +508,12 @@ model subscriptionaccrual {
   carryForwardToPeriodId                                                        String?
   createdAt                                                                     DateTime          @default(now())
   updatedAt                                                                     DateTime
-  accountingperiod_subscriptionaccrual_accountingPeriodIdToaccountingperiod     accountingperiod  @relation("subscriptionaccrual_accountingPeriodIdToaccountingperiod")
-  accountingperiod_subscriptionaccrual_carryForwardToPeriodIdToaccountingperiod accountingperiod? @relation("subscriptionaccrual_carryForwardToPeriodIdToaccountingperiod")
+  accountingperiod_subscriptionaccrual_accountingPeriodIdToaccountingperiod     accountingperiod  @relation("subscriptionaccrual_accountingPeriodIdToaccountingperiod", fields: [accountingPeriodId], references: [id], onDelete: Cascade, map: "SubscriptionAccrual_accountingPeriodId_fkey")
+  accountingperiod_subscriptionaccrual_carryForwardToPeriodIdToaccountingperiod accountingperiod? @relation("subscriptionaccrual_carryForwardToPeriodIdToaccountingperiod", fields: [carryForwardToPeriodId], references: [id], onDelete: SetNull, map: "SubscriptionAccrual_carryForwardToPeriodId_fkey")
   customer                                                                      customer          @relation(fields: [customerId], references: [id], onDelete: Cascade, map: "SubscriptionAccrual_customerId_fkey")
 
   @@index([accountingPeriodId], map: "SubscriptionAccrual_accountingPeriodId_idx")
-  @@index([carryForwardToPeriodId], map: "SubscriptionAccrual_carryForwardToPeriodId_fkey")
+  @@index([carryForwardToPeriodId], map: "SubscriptionAccrual_carryForwardToPeriodId_idx")
   @@index([customerId], map: "SubscriptionAccrual_customerId_idx")
   @@index([dueDate], map: "SubscriptionAccrual_dueDate_idx")
   @@index([isPaid], map: "SubscriptionAccrual_isPaid_idx")

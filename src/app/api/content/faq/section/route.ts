@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 const DEFAULT_SECTION_DATA = {
   title: "Sıkça Sorulan Sorular",
@@ -10,7 +9,7 @@ const DEFAULT_SECTION_DATA = {
 
 export async function GET() {
   try {
-    const section = await prisma.fAQSection.findFirst()
+    const section = await prisma.faqsection.findFirst()
     
     if (!section) {
       return NextResponse.json(DEFAULT_SECTION_DATA)
@@ -27,22 +26,25 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     
-    const existingSection = await prisma.fAQSection.findFirst()
+    const existingSection = await prisma.faqsection.findFirst()
     
     let section
     if (existingSection) {
-      section = await prisma.fAQSection.update({
+      section = await prisma.faqsection.update({
         where: { id: existingSection.id },
         data: {
           title: data.title,
-          paragraph: data.paragraph
+          paragraph: data.paragraph,
+          updatedAt: new Date()
         }
       })
     } else {
-      section = await prisma.fAQSection.create({
+      section = await prisma.faqsection.create({
         data: {
+          id: randomUUID(),
           title: data.title,
-          paragraph: data.paragraph
+          paragraph: data.paragraph,
+          updatedAt: new Date()
         }
       })
     }

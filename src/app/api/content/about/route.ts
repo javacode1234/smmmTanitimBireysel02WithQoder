@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 // Add this helper function to get default features with isActive field
 function getDefaultFeatures() {
@@ -43,9 +44,9 @@ function getDefaultFeatures() {
 
 export async function GET() {
   try {
-    const aboutSection = await prisma.aboutSection.findFirst({
+    const aboutSection = await prisma.aboutsection.findFirst({
       include: {
-        features: {
+        aboutfeature: {
           orderBy: {
             order: 'asc'
           }
@@ -63,7 +64,13 @@ export async function GET() {
       })
     }
 
-    return NextResponse.json(aboutSection)
+    if (aboutSection) {
+      return NextResponse.json({
+        ...aboutSection,
+        features: (aboutSection as unknown as { aboutfeature: unknown[] }).aboutfeature
+      })
+    }
+    return NextResponse.json(null)
   } catch (error: unknown) {
     console.error('Error fetching about section:', error)
     return NextResponse.json({
@@ -79,16 +86,16 @@ export async function GET() {
 export async function DELETE() {
   try {
     // Get existing section
-    const existingSection = await prisma.aboutSection.findFirst()
+    const existingSection = await prisma.aboutsection.findFirst()
     
     if (existingSection) {
       // Delete all features first
-      await prisma.aboutFeature.deleteMany({
+      await prisma.aboutfeature.deleteMany({
         where: { sectionId: existingSection.id }
       })
       
       // Delete the section
-      await prisma.aboutSection.delete({
+      await prisma.aboutsection.delete({
         where: { id: existingSection.id }
       })
     }
@@ -111,72 +118,77 @@ export async function POST(request: NextRequest) {
     const data = await request.json()
     
     // Check if about section already exists
-    const existingSection = await prisma.aboutSection.findFirst()
+    const existingSection = await prisma.aboutsection.findFirst()
     
     if (existingSection) {
-      // Update existing section
-      await prisma.aboutSection.update({
-        where: { id: existingSection.id },
-        data: {
-          title: data.title,
-          subtitle: data.subtitle,
-          description: data.description,
-          image: data.image
-        }
-      })
-      
-      // Delete all existing features
-      await prisma.aboutFeature.deleteMany({
-        where: { sectionId: existingSection.id }
-      })
-      
-      // Create new features
-      // Try to create features with isActive field, fallback to without if it fails
-      try {
-        await prisma.aboutFeature.createMany({
-          data: (data.features as { icon: string; title: string; description: string; isActive?: boolean }[]).map((feature, index: number) => ({
-            sectionId: existingSection.id,
-            icon: feature.icon,
-            title: feature.title,
-            description: feature.description,
-            ...(feature.isActive !== undefined && { isActive: feature.isActive }),
-            order: index
-          }))
-        })
-      } catch {
-        // Fallback: create features without isActive field
-        await prisma.aboutFeature.createMany({
-          data: (data.features as { icon: string; title: string; description: string }[]).map((feature, index: number) => ({
-            sectionId: existingSection.id,
-            icon: feature.icon,
-            title: feature.title,
-            description: feature.description,
-            order: index
-          }))
-        })
-      }
-      
-      // Return the updated section with features
-      const sectionWithFeatures = await prisma.aboutSection.findUnique({
-        where: { id: existingSection.id },
-        include: { 
-          features: { orderBy: { order: 'asc' } }
-        }
-      })
-      
-      return NextResponse.json(sectionWithFeatures)
-    } else {
-      // Create new section
-      let newSection;
-      try {
-        newSection = await prisma.aboutSection.create({
+      // Update existing section and features atomically
+      await prisma.$transaction(async (tx) => {
+        await tx.aboutsection.update({
+          where: { id: existingSection.id },
           data: {
             title: data.title,
             subtitle: data.subtitle,
             description: data.description,
             image: data.image,
-            features: {
+            updatedAt: new Date()
+          }
+        })
+        await tx.aboutfeature.deleteMany({
+          where: { sectionId: existingSection.id }
+        })
+        try {
+          await tx.aboutfeature.createMany({
+            data: (data.features as { icon: string; title: string; description: string; isActive?: boolean }[]).map((feature, index: number) => ({
+              id: randomUUID(),
+              sectionId: existingSection.id,
+              icon: feature.icon,
+              title: feature.title,
+              description: feature.description,
+              ...(feature.isActive !== undefined && { isActive: feature.isActive }),
+              order: index
+            }))
+          })
+        } catch {
+          await tx.aboutfeature.createMany({
+            data: (data.features as { icon: string; title: string; description: string }[]).map((feature, index: number) => ({
+              id: randomUUID(),
+              sectionId: existingSection.id,
+              icon: feature.icon,
+              title: feature.title,
+              description: feature.description,
+              order: index
+            }))
+          })
+        }
+      })
+      const sectionWithFeatures = await prisma.aboutsection.findUnique({
+        where: { id: existingSection.id },
+        include: { 
+          aboutfeature: { orderBy: { order: 'asc' } }
+        }
+      })
+      if (sectionWithFeatures) {
+        return NextResponse.json({
+          ...sectionWithFeatures,
+          features: (sectionWithFeatures as unknown as { aboutfeature: unknown[] }).aboutfeature
+        })
+      }
+      return NextResponse.json(null)
+    } else {
+      // Create new section
+      let newSection;
+      try {
+        newSection = await prisma.aboutsection.create({
+          data: {
+            id: randomUUID(),
+            title: data.title,
+            subtitle: data.subtitle,
+            description: data.description,
+            image: data.image,
+            updatedAt: new Date(),
+            aboutfeature: {
               create: (data.features as { icon: string; title: string; description: string; isActive?: boolean }[]).map((feature, index: number) => ({
+                id: randomUUID(),
                 icon: feature.icon,
                 title: feature.title,
                 description: feature.description,
@@ -186,19 +198,22 @@ export async function POST(request: NextRequest) {
             }
           },
           include: {
-            features: true
+            aboutfeature: true
           }
         })
       } catch {
         // Fallback: create section without isActive field
-        newSection = await prisma.aboutSection.create({
+        newSection = await prisma.aboutsection.create({
           data: {
+            id: randomUUID(),
             title: data.title,
             subtitle: data.subtitle,
             description: data.description,
             image: data.image,
-            features: {
+            updatedAt: new Date(),
+            aboutfeature: {
               create: (data.features as { icon: string; title: string; description: string }[]).map((feature, index: number) => ({
+                id: randomUUID(),
                 icon: feature.icon,
                 title: feature.title,
                 description: feature.description,
@@ -207,12 +222,18 @@ export async function POST(request: NextRequest) {
             }
           },
           include: {
-            features: true
+            aboutfeature: true
           }
         })
       }
       
-      return NextResponse.json(newSection)
+      if (newSection) {
+        return NextResponse.json({
+          ...newSection,
+          features: (newSection as unknown as { aboutfeature: unknown[] }).aboutfeature
+        })
+      }
+      return NextResponse.json(null)
     }
   } catch (error) {
     console.error('Error creating/updating about section:', error)
