@@ -189,15 +189,21 @@ const DEFAULT_SECTION_DATA = {
   paragraph: "Alanında uzman, deneyimli ve sertifikalı mali müşavirlerimiz ile işletmenizin mali süreçlerini güvenle yönetiyoruz."
 }
 
+interface TeamSectionData {
+  id?: string
+  title: string
+  paragraph?: string
+}
+
 export function TeamTab() {
   const [members, setMembers] = useState<TeamMember[]>(DEFAULT_TEAM_MEMBERS)
-  const [sectionData, setSectionData] = useState(DEFAULT_SECTION_DATA)
+  const [sectionData, setSectionData] = useState<TeamSectionData>(DEFAULT_SECTION_DATA)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
+  const [editingMember, setEditingMember] = useState<Omit<TeamMember, 'id'> & { id?: string } | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -220,8 +226,8 @@ export function TeamTab() {
     try {
       const response = await fetch('/api/content/team/section')
       if (response.ok) {
-        const data: TeamMember[] = await response.json()
-        if (data && data.id) {
+        const data: TeamSectionData = await response.json()
+        if (data && (data.title || data.paragraph)) {
           setSectionData({
             title: data.title || DEFAULT_SECTION_DATA.title,
             paragraph: data.paragraph || DEFAULT_SECTION_DATA.paragraph
@@ -444,6 +450,7 @@ export function TeamTab() {
   }
 
   const handleSave = () => {
+    if (!editingMember) return
     if (!editingMember.name || !editingMember.position) {
       toast.error('İsim ve pozisyon zorunludur')
       return
@@ -455,10 +462,11 @@ export function TeamTab() {
     }
 
     if (editingMember.id && !editingMember.id.startsWith('default-')) {
-      setMembers(members.map(m => m.id === editingMember.id ? payload : m))
+      const updated: TeamMember = { ...payload, id: editingMember.id! }
+      setMembers(members.map(m => m.id === editingMember.id ? updated : m))
       toast.success('Ekip üyesi güncellendi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     } else {
-      const newMember = { ...payload, id: `temp-${Date.now()}`, order: members.length }
+      const newMember: TeamMember = { ...payload, id: `temp-${Date.now()}`, order: members.length }
       setMembers([...members, newMember])
       toast.success('Yeni ekip üyesi eklendi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     }

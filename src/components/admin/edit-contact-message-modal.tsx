@@ -104,7 +104,7 @@ export function EditContactMessageModal({ message, isOpen, onClose, onStatusUpda
             <Label htmlFor="status" className="text-sm font-medium">
               Yeni Durum Seçin
             </Label>
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <Select value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as ContactMessageStatus)}>
               <SelectTrigger className="mt-2">
                 <SelectValue placeholder="Durum seçin" />
               </SelectTrigger>

@@ -152,15 +152,23 @@ const DEFAULT_SECTION_DATA = {
   paragraph: "500'den fazla mutlu müşterimizin deneyimleri. Güven ve memnuniyet odaklı hizmet anlayışımızın en büyük kanıtı."
 }
 
+interface TestimonialsSectionData {
+  id?: string
+  title: string
+  paragraph?: string
+}
+
+type EditableTestimonial = Omit<Testimonial, 'id'> & { id?: string }
+
 export function TestimonialsTab() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>(DEFAULT_TESTIMONIALS)
-  const [sectionData, setSectionData] = useState(DEFAULT_SECTION_DATA)
+  const [sectionData, setSectionData] = useState<TestimonialsSectionData>(DEFAULT_SECTION_DATA)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null)
+  const [editingTestimonial, setEditingTestimonial] = useState<EditableTestimonial | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [testimonialToDelete, setTestimonialToDelete] = useState<Testimonial | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -183,8 +191,8 @@ export function TestimonialsTab() {
     try {
       const response = await fetch('/api/content/testimonials/section')
       if (response.ok) {
-        const data: Testimonial[] = await response.json()
-        if (data && data.id) {
+        const data: TestimonialsSectionData = await response.json()
+        if (data && (data.title || data.paragraph)) {
           setSectionData({
             title: data.title || DEFAULT_SECTION_DATA.title,
             paragraph: data.paragraph || DEFAULT_SECTION_DATA.paragraph
@@ -359,24 +367,26 @@ export function TestimonialsTab() {
   }
 
   const handleSave = () => {
+    if (!editingTestimonial) return
     if (!editingTestimonial.name || !editingTestimonial.content) {
       toast.error('İsim ve içerik zorunludur')
       return
     }
 
     // Ensure rating is a number
-    const payload = { 
+    const payload: EditableTestimonial = { 
       ...editingTestimonial,
       rating: Number(editingTestimonial.rating)
     }
 
     if (editingTestimonial.id) {
       // Update existing testimonial (both default and custom)
-      setTestimonials(testimonials.map(t => t.id === editingTestimonial.id ? payload : t))
+      const updated: Testimonial = { ...payload, id: editingTestimonial.id! }
+      setTestimonials(testimonials.map(t => t.id === editingTestimonial.id ? updated : t))
       toast.success('Yorum güncellendi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     } else {
       // Add new testimonial
-      const newTestimonial = { ...payload, id: `temp-${Date.now()}`, order: testimonials.length }
+      const newTestimonial: Testimonial = { ...payload, id: `temp-${Date.now()}`, order: testimonials.length }
       setTestimonials([...testimonials, newTestimonial])
       toast.success('Yeni yorum eklendi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     }

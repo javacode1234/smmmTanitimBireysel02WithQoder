@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Download, Mail, Phone, Calendar, FileText, MessageSquare } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 
-type ContactMessageStatus = 'NEW' | 'PENDING' | 'REPLIED' | 'RESOLVED' | 'new' | 'pending' | 'replied' | 'resolved'
+type ContactMessageStatus = 'NEW' | 'PENDING' | 'REPLIED' | 'RESOLVED'
 
 interface ContactMessage {
   id: string
@@ -38,11 +38,6 @@ const statusColors = {
   PENDING: "bg-yellow-100 text-yellow-800",
   REPLIED: "bg-green-100 text-green-800",
   RESOLVED: "bg-gray-100 text-gray-800",
-  // Lowercase variants for compatibility
-  new: "bg-blue-100 text-blue-800",
-  pending: "bg-yellow-100 text-yellow-800",
-  replied: "bg-green-100 text-green-800",
-  resolved: "bg-gray-100 text-gray-800",
 }
 
 const statusLabels = {
@@ -50,11 +45,6 @@ const statusLabels = {
   PENDING: "Beklemede",
   REPLIED: "Yanıtlandı",
   RESOLVED: "Çözüldü",
-  // Lowercase variants for compatibility
-  new: "Yeni",
-  pending: "Beklemede",
-  replied: "Yanıtlandı",
-  resolved: "Çözüldü",
 }
 
 export function ContactMessageModal({ message, isOpen, onClose, onExportPDF }: ContactMessageModalProps) {

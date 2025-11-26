@@ -198,43 +198,11 @@ export default function CircularPage({ params }: { params: Promise<{ id: string 
   }, [params])
 
   useEffect(() => {
-    fetchCircular()
+    const t = setTimeout(() => {
+      fetchCircular()
+    }, 0)
+    return () => clearTimeout(t)
   }, [fetchCircular])
-
-  const fetchCircular = () => {
-    setLoading(true)
-    try {
-      // Simulate API call - in a real implementation, this would fetch from database
-      setTimeout(() => {
-        // Check if params is a Promise and handle accordingly
-        if (typeof params === 'object' && params !== null && 'id' in params) {
-          const foundCircular = MOCK_CIRCULARS.find(c => c.id === params.id)
-          if (foundCircular) {
-            setCircular(foundCircular)
-          } else {
-            toast.error("Sirküler bulunamadı")
-          }
-        } else {
-          // Fallback for when params is a Promise
-          Promise.resolve(params).then((resolvedParams) => {
-            const foundCircular = MOCK_CIRCULARS.find(c => c.id === resolvedParams.id)
-            if (foundCircular) {
-              setCircular(foundCircular)
-            } else {
-              toast.error("Sirküler bulunamadı")
-            }
-          }).catch(() => {
-            toast.error("Sirküler yüklenirken bir hata oluştu")
-          })
-        }
-        setLoading(false)
-      }, 500)
-    } catch (error) {
-      console.error("Error fetching circular:", error)
-      toast.error("Sirküler yüklenirken bir hata oluştu")
-      setLoading(false)
-    }
-  }
 
   // Handle navigation with proper cleanup to prevent DOM errors
   const handleNavigation = (href: string, event?: React.MouseEvent) => {

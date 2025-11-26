@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText, Save, Edit2, X, Check, Plus, Calendar, Info } from "lucide-react"
 import { toast } from "sonner"
 
-interface DeclarationSetting {
+export interface DeclarationSetting {
   id?: string
   type: string
   enabled: boolean

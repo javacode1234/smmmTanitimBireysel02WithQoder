@@ -182,10 +182,19 @@ const DEFAULT_SECTION_DATA = {
   footerText: "* Tüm fiyatlar KDV hariçtir. Özel ihtiyaçlarınız için size özel paket oluşturabiliriz. İlk ay ücretsiz danışmanlık hizmeti ile başlayabilirsiniz."
 }
 
+interface PricingSectionData {
+  id?: string
+  title: string
+  paragraph?: string
+  additionalTitle: string
+  additionalParagraph?: string
+  footerText?: string
+}
+
 export function PricingTab() {
   const [plans, setPlans] = useState<PricingPlan[]>(DEFAULT_PLANS)
   const [additionalServices, setAdditionalServices] = useState<AdditionalService[]>(DEFAULT_SERVICES)
-  const [sectionData, setSectionData] = useState(DEFAULT_SECTION_DATA)
+  const [sectionData, setSectionData] = useState<PricingSectionData>(DEFAULT_SECTION_DATA)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   
@@ -247,8 +256,8 @@ export function PricingTab() {
     try {
       const response = await fetch('/api/content/pricing/section')
       if (response.ok) {
-        const data: PricingPlan[] = await response.json()
-        if (data && data.id) {
+        const data: PricingSectionData = await response.json()
+        if (data && (data.title || data.additionalTitle || data.footerText)) {
           setSectionData({
             title: data.title || DEFAULT_SECTION_DATA.title,
             paragraph: data.paragraph || DEFAULT_SECTION_DATA.paragraph,
@@ -501,6 +510,7 @@ export function PricingTab() {
   }
 
   const handleSavePlan = () => {
+    if (!editingPlan) return
     if (!editingPlan.name || !editingPlan.price) {
       toast.error('İsim ve fiyat zorunludur')
       return
@@ -509,7 +519,8 @@ export function PricingTab() {
     const payload = { ...editingPlan }
 
     if (editingPlan.id && !editingPlan.id.startsWith('default-')) {
-      setPlans(plans.map(p => p.id === editingPlan.id ? payload : p))
+      const updated: PricingPlan = { ...payload, id: editingPlan.id! }
+      setPlans(plans.map(p => p.id === editingPlan.id ? updated : p))
       toast.success('Plan güncellendi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     } else {
       const newPlan = { ...payload, id: `temp-${Date.now()}`, order: plans.length }
@@ -543,6 +554,7 @@ export function PricingTab() {
   }
 
   const addFeature = () => {
+    if (!editingPlan) return
     if (!featureInput.trim()) return
     setEditingPlan({
       ...editingPlan,
@@ -552,6 +564,7 @@ export function PricingTab() {
   }
 
   const removeFeature = (index: number) => {
+    if (!editingPlan) return
     setEditingPlan({
       ...editingPlan,
       features: editingPlan.features.filter((_, i) => i !== index)
@@ -573,16 +586,18 @@ export function PricingTab() {
   }
 
   const handleSaveService = () => {
+    if (!editingService) return
     if (!editingService.text.trim()) {
       toast.error('Metin zorunludur')
       return
     }
 
     if (editingService.id && !editingService.id.startsWith('default-')) {
-      setAdditionalServices(additionalServices.map(s => s.id === editingService.id ? editingService : s))
+      const updated: AdditionalService = { ...editingService, id: editingService.id! }
+      setAdditionalServices(additionalServices.map(s => s.id === editingService.id ? updated : s))
       toast.success('Hizmet güncellendi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     } else {
-      const newService = { ...editingService, id: `temp-${Date.now()}`, order: additionalServices.length }
+      const newService: AdditionalService = { ...editingService, id: `temp-${Date.now()}`, order: additionalServices.length }
       setAdditionalServices([...additionalServices, newService])
       toast.success('Yeni hizmet eklendi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     }

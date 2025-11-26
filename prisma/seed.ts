@@ -1,4 +1,9 @@
 import { PrismaClient, Prisma } from '@prisma/client'
+import fetch from 'node-fetch'
+import * as fs from 'fs'
+import * as path from 'path'
+let XLSX: any
+import { turkishTaxOffices } from '../src/lib/tax-offices'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -32,6 +37,24 @@ async function main() {
       },
     })
     console.log('✅ Site settings created:', settings.siteName)
+    try {
+      console.log('🏷️ Seeding activity codes (dev, TR XLS) ...')
+      await prisma.activitycode.deleteMany({})
+      await seedActivityCodesFromLocalXLS()
+      console.log('✅ Activity codes seeded (dev, TR XLS)')
+    } catch (e) {
+      console.warn('⚠️ Skipping dev TR XLS activity codes seed:', e instanceof Error ? e.message : e)
+    }
+    try {
+      console.log('🗺️ Seeding cities/districts (dev)...')
+      const cityNames = Array.from(new Set((turkishTaxOffices || []).map(o => o.city).filter(Boolean)))
+      for (const name of cityNames) {
+        await prisma.city.upsert({ where: { name }, update: {}, create: { name } })
+      }
+      console.log('✅ Cities seeded (dev)')
+    } catch (e) {
+      console.warn('⚠️ Skipping dev cities/districts seed:', e instanceof Error ? e.message : e)
+    }
     console.log('✅ Minimal database seeding completed successfully!')
     return
   }
@@ -118,15 +141,10 @@ async function main() {
   // Seed Tax Offices
   try {
     console.log('🏛️ Seeding tax offices...')
-    await prisma.taxOffice.createMany({
-      data: [
-        { id: 'tax-ist-anadolu', name: 'İstanbul Anadolu VDB', city: 'İstanbul', district: 'Anadolu' },
-        { id: 'tax-ist-avrupa', name: 'İstanbul Avrupa VDB', city: 'İstanbul', district: 'Avrupa' },
-        { id: 'tax-ankara', name: 'Ankara VDB', city: 'Ankara', district: 'Merkez' },
-        { id: 'tax-izmir', name: 'İzmir VDB', city: 'İzmir', district: 'Merkez' },
-      ],
-      skipDuplicates: true,
-    })
+    const officeData = (turkishTaxOffices || []).map(o => ({ name: o.name, city: o.city, district: o.district }))
+    if (officeData.length > 0) {
+      await prisma.taxOffice.createMany({ data: officeData, skipDuplicates: true })
+    }
     console.log('✅ Tax offices seeded')
   } catch (e) {
     console.warn('⚠️ Skipping tax offices seed:', e instanceof Error ? e.message : e)
@@ -229,6 +247,7 @@ async function main() {
         updatedAt: new Date(),
       },
     ],
+    skipDuplicates: true,
   })
 
   // Seed Quote Requests
@@ -284,6 +303,7 @@ async function main() {
         updatedAt: new Date(),
       },
     ],
+    skipDuplicates: true,
   })
 
   // Seed Contact Messages
@@ -335,6 +355,7 @@ async function main() {
         updatedAt: new Date(),
       },
     ],
+    skipDuplicates: true,
   })
 
   // Seed Declaration Configs
@@ -418,13 +439,88 @@ async function main() {
       createdAt: new Date(),
       updatedAt: new Date(),
     },
-  ] as Prisma.DeclarationconfigCreateInput[]
+  ] as Prisma.declarationconfigCreateInput[]
   for (const d of defaults) {
     await prisma.declarationconfig.upsert({
       where: { type: d.type },
       update: {},
       create: d,
     })
+  }
+
+  // Seed Activity Codes
+  try {
+    console.log('🏷️ Seeding activity codes...')
+    await prisma.activitycode.deleteMany({})
+    await seedActivityCodesFromLocalXLS()
+    console.log('✅ Activity codes seeded (full list if CSV available)')
+  } catch (e) {
+    console.warn('⚠️ Skipping activity codes seed:', e instanceof Error ? e.message : e)
+  }
+
+  // Seed Cities and Districts
+  try {
+    console.log('🗺️ Seeding cities and districts...')
+    const cityNames = Array.from(new Set((turkishTaxOffices || []).map(o => o.city).filter(Boolean)))
+    const cityMap: Record<string, string> = {}
+    for (const name of cityNames) {
+      const city = await prisma.city.upsert({
+        where: { name },
+        update: {},
+        create: { name },
+      })
+      cityMap[name] = city.id
+    }
+
+    const byCity: Record<string, Set<string>> = {}
+    for (const o of turkishTaxOffices || []) {
+      if (!o.city || !o.district) continue
+      byCity[o.city] = byCity[o.city] || new Set<string>()
+      byCity[o.city].add(o.district)
+    }
+
+    for (const [cityName, districts] of Object.entries(byCity)) {
+      const cityId = cityMap[cityName]
+      if (!cityId) continue
+      for (const dist of districts) {
+        const key = `${cityId}:${dist}`
+        try {
+          await prisma.district.upsert({
+            where: { cityId_name: { cityId, name: dist } },
+            update: {},
+            create: { cityId, name: dist },
+          })
+        } catch {}
+      }
+    }
+    console.log('✅ Cities and districts seeded')
+  } catch (e) {
+    console.warn('⚠️ Skipping cities/districts seed:', e instanceof Error ? e.message : e)
+  }
+
+  // Supplement cities/districts with a public TR dataset (if available)
+  try {
+    console.log('🗺️ Supplementing cities/districts from public TR dataset...')
+    const url = 'https://gist.githubusercontent.com/sercanov/c63063e4b40c756d4040a0be694895e9/raw/turkiye.json'
+    const res = await fetch(url)
+    if (res.ok) {
+      const map = await res.json() as Record<string, string[]>
+      for (const [cityName, dists] of Object.entries(map)) {
+        const city = await prisma.city.upsert({ where: { name: cityName }, update: {}, create: { name: cityName } })
+        for (const distName of dists) {
+          await prisma.district.upsert({
+            where: { cityId_name: { cityId: city.id, name: distName } },
+            update: {},
+            create: { cityId: city.id, name: distName },
+          })
+        }
+      }
+      console.log('✅ Cities/districts supplemented from TR dataset')
+    } else {
+      console.warn('⚠️ Could not download TR cities/districts dataset:', res.status)
+    }
+  } catch (e) {
+    console.warn('⚠️ Skipping TR cities/districts supplement:', e instanceof Error ? e.message : e)
   }
 
   console.log('✅ Database seeding completed successfully!')
@@ -443,3 +539,140 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
+  
+// Helper: Seed activity codes from public CSV (NACE Rev.2)
+async function seedActivityCodesFromCSV() {
+  try {
+    console.log('📥 Fetching NACE Rev.2 CSV (classes) ...')
+    const url = 'https://gist.githubusercontent.com/b-rodrigues/4218d6daa8275acce80ebef6377953fe/raw/nace_rev2.csv'
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`Failed to download CSV: ${res.status}`)
+    const csv = await res.text()
+    const rows = parseCSV(csv)
+    // Expect headers: Order,Level,Code,Parent,Description,...
+    const header = rows[0]
+    const idxLevel = header.indexOf('Level')
+    const idxCode = header.indexOf('Code')
+    const idxDesc = header.indexOf('Description')
+    if (idxLevel < 0 || idxCode < 0 || idxDesc < 0) throw new Error('CSV headers not found')
+    const items = rows.slice(1)
+      .filter(r => String(r[idxLevel]).trim() === '4')
+      .map(r => ({ code: String(r[idxCode]).trim(), name: String(r[idxDesc]).trim() }))
+      .filter(i => /\d{2}\.\d{2}/.test(i.code) && i.name)
+    let count = 0
+    for (const it of items) {
+      await prisma.activitycode.upsert({
+        where: { code: it.code },
+        update: { name: it.name, isActive: true },
+        create: { code: it.code, name: it.name, isActive: true },
+      })
+      count++
+      if (count % 200 === 0) console.log(`  ↳ Seeded ${count} activity codes...`)
+    }
+    console.log(`✅ Seeded ${count} activity codes from CSV`)
+  } catch (e) {
+    console.warn('⚠️ Could not seed activity codes from CSV:', e instanceof Error ? e.message : e)
+  }
+}
+
+// Minimal CSV parser supporting quotes
+function parseCSV(input: string): string[][] {
+  const rows: string[][] = []
+  let row: string[] = []
+  let cell = ''
+  let inQuotes = false
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (input[i + 1] === '"') { cell += '"'; i++; } else { inQuotes = false }
+      } else {
+        cell += ch
+      }
+    } else {
+      if (ch === '"') { inQuotes = true }
+      else if (ch === ',') { row.push(cell); cell = '' }
+      else if (ch === '\n' || ch === '\r') {
+        if (cell.length || row.length) { row.push(cell); rows.push(row); row = []; cell = '' }
+        // handle \r\n pairs
+        if (ch === '\r' && input[i + 1] === '\n') i++
+      } else { cell += ch }
+    }
+  }
+  if (cell.length || row.length) { row.push(cell); rows.push(row) }
+  return rows
+}
+
+// Seed from local Turkish XLS (Altılı) if available
+async function seedActivityCodesFromLocalXLS() {
+  try {
+    console.log('📄 Looking for local Turkish NACE Excel...')
+    const envPath = process.env.NACE_TR_XLS_PATH
+    const candidates = [
+      envPath,
+      path.join(process.env.USERPROFILE || '', 'Desktop', 'nacet-6-li-kod.xls'),
+      path.join(process.env.HOME || '', 'Desktop', 'nacet-6-li-kod.xls'),
+      path.join(process.cwd(), 'nacet-6-li-kod.xls'),
+    ].filter(Boolean) as string[]
+    let filePath: string | null = null
+    for (const p of candidates) {
+      try { if (fs.existsSync(p)) { filePath = p; break } } catch {}
+    }
+    if (!filePath) { console.log('ℹ️ Turkish XLS not found, skipping.'); return }
+
+    if (!XLSX) {
+      try { XLSX = require('xlsx') } catch (e) { console.warn('⚠️ Missing xlsx dependency, install with: npm i xlsx'); return }
+    }
+
+    console.log('📥 Reading Excel:', filePath)
+    const wb = XLSX.readFile(filePath)
+    const wsName = wb.SheetNames[0]
+    const ws = wb.Sheets[wsName]
+    const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' })
+    // Try to detect columns
+    const detect = (row: any) => {
+      const keys = Object.keys(row)
+      const codeKey = keys.find(k => /kod|code|nace/i.test(k)) || keys[0]
+      const descKey = keys.find(k => /tanim|tanım|aciklama|açıklama|description|ad/i.test(k)) || keys[1] || keys[0]
+      return { codeKey, descKey }
+    }
+    const { codeKey, descKey } = rows.length ? detect(rows[0]) : { codeKey: 'Kod', descKey: 'Açıklama' }
+
+    let count = 0, updates = 0
+    for (const r of rows) {
+      let raw = String(r[codeKey] || '').trim()
+      const tr = String(r[descKey] || '').trim()
+      if (!raw || !tr) continue
+      // Normalize codes: accept forms like 620101, 62.01.01, 62-01-01, etc.
+      raw = raw.replace(/[^0-9]/g, '')
+      if (raw.length < 4) continue
+      const code4 = `${raw.slice(0,2)}.${raw.slice(2,4)}`
+      const code6 = raw.length >= 6 ? `${raw.slice(0,2)}.${raw.slice(2,4)}.${raw.slice(4,6)}` : code4
+
+      // Update Turkish name for 4-digit class
+      try {
+        await prisma.activitycode.upsert({
+          where: { code: code4 },
+          update: { name: tr, isActive: true },
+          create: { code: code4, name: tr, isActive: true },
+        })
+        updates++
+      } catch {}
+
+      // Insert 6-digit subclass as separate record
+      if (code6 !== code4) {
+        try {
+          await prisma.activitycode.upsert({
+            where: { code: code6 },
+            update: { name: tr, isActive: true },
+            create: { code: code6, name: tr, isActive: true },
+          })
+          count++
+        } catch {}
+      }
+    }
+    console.log(`✅ Turkish Excel processed. Updated TR names: ${updates}, added subclasses: ${count}`)
+  } catch (e) {
+    console.warn('⚠️ Could not seed from Turkish XLS:', e instanceof Error ? e.message : e)
+  }
+}

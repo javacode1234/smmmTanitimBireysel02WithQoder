@@ -20,7 +20,7 @@ interface QuoteRequestModalProps {
   onExportPDF: (request: QuoteRequest) => void
 }
 
-export type QuoteRequestStatus = 'NEW' | 'PENDING' | 'REVIEWED' | 'CONTACTED' | 'COMPLETED' | 'new' | 'pending' | 'reviewed' | 'contacted' | 'completed'
+export type QuoteRequestStatus = 'NEW' | 'PENDING' | 'REVIEWED' | 'CONTACTED' | 'COMPLETED'
 
 export interface QuoteRequest {
   id: string
@@ -40,12 +40,6 @@ const statusColors = {
   REVIEWED: "bg-blue-100 text-blue-800",
   CONTACTED: "bg-purple-100 text-purple-800",
   COMPLETED: "bg-green-100 text-green-800",
-  // Lowercase variants for compatibility
-  new: "bg-blue-100 text-blue-800",
-  pending: "bg-yellow-100 text-yellow-800",
-  reviewed: "bg-blue-100 text-blue-800",
-  contacted: "bg-purple-100 text-purple-800",
-  completed: "bg-green-100 text-green-800",
 }
 
 const statusLabels = {
@@ -54,12 +48,6 @@ const statusLabels = {
   REVIEWED: "İncelendi",
   CONTACTED: "İletişime Geçildi",
   COMPLETED: "Tamamlandı",
-  // Lowercase variants for compatibility
-  new: "Yeni",
-  pending: "Beklemede",
-  reviewed: "İncelendi",
-  contacted: "İletişime Geçildi",
-  completed: "Tamamlandı",
 }
 
 export function QuoteRequestModal({ request, isOpen, onClose, onExportPDF }: QuoteRequestModalProps) {

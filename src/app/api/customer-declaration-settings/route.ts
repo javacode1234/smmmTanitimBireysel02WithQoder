@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { customerdeclarationsetting_frequency, customerdeclarationsetting_taxPeriodType } from "@prisma/client"
+import { randomUUID } from "crypto"
 
 // GET /api/customer-declaration-settings?customerId=...
 export async function GET(req: NextRequest) {
@@ -10,7 +12,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "customerId is required" }, { status: 400 })
     }
 
-    const items = await prisma.customerDeclarationSetting.findMany({
+    const items = await prisma.customerdeclarationsetting.findMany({
       where: { customerId },
       orderBy: { type: "asc" },
     })
@@ -49,16 +51,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Replace existing set: delete and create many
-    await prisma.customerDeclarationSetting.deleteMany({ where: { customerId } })
+    await prisma.customerdeclarationsetting.deleteMany({ where: { customerId } })
 
     if (settings.length > 0) {
-      await prisma.customerDeclarationSetting.createMany({
+      await prisma.customerdeclarationsetting.createMany({
         data: settings.map((s) => ({
+          id: randomUUID(),
           customerId,
           type: s.type,
           enabled: !!s.enabled,
-          frequency: String(s.frequency).toUpperCase(),
-          taxPeriodType: s.taxPeriodType ? String(s.taxPeriodType).toUpperCase() : null,
+          frequency: String(s.frequency).toUpperCase() as customerdeclarationsetting_frequency,
+          taxPeriodType: s.taxPeriodType ? (String(s.taxPeriodType).toUpperCase() as customerdeclarationsetting_taxPeriodType) : null,
           dueDay: Number(s.dueDay),
           dueHour: Number(s.dueHour),
           dueMinute: Number(s.dueMinute),
@@ -67,6 +70,7 @@ export async function POST(req: NextRequest) {
           yearlyCount: s.yearlyCount != null ? Number(s.yearlyCount) : null,
           skipQuarter: s.skipQuarter != null ? !!s.skipQuarter : null,
           quarters: s.quarters && Array.isArray(s.quarters) ? JSON.stringify(s.quarters) : null,
+          updatedAt: new Date(),
         })),
       })
     }

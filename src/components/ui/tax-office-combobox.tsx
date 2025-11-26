@@ -13,21 +13,31 @@ interface TaxOffice {
 }
 
 interface TaxOfficeComboboxProps {
+  id?: string
   value: string
   onValueChange: (value: string) => void
   taxOffices: TaxOffice[]
   placeholder?: string
   searchPlaceholder?: string
   emptyMessage?: string
+  allowCustom?: boolean
+  minCharsToSearch?: number
+  maxItemsToShow?: number
+  displayMode?: 'name' | 'codeFirst'
 }
 
 export function TaxOfficeCombobox({
+  id,
   value,
   onValueChange,
   taxOffices,
   placeholder = "Vergi dairesi seçin...",
   searchPlaceholder = "Vergi dairesi ara...",
-  emptyMessage = "Vergi dairesi bulunamadı."
+  emptyMessage = "Vergi dairesi bulunamadı.",
+  allowCustom = false,
+  minCharsToSearch = 2,
+  maxItemsToShow = 200,
+  displayMode = 'codeFirst'
 }: TaxOfficeComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
@@ -35,24 +45,43 @@ export function TaxOfficeCombobox({
   const filteredOffices = taxOffices.filter(office => 
     office.name.toLowerCase().includes(search.toLowerCase())
   )
+  const displayOffices = filteredOffices.slice(0, maxItemsToShow)
 
   return (
     <div className="relative">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
+            id={id}
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between"
+            className="w-full justify-between gap-2"
           >
-            {value
-              ? taxOffices.find((office) => office.name === value)?.name
-              : placeholder}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            {(() => {
+              const selected = value
+                ? (taxOffices.find((office) => office.name === value)?.name ?? value)
+                : placeholder
+              if (displayMode === 'name') {
+                return (
+                  <span className="flex-1 text-left truncate" title={typeof selected === 'string' ? selected : undefined}>
+                    {selected}
+                  </span>
+                )
+              }
+              const parts = typeof selected === 'string' ? selected.split(' - ') : []
+              const code = parts[0]?.trim()
+              const display = value ? (code || selected) : selected
+              return (
+                <span className="flex-1 text-left truncate" title={typeof selected === 'string' ? selected : undefined}>
+                  {display}
+                </span>
+              )
+            })()}
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0">
+        <PopoverContent className="w-full p-0 max-h-80">
           <Command>
             <CommandInput 
               placeholder={searchPlaceholder} 
@@ -60,10 +89,10 @@ export function TaxOfficeCombobox({
               onValueChange={setSearch}
               className="h-9"
             />
-            <CommandList>
+            <CommandList className="max-h-72 overflow-auto">
               <CommandEmpty>{emptyMessage}</CommandEmpty>
               <CommandGroup>
-                {filteredOffices.map((office) => (
+                {(search.length < minCharsToSearch && taxOffices.length > maxItemsToShow) ? null : displayOffices.map((office) => (
                   <CommandItem
                     key={office.id}
                     value={office.name}
@@ -73,8 +102,22 @@ export function TaxOfficeCombobox({
                       setSearch("")
                     }}
                   >
-                    <div className="flex items-center">
-                      <span>{office.name}</span>
+                    <div className="flex flex-col">
+                      {displayMode === 'name' ? (
+                        <span className="text-sm font-medium">{office.name}</span>
+                      ) : (
+                        (() => {
+                          const parts = office.name.split(' - ')
+                          const code = parts[0]?.trim()
+                          const desc = parts[1]?.trim()
+                          return (
+                            <>
+                              <span className="text-sm font-medium">{code || office.name}</span>
+                              {desc && <span className="text-xs text-muted-foreground">{desc}</span>}
+                            </>
+                          )
+                        })()
+                      )}
                     </div>
                     <Check
                       className={cn(
@@ -84,6 +127,46 @@ export function TaxOfficeCombobox({
                     />
                   </CommandItem>
                 ))}
+                {(search.length < minCharsToSearch && taxOffices.length > maxItemsToShow) && (
+                  <CommandItem key="hint" value="">
+                    <div className="text-muted-foreground text-sm">Aramak için en az {minCharsToSearch} karakter girin</div>
+                  </CommandItem>
+                )}
+                {allowCustom && search.trim() && !filteredOffices.some(o => o.name.toLowerCase() === search.trim().toLowerCase()) && (
+                  <CommandItem
+                    key={`custom-${search}`}
+                    value={search.trim()}
+                    onSelect={() => {
+                      onValueChange(search.trim())
+                      setOpen(false)
+                      setSearch("")
+                    }}
+                  >
+                    <div className="flex flex-col">
+                      {displayMode === 'name' ? (
+                        <span className="text-sm font-medium">{search.trim()}</span>
+                      ) : (
+                        (() => {
+                          const parts = search.trim().split(' - ')
+                          const code = parts[0]?.trim()
+                          const desc = parts[1]?.trim()
+                          return (
+                            <>
+                              <span className="text-sm font-medium">{code}</span>
+                              {desc && <span className="text-xs text-muted-foreground">{desc}</span>}
+                            </>
+                          )
+                        })()
+                      )}
+                    </div>
+                    <Check
+                      className={cn(
+                        "ml-auto h-4 w-4",
+                        value === search.trim() ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                  </CommandItem>
+                )}
               </CommandGroup>
             </CommandList>
           </Command>

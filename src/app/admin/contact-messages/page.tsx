@@ -27,7 +27,7 @@ import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-di
 import { toast } from "sonner"
 import { exportContactMessageToPDF } from "@/lib/pdf-export"
 
-type ContactMessageStatus = 'NEW' | 'PENDING' | 'REPLIED' | 'RESOLVED' | 'new' | 'pending' | 'replied' | 'resolved'
+type ContactMessageStatus = 'NEW' | 'PENDING' | 'REPLIED' | 'RESOLVED'
 
 interface ContactMessage {
   id: string
@@ -75,8 +75,14 @@ export default function ContactMessagesPage() {
     try {
       const response = await fetch('/api/contact-messages')
       if (response.ok) {
-        const data = await response.json()
-        setMessages(data)
+        const data = await response.json() as Array<{ id: string; name: string; email: string; phone: string; subject: string; message: string; status: string; createdAt: string }>
+        const allowed: ContactMessageStatus[] = ['NEW','PENDING','REPLIED','RESOLVED']
+        const normalized = (data || []).map(d => {
+          const up = String(d.status || '').toUpperCase()
+          const status = (allowed as string[]).includes(up) ? (up as ContactMessageStatus) : 'NEW'
+          return { ...d, status }
+        })
+        setMessages(normalized)
       } else {
         toast.error('Mesajlar yüklenirken bir hata oluştu')
       }
@@ -119,7 +125,7 @@ export default function ContactMessagesPage() {
     setIsEditModalOpen(true)
   }
 
-  const handleStatusUpdate = async (messageId: string, newStatus: string) => {
+  const handleStatusUpdate = async (messageId: string, newStatus: ContactMessageStatus) => {
     try {
       const response = await fetch('/api/contact-messages', {
         method: 'PATCH',
@@ -128,12 +134,8 @@ export default function ContactMessagesPage() {
       })
 
       if (response.ok) {
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === messageId 
-              ? { ...msg, status: newStatus } 
-              : msg
-          )
+        setMessages(prev =>
+          prev.map(msg => (msg.id === messageId ? { ...msg, status: newStatus } : msg))
         )
         setIsEditModalOpen(false)
         toast.success('Mesaj durumu başarıyla güncellendi!')

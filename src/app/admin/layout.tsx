@@ -108,10 +108,10 @@ export default function AdminLayout({
 
   return (
     <BreadcrumbProvider>
-      <div className="min-h-screen bg-gray-50" suppressHydrationWarning>
+      <div className="min-h-screen bg-gray-100" suppressHydrationWarning>
       {/* Sidebar */}
       <aside 
-        className={`fixed left-0 top-0 z-40 h-screen ${sidebarWidth} bg-white border-r transition-all duration-300 overflow-hidden`}
+        className={`fixed left-0 top-0 z-40 h-screen ${sidebarWidth} bg-gray-50 border-r border-slate-200 transition-all duration-300 overflow-hidden`}
         style={{ transitionProperty: 'width, transform' }}
       >
         <div className="flex h-full flex-col">
@@ -141,7 +141,7 @@ export default function AdminLayout({
                   className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-primary text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                      : "text-slate-700 hover:bg-primary/10 hover:text-primary"
                   }`}
                   title={sidebarState !== "open" ? item.name : ""}
                 >

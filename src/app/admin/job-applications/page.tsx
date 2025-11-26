@@ -27,7 +27,7 @@ import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-di
 import { toast } from "sonner"
 import { exportJobApplicationToPDF } from "@/lib/pdf-export"
 
-type ApplicationStatus = 'NEW' | 'REVIEWING' | 'INTERVIEWED' | 'REJECTED' | 'ACCEPTED' | 'new' | 'reviewing' | 'interviewed' | 'rejected' | 'accepted'
+type ApplicationStatus = 'NEW' | 'REVIEWING' | 'INTERVIEWED' | 'REJECTED' | 'ACCEPTED'
 
 interface JobApplication {
   id: string
@@ -82,8 +82,14 @@ export default function JobApplicationsPage() {
     try {
       const response = await fetch('/api/job-applications')
       if (response.ok) {
-        const data: JobApplication[] = await response.json()
-        setApplications(data)
+        const data = await response.json() as Array<{ id: string; name: string; email: string; phone: string; position: string; experience: string; education: string; coverLetter?: string; cvFileName?: string; createdAt: string; status: string }>
+        const allowed: ApplicationStatus[] = ['NEW','REVIEWING','INTERVIEWED','REJECTED','ACCEPTED']
+        const normalized: JobApplication[] = (data || []).map(d => {
+          const up = String(d.status || '').toUpperCase()
+          const status = (allowed as string[]).includes(up) ? (up as ApplicationStatus) : 'NEW'
+          return { ...d, status }
+        })
+        setApplications(normalized)
       } else {
         toast.error('Başvurular yüklenirken bir hata oluştu')
       }
@@ -134,7 +140,7 @@ export default function JobApplicationsPage() {
     setIsEditModalOpen(true)
   }
 
-  const handleStatusUpdate = async (applicationId: string, newStatus: string) => {
+  const handleStatusUpdate = async (applicationId: string, newStatus: ApplicationStatus) => {
     try {
       const response = await fetch('/api/job-applications', {
         method: 'PATCH',
@@ -143,13 +149,7 @@ export default function JobApplicationsPage() {
       })
 
       if (response.ok) {
-        setApplications(prev => 
-          prev.map(app => 
-            app.id === applicationId 
-              ? { ...app, status: newStatus } 
-              : app
-          )
-        )
+        setApplications(prev => prev.map(app => (app.id === applicationId ? { ...app, status: newStatus } : app)))
         setIsEditModalOpen(false)
         toast.success('Başvuru durumu başarıyla güncellendi!')
       } else {

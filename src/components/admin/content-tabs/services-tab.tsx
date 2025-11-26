@@ -86,6 +86,8 @@ interface ServiceValue {
   order: number
 }
 
+type EditableService = Omit<Service, 'id'> & { id?: string }
+
 interface SectionData {
   title: string
   paragraph?: string
@@ -211,7 +213,7 @@ export function ServicesTab() {
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
-  const [editingService, setEditingService] = useState<Service | null>(null)
+  const [editingService, setEditingService] = useState<EditableService | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -543,28 +545,30 @@ export function ServicesTab() {
   }
 
   const handleSave = async () => {
+    if (!editingService) return
     if (!editingService.title || !editingService.description) {
       toast.error('Başlık ve açıklama zorunludur')
       return
     }
 
     // Sadece local state'i güncelle, database'e kaydetme
-    const payload = {
+    const payload: EditableService = {
       ...editingService,
       features: editingService.features
     }
 
     if (editingService.id && !editingService.id.startsWith('default-')) {
       // Mevcut hizmeti güncelle (local state'te)
+      const updated: Service = { ...payload, id: editingService.id! }
       setServices(services.map(s => 
-        s.id === editingService.id ? payload : s
+        s.id === editingService.id ? updated : s
       ))
       toast.success('Hizmet güncellendi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     } else {
       // Yeni hizmet ekle (local state'te)
-      const newService = {
+      const newService: Service = {
         ...payload,
-        id: `temp-${Date.now()}`, // Geçici ID
+        id: `temp-${Date.now()}`,
         order: services.length
       }
       setServices([...services, newService])
@@ -618,6 +622,7 @@ export function ServicesTab() {
   }
 
   const addFeature = () => {
+    if (!editingService) return
     if (!featureInput.trim()) return
     
     setEditingService({
@@ -628,6 +633,7 @@ export function ServicesTab() {
   }
 
   const removeFeature = (index: number) => {
+    if (!editingService) return
     setEditingService({
       ...editingService,
       features: editingService.features.filter((_, i) => i !== index)
@@ -653,6 +659,7 @@ export function ServicesTab() {
   }
 
   const saveValue = () => {
+    if (!editingValue) return
     if (!editingValue.text.trim()) {
       toast.error("Değer alanı boş olamaz")
       return

@@ -47,7 +47,7 @@ const statusLabels = {
 }
 
 export function EditQuoteRequestModal({ request, isOpen, onClose, onStatusUpdate }: EditQuoteRequestModalProps) {
-  const [selectedStatus, setSelectedStatus] = useState(request?.status || "NEW")
+  const [selectedStatus, setSelectedStatus] = useState<QuoteRequestStatus>(request?.status || "NEW")
 
   if (!request) return null
 
@@ -103,7 +103,7 @@ export function EditQuoteRequestModal({ request, isOpen, onClose, onStatusUpdate
             <Label htmlFor="status" className="text-sm font-medium">
               Yeni Durum Seçin
             </Label>
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <Select value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as QuoteRequestStatus)}>
               <SelectTrigger className="mt-2">
                 <SelectValue placeholder="Durum seçin" />
               </SelectTrigger>

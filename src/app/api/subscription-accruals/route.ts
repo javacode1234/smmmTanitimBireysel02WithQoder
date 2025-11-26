@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import crypto from 'node:crypto'
 
 // Generate monthly subscription accruals for all active customers
 export async function POST() {
@@ -42,7 +43,7 @@ export async function POST() {
         const endMonth = (year === targetYear) ? now.getMonth() : 11 // December or current month
         
         // Create accounting period if it doesn't exist
-        let accountingPeriod = await prisma.accountingPeriod.findFirst({
+        let accountingPeriod = await prisma.accountingperiod.findFirst({
           where: {
             customerId: customer.id,
             year: year
@@ -54,12 +55,14 @@ export async function POST() {
           const startDate = new Date(year, 0, 1) // January 1st
           const endDate = new Date(year, 11, 31) // December 31st
           
-          accountingPeriod = await prisma.accountingPeriod.create({
+          accountingPeriod = await prisma.accountingperiod.create({
             data: {
-              customerId: customer.id,
+              id: crypto.randomUUID(),
+              customer: { connect: { id: customer.id } },
               year: year,
               startDate,
-              endDate
+              endDate,
+              updatedAt: new Date()
             }
           })
         }
@@ -72,7 +75,7 @@ export async function POST() {
         // Generate accruals for each month in the range
         for (let month = startMonth; month <= endMonth; month++) {
           // Check if an accrual already exists for this customer and month
-          const existingAccrual = await prisma.subscriptionAccrual.findFirst({
+          const existingAccrual = await prisma.subscriptionaccrual.findFirst({
             where: {
               customerId: customer.id,
               accountingPeriodId: accountingPeriod.id,
@@ -88,13 +91,15 @@ export async function POST() {
             // Create the accrual for this month (due at the end of the month)
             const dueDate = new Date(year, month, 28) // Due at the end of the month
             
-            const accrual = await prisma.subscriptionAccrual.create({
+            const accrual = await prisma.subscriptionaccrual.create({
               data: {
+                id: crypto.randomUUID(),
                 customerId: customer.id,
                 accountingPeriodId: accountingPeriod.id,
                 amount: feeAmount,
                 dueDate,
-                description: `${year} ${getTurkishMonthName(month + 1)} ayı aidatı`
+                description: `${year} ${getTurkishMonthName(month + 1)} ayı aidatı`,
+                updatedAt: new Date()
               }
             })
             
@@ -150,32 +155,27 @@ export async function GET(request: NextRequest) {
     
     // If year parameter is "all", get all accruals for the customer
     if (year === "all") {
-      const accruals = await prisma.subscriptionAccrual.findMany({
+      const accruals = await prisma.subscriptionaccrual.findMany({
         where: {
           customerId
         },
         orderBy: {
           dueDate: 'asc'
         },
-        include: {
-          accountingPeriod: true
-        }
+        // no include to avoid type issues; client uses fields from accruals
       })
       
       return NextResponse.json(accruals)
     }
     
-    const accruals = await prisma.subscriptionAccrual.findMany({
-      where: {
-        customerId,
-        accountingPeriod: {
-          year: year ? parseInt(year) : new Date().getFullYear()
-        }
-      },
-      orderBy: {
-        dueDate: 'asc'
-      }
-    })
+    const targetYear = year ? parseInt(year) : new Date().getFullYear()
+    const ap = await prisma.accountingperiod.findFirst({ where: { customerId, year: targetYear } })
+    const accruals = ap
+      ? await prisma.subscriptionaccrual.findMany({
+          where: { customerId, accountingPeriodId: ap.id },
+          orderBy: { dueDate: 'asc' }
+        })
+      : []
     
     return NextResponse.json(accruals)
   } catch (error) {
@@ -250,7 +250,7 @@ export async function PUT(request: NextRequest) {
       console.log(`Processing year ${year}: months ${startMonth} to ${endMonth}`)
       
       // Create accounting period if it doesn't exist
-      let accountingPeriod = await prisma.accountingPeriod.findFirst({
+      let accountingPeriod = await prisma.accountingperiod.findFirst({
         where: {
           customerId: customer.id,
           year: year
@@ -264,12 +264,14 @@ export async function PUT(request: NextRequest) {
         
         console.log(`Creating accounting period for year ${year}`)
         
-        accountingPeriod = await prisma.accountingPeriod.create({
+        accountingPeriod = await prisma.accountingperiod.create({
           data: {
-            customerId: customer.id,
+            id: crypto.randomUUID(),
+            customer: { connect: { id: customer.id } },
             year: year,
             startDate,
-            endDate
+            endDate,
+            updatedAt: new Date()
           }
         })
       }
@@ -287,7 +289,7 @@ export async function PUT(request: NextRequest) {
       // Generate accruals for each month in the range
       for (let month = startMonth; month <= endMonth; month++) {
         // Check if an accrual already exists for this customer and month
-        const existingAccrual = await prisma.subscriptionAccrual.findFirst({
+        const existingAccrual = await prisma.subscriptionaccrual.findFirst({
           where: {
             customerId: customer.id,
             accountingPeriodId: accountingPeriod.id,
@@ -305,13 +307,15 @@ export async function PUT(request: NextRequest) {
           
           console.log(`Creating accrual for ${year}-${month + 1}: amount ${feeAmount}`)
           
-          const accrual = await prisma.subscriptionAccrual.create({
+          const accrual = await prisma.subscriptionaccrual.create({
             data: {
+              id: crypto.randomUUID(),
               customerId: customer.id,
               accountingPeriodId: accountingPeriod.id,
               amount: feeAmount,
               dueDate,
-              description: `${year} ${getTurkishMonthName(month + 1)} ayı aidatı`
+              description: `${year} ${getTurkishMonthName(month + 1)} ayı aidatı`,
+              updatedAt: new Date()
             }
           })
           

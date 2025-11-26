@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { randomUUID } from 'crypto'
 
 // Carry forward balances from one period to the next
 export async function POST(request: NextRequest) {
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Find the source period
-    const fromPeriod = await prisma.accountingPeriod.findFirst({
+    const fromPeriod = await prisma.accountingperiod.findFirst({
       where: {
         customerId,
         year: fromYear
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Find or create the target period
-    let toPeriod = await prisma.accountingPeriod.findFirst({
+    let toPeriod = await prisma.accountingperiod.findFirst({
       where: {
         customerId,
         year: toYear
@@ -40,19 +41,21 @@ export async function POST(request: NextRequest) {
       const startDate = new Date(toYear, 0, 1) // January 1st
       const endDate = new Date(toYear, 11, 31) // December 31st
       
-      toPeriod = await prisma.accountingPeriod.create({
+      toPeriod = await prisma.accountingperiod.create({
         data: {
-          customerId,
+          id: randomUUID(),
+          customer: { connect: { id: customerId } },
           year: toYear,
           startDate,
-          endDate
+          endDate,
+          updatedAt: new Date()
         }
       })
     }
     
     // Calculate the total balance from the source period
     // This would be the sum of all unpaid accruals
-    const unpaidAccruals = await prisma.subscriptionAccrual.findMany({
+    const unpaidAccruals = await prisma.subscriptionaccrual.findMany({
       where: {
         customerId,
         accountingPeriodId: fromPeriod.id,
@@ -76,7 +79,7 @@ export async function POST(request: NextRequest) {
     for (const accrual of unpaidAccruals) {
       const accrualTotal = Number(accrual.amount)
       
-      const updated = await prisma.subscriptionAccrual.update({
+      const updated = await prisma.subscriptionaccrual.update({
         where: {
           id: accrual.id
         },
@@ -92,20 +95,22 @@ export async function POST(request: NextRequest) {
     // Create a new accrual in the target period for the carried forward balance
     let carryForwardAccrual = null
     if (totalUnpaid > 0) {
-      carryForwardAccrual = await prisma.subscriptionAccrual.create({
+      carryForwardAccrual = await prisma.subscriptionaccrual.create({
         data: {
+          id: randomUUID(),
           customerId,
           accountingPeriodId: toPeriod.id,
           amount: totalUnpaid,
           dueDate: new Date(toYear, 0, 28), // Due at the end of January
           description: `${fromYear} yılından devreden bakiye`,
-          carryForwardAmount: 0
+          carryForwardAmount: 0,
+          updatedAt: new Date()
         }
       })
     }
     
     // Update the source period status to CLOSED
-    await prisma.accountingPeriod.update({
+    await prisma.accountingperiod.update({
       where: {
         id: fromPeriod.id
       },
@@ -145,22 +150,9 @@ export async function GET(request: NextRequest) {
     }
     
     // Get the latest accounting period
-    const latestPeriod = await prisma.accountingPeriod.findFirst({
-      where: {
-        customerId
-      },
-      orderBy: {
-        year: 'desc'
-      },
-      include: {
-        accruals: {
-          where: {
-            carryForwardToPeriodId: {
-              not: null
-            }
-          }
-        }
-      }
+    const latestPeriod = await prisma.accountingperiod.findFirst({
+      where: { customerId },
+      orderBy: { year: 'desc' }
     })
     
     if (!latestPeriod) {
@@ -171,7 +163,9 @@ export async function GET(request: NextRequest) {
     }
     
     // Check if there are any accruals that have been carried forward
-    const carriedForwardAccruals = latestPeriod.accruals
+    const carriedForwardAccruals = await prisma.subscriptionaccrual.findMany({
+      where: { accountingPeriodId: latestPeriod.id, carryForwardToPeriodId: { not: null } }
+    })
     
     return NextResponse.json({
       hasCarryForward: carriedForwardAccruals.length > 0,

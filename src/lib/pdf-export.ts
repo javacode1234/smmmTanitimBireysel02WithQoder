@@ -150,7 +150,7 @@ export const exportJobApplicationToPDF = (application: JobApplication) => {
   doc.text('ON YAZI', 20, y)
   y += 7
   doc.setFontSize(10)
-  const splitCoverLetter = doc.splitTextToSize(application.coverLetter, 170)
+  const splitCoverLetter = doc.splitTextToSize(application.coverLetter || "", 170)
   doc.text(splitCoverLetter, 20, y)
   
   // CV File Info

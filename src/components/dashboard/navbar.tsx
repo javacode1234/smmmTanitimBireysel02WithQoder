@@ -129,7 +129,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
     }
   }, [userType])
 
-  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, targetPath: string) => {
+  const handleNavigation = (e: React.MouseEvent<HTMLElement>, targetPath: string) => {
     e.preventDefault()
     
     if (isNavigating || pathname === targetPath) return
@@ -153,7 +153,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
 
   return (
     <div 
-      className={`h-16 border-b bg-white flex items-center justify-between px-8 fixed top-0 right-0 z-20 transition-all duration-300`}
+      className={`h-16 border-b border-slate-200 bg-gray-50 flex items-center justify-between px-8 fixed top-0 right-0 z-20 transition-all duration-300`}
       style={{ left: sidebarWidth }}
     >
       <div className="flex items-center gap-4">
@@ -162,7 +162,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
           variant="ghost"
           size="icon"
           onClick={onToggleSidebar}
-          className="hover:bg-gray-100"
+          className="hover:bg-primary/10"
         >
           <Menu className="h-5 w-5" />
         </Button>

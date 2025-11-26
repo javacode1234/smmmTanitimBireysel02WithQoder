@@ -108,7 +108,7 @@ export function EditJobApplicationModal({ application, isOpen, onClose, onStatus
             <Label htmlFor="status" className="text-sm font-medium">
               Yeni Durum Seçin
             </Label>
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <Select value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as ApplicationStatus)}>
               <SelectTrigger className="mt-2">
                 <SelectValue placeholder="Durum seçin" />
               </SelectTrigger>

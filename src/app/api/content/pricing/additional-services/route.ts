@@ -34,7 +34,7 @@ function getDefaultServices() {
 
 export async function GET() {
   try {
-    const services = await prisma.additionalService.findMany({
+    const services = await prisma.additionalservice.findMany({
       orderBy: {
         order: 'asc'
       }

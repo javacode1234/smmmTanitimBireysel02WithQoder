@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Download, Mail, Phone, Calendar, FileText, Briefcase, GraduationCap, Clock } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 
-type ApplicationStatus = 'NEW' | 'REVIEWING' | 'INTERVIEWED' | 'REJECTED' | 'ACCEPTED' | 'new' | 'reviewing' | 'interviewed' | 'rejected' | 'accepted'
+type ApplicationStatus = 'NEW' | 'REVIEWING' | 'INTERVIEWED' | 'REJECTED' | 'ACCEPTED'
 
 interface JobApplication {
   id: string
@@ -45,12 +45,6 @@ const statusColors = {
   INTERVIEWED: "bg-purple-100 text-purple-800",
   REJECTED: "bg-red-100 text-red-800",
   ACCEPTED: "bg-green-100 text-green-800",
-  // Lowercase variants for compatibility
-  new: "bg-blue-100 text-blue-800",
-  reviewing: "bg-yellow-100 text-yellow-800",
-  interviewed: "bg-purple-100 text-purple-800",
-  rejected: "bg-red-100 text-red-800",
-  accepted: "bg-green-100 text-green-800",
 }
 
 const statusLabels = {
@@ -59,12 +53,6 @@ const statusLabels = {
   INTERVIEWED: "Görüşme Yapıldı",
   REJECTED: "Reddedildi",
   ACCEPTED: "Kabul Edildi",
-  // Lowercase variants for compatibility
-  new: "Yeni",
-  reviewing: "İnceleniyor",
-  interviewed: "Görüşme Yapıldı",
-  rejected: "Reddedildi",
-  accepted: "Kabul Edildi",
 }
 
 export function JobApplicationModal({ application, isOpen, onClose, onExportPDF }: JobApplicationModalProps) {

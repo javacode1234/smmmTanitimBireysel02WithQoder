@@ -218,6 +218,7 @@ export function AboutTab() {
 
   // Handle feature changes
   const handleFeatureChange = (field: string, value: string | boolean) => {
+    if (!editingFeature) return
     setEditingFeature({ ...editingFeature, [field]: value })
   }
 

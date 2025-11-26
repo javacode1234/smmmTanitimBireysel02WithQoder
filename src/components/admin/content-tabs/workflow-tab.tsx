@@ -407,6 +407,7 @@ export function WorkflowTab() {
   }
 
   const handleSave = async () => {
+    if (!editingStep) return
     if (!editingStep.number || !editingStep.title || !editingStep.description) {
       toast.error('Numara, başlık ve açıklama zorunludur')
       return
@@ -415,12 +416,13 @@ export function WorkflowTab() {
     const payload = { ...editingStep }
 
     if (editingStep.id && !editingStep.id.startsWith('default-')) {
+      const updated: WorkflowStep = { ...payload, id: editingStep.id! }
       setSteps(steps.map(s => 
-        s.id === editingStep.id ? payload : s
+        s.id === editingStep.id ? updated : s
       ))
       toast.success('Adım güncellendi (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     } else {
-      const newStep = {
+      const newStep: WorkflowStep = {
         ...payload,
         id: `temp-${Date.now()}`,
         order: steps.length

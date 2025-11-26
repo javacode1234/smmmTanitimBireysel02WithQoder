@@ -177,6 +177,8 @@ model customer {
   email                      String?
   address                    String?
   city                       String?
+  district                   String?
+  mainActivityCode           String?
   facebookUrl                String?
   xUrl                       String?
   linkedinUrl                String?
@@ -206,6 +208,8 @@ model customer {
   passwords                  String?                      @db.LongText
   taxPeriodType              customer_taxPeriodType?
   declarations               String?                      @db.LongText
+  authorizedPersons          String?                      @db.LongText
+  branches                   String?                      @db.LongText
   hasEmployees               Boolean?                     @default(false)
   employeeCount              Int?                         // New field for insurance employee count
   taxOfficeId                String? 
@@ -749,6 +753,7 @@ enum customer_taxPeriodType {
 model TaxOffice {
   id        String   @id @default(cuid())
   name      String   @unique
+  code      String?  @unique
   city      String?
   district  String?
   createdAt DateTime @default(now())
@@ -757,4 +762,35 @@ model TaxOffice {
 
   @@index([name], map: "TaxOffice_name_idx")
   @@index([city], map: "TaxOffice_city_idx")
+}
+
+model city {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  code      String?    @unique
+  districts district[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model district {
+  id        String   @id @default(cuid())
+  name      String
+  code      String?  @unique
+  cityId    String
+  city      city     @relation(fields: [cityId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cityId, name], map: "district_city_name_unique")
+}
+
+model activitycode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String   @db.Text
+  trName    String?  @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

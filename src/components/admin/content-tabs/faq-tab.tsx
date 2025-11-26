@@ -220,20 +220,23 @@ export function FAQTab() {
   }
 
   const handleSaveFaq = () => {
+    if (!editingFaq) return
     if (!editingFaq.question || !editingFaq.answer) {
       toast.error('Soru ve cevap zorunludur')
       return
     }
     const payload = { ...editingFaq }
     if (editingFaq.id && !editingFaq.id.startsWith('default-')) {
-      setFaqs(faqs.map(f => f.id === editingFaq.id ? payload : f))
+      const updated: FAQ = { ...payload, id: editingFaq.id! } as FAQ
+      setFaqs(faqs.map(f => f.id === editingFaq.id ? updated : f))
       toast.success('Soru güncellendi')
     } else {
-      const newFaq = { ...payload, id: `temp-${Date.now()}`, order: faqs.length }
+      const newFaq: FAQ = { ...payload, id: `temp-${Date.now()}`, order: faqs.length } as FAQ
       setFaqs([...faqs, newFaq])
       toast.success('Yeni soru eklendi')
     }
     setIsFaqDialogOpen(false)
+    setEditingFaq(null)
   }
 
   const handleDeleteFaq = (id: string) => {

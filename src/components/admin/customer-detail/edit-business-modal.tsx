@@ -53,8 +53,8 @@ export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initial
   const [subscriptionFee, setSubscriptionFee] = useState("")
   const [establishmentDate, setEstablishmentDate] = useState("")
   const [taxPeriodType, setTaxPeriodType] = useState("")
-  const [status, setStatus] = useState("ACTIVE")
-  const [onboardingStage, setOnboardingStage] = useState("LEAD")
+  const [status, setStatus] = useState<"ACTIVE" | "INACTIVE">("ACTIVE")
+  const [onboardingStage, setOnboardingStage] = useState<"LEAD" | "PROSPECT" | "CUSTOMER">("LEAD")
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -189,7 +189,7 @@ export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initial
 
           <div>
             <Label htmlFor="status">Durum</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={(v) => setStatus(v as "ACTIVE" | "INACTIVE")}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -202,7 +202,7 @@ export function EditBusinessModal({ isOpen, onClose, onSave, customerId, initial
 
           <div>
             <Label htmlFor="onboardingStage">Müşteri Aşaması</Label>
-            <Select value={onboardingStage} onValueChange={setOnboardingStage}>
+            <Select value={onboardingStage} onValueChange={(v) => setOnboardingStage(v as "LEAD" | "PROSPECT" | "CUSTOMER")}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

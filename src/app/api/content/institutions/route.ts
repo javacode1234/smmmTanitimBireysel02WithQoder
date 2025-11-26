@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
           name: data.name,
           description: data.description,
           url: data.url,
-          logo: data.logo,
+          logo: data.logo ?? '',
           isActive: data.isActive !== undefined ? data.isActive : true,
           order: data.order !== undefined ? data.order : 0,
         },

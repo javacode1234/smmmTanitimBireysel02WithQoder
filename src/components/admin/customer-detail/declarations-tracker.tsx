@@ -86,23 +86,11 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
     return tr.period
   }
   
-  useEffect(() => {
-    fetchTaxReturns()
-  }, [fetchTaxReturns])
-
-  useEffect(() => {
-    setCurrentPage(1) // Reset to first page when filters change
-  }, [yearFilter, monthFilter, typeFilter, statusFilter])
-
-  // Fetch tax returns with current filters
   const fetchTaxReturns = useCallback(async () => {
     setLoading(true)
     try {
-      // Build query parameters
       const params = new URLSearchParams()
       params.append('customerId', customerId)
-      
-      // Use year and month filters separately
       if (monthFilter !== 'all') {
         const [y, m] = monthFilter.split('-')
         params.append('dueDateYear', y)
@@ -110,15 +98,12 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
       } else if (yearFilter !== 'all') {
         params.append('year', yearFilter)
       }
-      
       if (typeFilter !== 'all') {
         params.append('type', typeFilter)
       }
-      
       if (statusFilter !== 'all') {
         params.append('isSubmitted', statusFilter === 'submitted' ? 'true' : 'false')
       }
-      
       const response = await fetch(`/api/tax-returns?${params.toString()}`)
       if (response.ok) {
         const data = await response.json()
@@ -134,6 +119,16 @@ export function DeclarationsTracker({ customerId }: DeclarationsTrackerProps) {
       setLoading(false)
     }
   }, [customerId, yearFilter, monthFilter, typeFilter, statusFilter])
+
+  useEffect(() => {
+    fetchTaxReturns()
+  }, [fetchTaxReturns])
+
+  useEffect(() => {
+    setCurrentPage(1) // Reset to first page when filters change
+  }, [yearFilter, monthFilter, typeFilter, statusFilter])
+
+  // Fetch tax returns with current filters is declared above to avoid usage before declaration
 
   const handleToggleSubmitted = async (taxReturn: TaxReturn) => {
     try {

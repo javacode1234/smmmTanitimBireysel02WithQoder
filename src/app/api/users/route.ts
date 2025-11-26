@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { randomUUID } from "crypto"
+import { user_role } from "@prisma/client"
 import bcrypt from "bcryptjs"
 
 // GET /api/users - Get all users
@@ -42,12 +44,15 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
+    const roleValue = role ? (String(role).toUpperCase() as user_role) : undefined
     const user = await prisma.user.create({
       data: {
+        id: randomUUID(),
         name: name || null,
         email,
         password: hashedPassword,
-        role: role || "CLIENT",
+        ...(roleValue ? { role: roleValue } : {}),
+        updatedAt: new Date(),
       },
       select: {
         id: true,
@@ -79,16 +84,17 @@ export async function PATCH(req: NextRequest) {
     const { name, email, password, role } = body
 
     // Prepare update data
-    const updateData: Partial<{ name: string | null; email: string; password: string; role: string }> = {}
+    const updateData: Partial<{ name: string | null; email: string; password: string; role: user_role; updatedAt: Date }> = {}
     if (name !== undefined) updateData.name = name || null
     if (email) updateData.email = email
-    if (role) updateData.role = role
+    if (role) updateData.role = String(role).toUpperCase() as user_role
     if (password) {
       updateData.password = await bcrypt.hash(password, 10)
     }
+    updateData.updatedAt = new Date()
 
     const user = await prisma.user.update({
-      where: { id },
+      where: { id: String(id) },
       data: updateData,
       select: {
         id: true,

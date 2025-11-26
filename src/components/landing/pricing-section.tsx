@@ -97,7 +97,7 @@ export function PricingSection() {
               .filter((f) => f.isIncluded !== false)
               .map((f) => f.text)
           } else if (Array.isArray(raw)) {
-            featuresArr = raw as string[]
+            featuresArr = raw as unknown as string[]
           }
 
           return { ...plan, features: featuresArr }

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     // If ID is provided, return single tax return
     if (id) {
-      const taxReturn = await prisma.taxReturn.findUnique({
+      const taxReturn = await prisma.taxreturn.findUnique({
         where: { id },
         include: {
           customer: {
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch tax returns
-    const taxReturns = await prisma.taxReturn.findMany({
+    const taxReturns = await prisma.taxreturn.findMany({
       where,
       include: {
         customer: {
@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate (same customer, type, and period)
-    const existing = await prisma.taxReturn.findFirst({
+    const existing = await prisma.taxreturn.findFirst({
       where: {
         customerId: data.customerId,
         type: data.type,
@@ -240,8 +240,9 @@ export async function POST(request: NextRequest) {
     const year = parseInt(periodParts[0])
     const month = periodParts.length > 1 ? parseInt(periodParts[1]) : null
 
-    const taxReturn = await prisma.taxReturn.create({
+    const taxReturn = await prisma.taxreturn.create({
       data: {
+        id: (await import('crypto')).randomUUID(),
         customerId: data.customerId,
         type: data.type,
         period: data.period,
@@ -251,6 +252,7 @@ export async function POST(request: NextRequest) {
         submittedDate: data.submittedDate ? new Date(data.submittedDate) : null,
         isSubmitted: data.isSubmitted || false,
         notes: data.notes || null,
+        updatedAt: new Date(),
       },
       include: {
         customer: {
@@ -291,8 +293,8 @@ export async function PATCH(request: NextRequest) {
       month = periodParts.length > 1 ? parseInt(periodParts[1]) : null
     }
 
-    const taxReturn = await prisma.taxReturn.update({
-      where: { id },
+    const taxReturn = await prisma.taxreturn.update({
+      where: { id: String(id) },
       data: {
         type: data.type,
         period: data.period,
@@ -302,6 +304,7 @@ export async function PATCH(request: NextRequest) {
         submittedDate: data.submittedDate ? new Date(data.submittedDate) : null,
         isSubmitted: data.isSubmitted,
         notes: data.notes,
+        updatedAt: new Date(),
       },
       include: {
         customer: {
@@ -330,13 +333,13 @@ export async function DELETE(request: NextRequest) {
     
     // If ID provided, delete single tax return
     if (id) {
-      await prisma.taxReturn.delete({ where: { id } })
+      await prisma.taxreturn.delete({ where: { id } })
       return NextResponse.json({ success: true })
     }
     
     // If customerId provided, delete all tax returns for customer
     if (customerId) {
-      await prisma.taxReturn.deleteMany({ where: { customerId } })
+      await prisma.taxreturn.deleteMany({ where: { customerId } })
       return NextResponse.json({ success: true })
     }
     

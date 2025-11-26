@@ -48,6 +48,7 @@ const statusLabels = {
 export default function QuoteRequestsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | QuoteRequestStatus>("all")
+  const setStatusFilterValue = (v: string) => setStatusFilter(v as "all" | QuoteRequestStatus)
   const [serviceFilter, setServiceFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedRequest, setSelectedRequest] = useState<QuoteRequest | null>(null)
@@ -239,7 +240,7 @@ export default function QuoteRequestsPage() {
             
             {isMounted && (
               <>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={setStatusFilterValue}>
                   <SelectTrigger className="w-full md:w-[200px]">
                     <SelectValue placeholder="Durum Filtrele" />
                   </SelectTrigger>

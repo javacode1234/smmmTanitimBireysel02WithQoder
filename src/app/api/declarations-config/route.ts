@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { declarationconfig_frequency, declarationconfig_taxPeriodType } from "@prisma/client"
 
 export async function GET() {
   try {
@@ -44,10 +45,11 @@ export async function POST(request: NextRequest) {
 
     const created = await prisma.declarationconfig.create({
       data: {
+        id: (await import('crypto')).randomUUID(),
         type: String(type),
         enabled: Boolean(enabled),
-        frequency: String(frequency).toUpperCase(),
-        taxPeriodType: taxPeriodType ? String(taxPeriodType).toUpperCase() : undefined,
+        frequency: String(frequency).toUpperCase() as declarationconfig_frequency,
+        taxPeriodType: taxPeriodType ? (String(taxPeriodType).toUpperCase() as declarationconfig_taxPeriodType) : undefined,
         dueDay: dueDay != null ? Number(dueDay) : undefined,
         dueHour: dueHour != null ? Number(dueHour) : undefined,
         dueMinute: dueMinute != null ? Number(dueMinute) : undefined,
@@ -57,6 +59,7 @@ export async function POST(request: NextRequest) {
         skipQuarter: !!skipQuarter,
         optional: !!optional,
         quarters: (quarters as string | null) ?? null,
+        updatedAt: new Date(),
       },
     })
 
@@ -75,9 +78,10 @@ export async function POST(request: NextRequest) {
         const { type: t, enabled: e, frequency: f, dueDay: dd, dueHour: dh, dueMinute: dm, dueMonth: dmo, quarterOffset: qo, yearlyCount: yc, skipQuarter: sq } = body2
         const created = await prisma.declarationconfig.create({
           data: {
+            id: (await import('crypto')).randomUUID(),
             type: String(t),
             enabled: Boolean(e),
-            frequency: String(f).toUpperCase(),
+            frequency: String(f).toUpperCase() as declarationconfig_frequency,
             dueDay: dd != null ? Number(dd) : undefined,
             dueHour: dh != null ? Number(dh) : undefined,
             dueMinute: dm != null ? Number(dm) : undefined,
@@ -85,6 +89,7 @@ export async function POST(request: NextRequest) {
             quarterOffset: qo != null ? Number(qo) : undefined,
             yearlyCount: yc != null ? Number(yc) : undefined,
             skipQuarter: !!sq,
+            updatedAt: new Date(),
           },
         })
         return NextResponse.json(created, { status: 201 })
@@ -106,11 +111,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updated = await prisma.declarationconfig.update({
-      where: { id },
+      where: { id: String(id) },
       data: {
         ...data,
-        frequency: data.frequency ? String(data.frequency).toUpperCase() : undefined,
-        taxPeriodType: data.taxPeriodType ? String(data.taxPeriodType).toUpperCase() : undefined,
+        frequency: data.frequency ? (String(data.frequency).toUpperCase() as declarationconfig_frequency) : undefined,
+        taxPeriodType: data.taxPeriodType ? (String(data.taxPeriodType).toUpperCase() as declarationconfig_taxPeriodType) : undefined,
         dueDay: data.dueDay != null ? Number(data.dueDay) : undefined,
         dueHour: data.dueHour != null ? Number(data.dueHour) : undefined,
         dueMinute: data.dueMinute != null ? Number(data.dueMinute) : undefined,
@@ -120,6 +125,7 @@ export async function PATCH(request: NextRequest) {
         skipQuarter: data.skipQuarter != null ? !!data.skipQuarter : undefined,
         optional: data.optional != null ? !!data.optional : undefined,
         quarters: data.quarters !== undefined ? data.quarters : undefined,
+        updatedAt: new Date(),
       },
     })
 
@@ -134,10 +140,10 @@ export async function PATCH(request: NextRequest) {
         const body2: ReqBody = await request.clone().json()
         const { id: updateId, ...updateData } = body2
         const updated = await prisma.declarationconfig.update({
-          where: { id: updateId },
+          where: { id: String(updateId) },
           data: {
             ...updateData,
-            frequency: updateData.frequency ? String(updateData.frequency).toUpperCase() : undefined,
+            frequency: updateData.frequency ? (String(updateData.frequency).toUpperCase() as declarationconfig_frequency) : undefined,
             dueDay: updateData.dueDay != null ? Number(updateData.dueDay) : undefined,
             dueHour: updateData.dueHour != null ? Number(updateData.dueHour) : undefined,
             dueMinute: updateData.dueMinute != null ? Number(updateData.dueMinute) : undefined,
@@ -145,6 +151,7 @@ export async function PATCH(request: NextRequest) {
             quarterOffset: updateData.quarterOffset != null ? Number(updateData.quarterOffset) : undefined,
             yearlyCount: updateData.yearlyCount != null ? Number(updateData.yearlyCount) : undefined,
             skipQuarter: updateData.skipQuarter != null ? !!updateData.skipQuarter : undefined,
+            updatedAt: new Date(),
           },
         })
         return NextResponse.json(updated)

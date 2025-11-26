@@ -490,7 +490,7 @@ const Carousel = React.forwardRef<
         <CarouselErrorBoundary>
           <div
             ref={React.useCallback((node: HTMLDivElement | null) => {
-              carouselRef.current = node;
+              (carouselRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
               if (typeof ref === 'function') {
                 ref(node);
               } else if (ref) {
