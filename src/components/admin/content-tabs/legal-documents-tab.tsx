@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -166,7 +167,7 @@ export function LegalDocumentsTab() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="flex flex-wrap w-full gap-2 bg-muted p-2 rounded-lg">
               {Object.entries(DOCUMENT_TYPES).map(([key, config]) => {
                 const Icon = config.icon
                 return (
@@ -185,8 +186,19 @@ export function LegalDocumentsTab() {
               if (!document) {
                 return (
                   <TabsContent key={key} value={key} className="space-y-4 mt-6">
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-2">
+                          <Skeleton className="h-5 w-40" />
+                          <Skeleton className="h-4 w-64" />
+                        </div>
+                        <Skeleton className="h-9 w-40" />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Skeleton className="h-9" />
+                        <Skeleton className="h-9" />
+                        <Skeleton className="h-9 md:col-span-2" />
+                      </div>
                     </div>
                   </TabsContent>
                 )

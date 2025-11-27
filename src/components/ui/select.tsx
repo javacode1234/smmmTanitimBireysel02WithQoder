@@ -24,7 +24,7 @@ function SelectTrigger({ className, children, ...props }: React.ComponentProps<t
       suppressHydrationWarning
       data-slot="select-trigger"
       className={cn(
-        "ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-8 w-full items-center justify-between rounded-xs border bg-background px-3 text-sm outline-hidden focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-8 w-full items-center justify-between rounded-md border bg-background px-3 text-sm outline-hidden focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
       {...props}

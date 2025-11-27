@@ -17,7 +17,7 @@ export default function ClientDashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Beyannameler
             </CardTitle>
-            <FileText className="h-4 w-4 text-blue-600" />
+            <FileText className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12</div>
@@ -32,7 +32,7 @@ export default function ClientDashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Okunmamış Duyuru
             </CardTitle>
-            <Bell className="h-4 w-4 text-orange-600" />
+            <Bell className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">5</div>
@@ -47,7 +47,7 @@ export default function ClientDashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Toplam Ödeme
             </CardTitle>
-            <CreditCard className="h-4 w-4 text-green-600" />
+            <CreditCard className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₺15,750</div>
@@ -62,7 +62,7 @@ export default function ClientDashboard() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Yaklaşan Hatırlatma
             </CardTitle>
-            <Calendar className="h-4 w-4 text-purple-600" />
+            <Calendar className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">2</div>

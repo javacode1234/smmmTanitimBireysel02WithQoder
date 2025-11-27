@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { Camera, Loader2, MapPin, RotateCcw, Save } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import NextImage from "next/image"
 import { toast } from "sonner"
 
@@ -299,11 +300,55 @@ export function SiteSettingsTab() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Genel Bilgiler</CardTitle>
+            <CardDescription>Site genel ayarlarını düzenleyin</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Skeleton className="h-9" />
+              <Skeleton className="h-9" />
+            </div>
+            <Skeleton className="h-24" />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded" />
+                  <Skeleton className="h-9 w-40" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded" />
+                  <Skeleton className="h-9 w-40" />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>İletişim ve Harita</CardTitle>
+            <CardDescription>Adres ve harita konumu</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Skeleton className="h-9" />
+              <Skeleton className="h-9" />
+            </div>
+            <Skeleton className="h-24" />
+            <div className="grid gap-4 md:grid-cols-3">
+              <Skeleton className="h-9" />
+              <Skeleton className="h-9" />
+              <Skeleton className="h-9" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
@@ -661,12 +706,12 @@ export function SiteSettingsTab() {
         description="Site ayarlarını varsayılan değerlere sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm özelleştirilmiş ayarlar kaybolacaktır."
       />
 
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="flex justify-between items-center flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <Button 
             onClick={() => setIsResetDialogOpen(true)} 
             variant="outline"
-            className="border-amber-600 text-amber-600 hover:bg-amber-50"
+            className="border-amber-600 text-amber-600 hover:bg-amber-50 w-full sm:w-auto"
           >
             <RotateCcw className="mr-2 h-4 w-4" />
             Varsayılan Değerlere Sıfırla
@@ -676,7 +721,7 @@ export function SiteSettingsTab() {
             onClick={saveDefaultsToDatabase} 
             disabled={!isDatabaseEmpty || isSavingDefaults}
             variant="default"
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 w-full sm:w-auto"
           >
             {isSavingDefaults ? (
               <>
@@ -691,7 +736,7 @@ export function SiteSettingsTab() {
             )}
           </Button>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} size="lg" className="bg-green-600 hover:bg-green-700">
+        <Button onClick={handleSave} disabled={isSaving} size="lg" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           <Save className="mr-2 h-4 w-4" />
           Tüm Değişiklikleri Kaydet

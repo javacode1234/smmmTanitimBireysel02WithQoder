@@ -1137,12 +1137,12 @@ export function ServicesTab() {
       </Card>
 
       {/* Actions */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <Button 
             onClick={() => setIsResetDialogOpen(true)} 
             variant="outline"
-            className="border-amber-600 text-amber-600 hover:bg-amber-50"
+            className="border-amber-600 text-amber-600 hover:bg-amber-50 w-full sm:w-auto"
           >
             <RotateCcw className="h-4 w-4 mr-2" />
             Varsayılan Değerlere Sıfırla
@@ -1152,7 +1152,7 @@ export function ServicesTab() {
             onClick={saveDefaultsToDatabase} 
             disabled={!isDatabaseEmpty || isSavingDefaults}
             variant="default"
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 w-full sm:w-auto"
           >
             {isSavingDefaults ? (
               <>
@@ -1168,8 +1168,8 @@ export function ServicesTab() {
           </Button>
         </div>
         
-        <div className="flex items-center gap-4">
-          <Button onClick={saveAllChanges} disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <Button onClick={saveAllChanges} disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

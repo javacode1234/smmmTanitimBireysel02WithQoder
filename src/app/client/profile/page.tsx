@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { User, Mail, Phone, Building, FileText, Camera, Save, Lock } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function ClientProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
@@ -174,8 +175,51 @@ export default function ClientProfilePage() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground">Yükleniyorr...</div>
+        <div className="grid gap-6 md:grid-cols-3">
+          <Card className="md:col-span-1">
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent className="flex flex-col items-center space-y-4">
+              <Skeleton className="h-32 w-32 rounded-full" />
+              <Skeleton className="h-9 w-28" />
+              <Separator />
+              <div className="w-full space-y-2">
+                <Skeleton className="h-4 w-56" />
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="h-4 w-36" />
+              </div>
+              <Separator />
+              <Skeleton className="h-3 w-48" />
+            </CardContent>
+          </Card>
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-60" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <Skeleton className="h-9" />
+                <Skeleton className="h-9" />
+                <Skeleton className="h-9" />
+                <Skeleton className="h-9" />
+                <Skeleton className="h-9" />
+                <Skeleton className="h-9 md:col-span-2" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="md:col-span-3">
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-12" />
+            </CardContent>
+          </Card>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-3">

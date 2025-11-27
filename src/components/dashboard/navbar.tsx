@@ -178,9 +178,9 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
           />
         )}
 
-        <h2 className="text-lg font-semibold text-gray-800">
-          {userType === "admin" ? "Admin Paneli" : "Müşteri Paneli"}
-        </h2>
+        {userType !== "admin" && (
+          <h2 className="text-lg font-semibold text-gray-800">Müşteri Paneli</h2>
+        )}
       </div>
 
       <div className="flex items-center gap-6">

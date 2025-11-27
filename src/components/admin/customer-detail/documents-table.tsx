@@ -160,7 +160,7 @@ export function DocumentsTable({ documents, onUpdate }: DocumentsTableProps) {
         setCurrentPage(1)
         setSearchQuery("")
       }}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="flex flex-wrap w-full gap-2 bg-muted p-2 rounded-lg">
           <TabsTrigger value="incoming">Gelen Evrak</TabsTrigger>
           <TabsTrigger value="outgoing">Giden Evrak</TabsTrigger>
         </TabsList>

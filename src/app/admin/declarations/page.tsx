@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { Pencil, Trash2, Plus } from "lucide-react"
@@ -68,6 +69,8 @@ export default function DeclarationsPage() {
   // modal + edit state
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [deletingItem, setDeletingItem] = useState<DeclarationConfig | null>(null)
 
   // filter + pagination
   const [search, setSearch] = useState("")
@@ -141,8 +144,8 @@ export default function DeclarationsPage() {
       return false
     }
     
-    if (quarterOffset && (isNaN(Number(quarterOffset)) || Number(quarterOffset) < 1 || Number(quarterOffset) > 3)) {
-      toast.error("Çeyrek offset değeri 1-3 arasında olmalıdır")
+  if (quarterOffset && (isNaN(Number(quarterOffset)) || Number(quarterOffset) < 1 || Number(quarterOffset) > 12)) {
+      toast.error("Çeyrek offset değeri 1-12 arasında olmalıdır")
       return false
     }
     
@@ -238,14 +241,18 @@ export default function DeclarationsPage() {
     }
   }
 
-  // Frequency options
+  
   const frequencyOptions = [
     { value: "MONTHLY", label: "Aylık" },
     { value: "QUARTERLY", label: "3 Aylık" },
     { value: "YEARLY", label: "Yıllık" }
   ]
-
-  // Tax period type options
+  
+  const followingMonthOptions = Array.from({ length: 12 }, (_, i) => ({
+    value: String(i + 1),
+    label: `Dönemi izleyen ${i + 1}. ay`
+  }))
+  
   const taxPeriodTypeOptions = [
     { value: "NORMAL", label: "Normal Dönem (Ocak-Aralık)" },
     { value: "SPECIAL", label: "Özel Dönem" }
@@ -272,7 +279,7 @@ export default function DeclarationsPage() {
 
           <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5">
                 <div className="space-y-2">
                   <Label htmlFor="declaration-type">Beyanname Türü *</Label>
                   <Input 
@@ -280,13 +287,17 @@ export default function DeclarationsPage() {
                     value={type} 
                     onChange={e => setType(e.target.value)} 
                     placeholder="Örn: KDV Beyannamesi" 
+                    className="w-full"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="frequency">Sıklık</Label>
+                  <Label htmlFor="period-type">Dönem Tipi</Label>
                   <Select value={frequency} onValueChange={setFrequency}>
-                    <SelectTrigger id="frequency">
-                      <SelectValue />
+                    <SelectTrigger id="period-type">
+                      <SelectValue placeholder="Seçiniz" />
                     </SelectTrigger>
                     <SelectContent>
                       {frequencyOptions.map(option => (
@@ -297,26 +308,6 @@ export default function DeclarationsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="tax-period-type">Dönem Tipi</Label>
-                  <Select value={taxPeriodType} onValueChange={setTaxPeriodType}>
-                    <SelectTrigger id="tax-period-type">
-                      <SelectValue placeholder="Seçiniz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {taxPeriodTypeOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">Sadece Kurumlar Vergisi ve Gelir Vergisi için</p>
-                </div>
-                
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2">
                     <Switch 
@@ -344,7 +335,35 @@ export default function DeclarationsPage() {
 
               <div className="border rounded-lg p-4 bg-muted/10">
                 <h3 className="font-medium mb-3">Zamanlama Ayarları</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Dönemi İzleyen Ay</Label>
+                  {frequency === "QUARTERLY" ? (
+                    <Select value={quarterOffset} onValueChange={setQuarterOffset}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seçiniz" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {followingMonthOptions.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Select value={dueMonth} onValueChange={setDueMonth}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seçiniz" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {followingMonthOptions.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <p className="text-xs text-muted-foreground">Dönem bitiminden sonra kaçıncı ayda verilmesi gerektiğini seçin.</p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                   <div className="space-y-2">
                     <Label htmlFor="due-day">Son Gün</Label>
                     <Input 
@@ -382,40 +401,12 @@ export default function DeclarationsPage() {
                     />
                   </div>
                 </div>
-                
-                <div className="mt-4">
-                  <Label htmlFor="due-month">Ay (Yıllık için)</Label>
-                  <Input 
-                    id="due-month"
-                    value={dueMonth} 
-                    onChange={e => setDueMonth(e.target.value)} 
-                    placeholder="1-12" 
-                    type="number"
-                    min="1"
-                    max="12"
-                  />
-                </div>
               </div>
 
               {frequency === "QUARTERLY" && (
                 <div className="border rounded-lg p-4 bg-muted/10">
                   <h3 className="font-medium mb-3">3 Aylık Beyanname Ayarları</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="quarter-offset">Çeyrek Offset (Ay)</Label>
-                      <Input 
-                        id="quarter-offset"
-                        value={quarterOffset} 
-                        onChange={e => setQuarterOffset(e.target.value)} 
-                        placeholder="Örn: 1" 
-                        type="number"
-                        min="1"
-                        max="3"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Dönem bitiminden sonra kaç ay içinde verilmeli (örn: 1 = sonraki ay)
-                      </p>
-                    </div>
                     
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
@@ -486,6 +477,23 @@ export default function DeclarationsPage() {
         </DialogContent>
       </Dialog>
 
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false)
+          setTimeout(() => setDeletingItem(null), 0)
+        }}
+        onConfirm={() => {
+          if (deletingItem) {
+            removeItem(deletingItem.id)
+          }
+          setIsDeleteDialogOpen(false)
+          setDeletingItem(null)
+        }}
+        title="Beyannameyi Sil"
+        description={deletingItem ? `${deletingItem.type} beyannamesini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.` : "Silme işlemini onaylıyor musunuz?"}
+      />
+
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -555,9 +563,8 @@ export default function DeclarationsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Beyanname Türü</TableHead>
-                  <TableHead>Sıklık</TableHead>
-                  <TableHead>Zamanlama</TableHead>
                   <TableHead>Dönem Tipi</TableHead>
+                  <TableHead>Zamanlama</TableHead>
                   <TableHead>Aktif</TableHead>
                   <TableHead className="text-right">İşlemler</TableHead>
                 </TableRow>
@@ -565,7 +572,7 @@ export default function DeclarationsPage() {
               <TableBody>
                 {(() => {
                   if (loading) {
-                    return (<TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Yükleniyor...</TableCell></TableRow>)
+                    return (<TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">Yükleniyor...</TableCell></TableRow>)
                   }
                   const q = search.toLowerCase()
                   let filtered = items.filter((i) => (i.type || "").toLowerCase().includes(q))
@@ -576,7 +583,7 @@ export default function DeclarationsPage() {
                   }
                   
                   if (filtered.length === 0) {
-                    return (<TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Tanım bulunamadı</TableCell></TableRow>)
+                    return (<TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">Tanım bulunamadı</TableCell></TableRow>)
                   }
                   const start = (currentPage - 1) * pageSize
                   const pageItems = filtered.slice(start, start + pageSize)
@@ -585,10 +592,21 @@ export default function DeclarationsPage() {
                       <TableCell className="font-medium">{item.type}</TableCell>
                       <TableCell>{getFrequencyLabel(item.frequency)}</TableCell>
                       <TableCell>
-                        {item.dueDay && `${item.dueDay}/${item.dueHour || 0}/${item.dueMinute || 0}`}
-                        {item.dueMonth && ` Ay: ${item.dueMonth}`}
+                        {(() => {
+                          const follow = item.frequency === 'QUARTERLY' ? item.quarterOffset : item.dueMonth
+                          const primary = follow ? `Dönemi izleyen ${follow}. ay` : '-'
+                          const hasTime = item.dueDay || item.dueHour || item.dueMinute
+                          const timeText = `Son: ${item.dueDay || '-'} / ${(item.dueHour ?? 0)}:${(item.dueMinute ?? 0)}`
+                          return (
+                            <div className="space-y-1">
+                              <div>{primary}</div>
+                              {hasTime && (
+                                <div className="text-xs text-muted-foreground">{timeText}</div>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </TableCell>
-                      <TableCell>{item.taxPeriodType ? (item.taxPeriodType === 'NORMAL' ? 'Normal' : 'Özel') : '-'}</TableCell>
                       <TableCell>
                         <Switch checked={item.enabled} onCheckedChange={(v) => toggleEnabled(item.id, v)} />
                       </TableCell>
@@ -629,9 +647,8 @@ export default function DeclarationsPage() {
                             size="icon" 
                             className="h-8 w-8 text-red-600 hover:bg-red-50" 
                             onClick={() => {
-                              if (confirm(`${item.type} beyannamesini silmek istediğinize emin misiniz?`)) {
-                                removeItem(item.id)
-                              }
+                              setDeletingItem(item)
+                              setIsDeleteDialogOpen(true)
                             }}
                           >
                             <Trash2 className="h-4 w-4" />

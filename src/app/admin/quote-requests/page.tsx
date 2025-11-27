@@ -26,6 +26,7 @@ import { EditQuoteRequestModal } from "@/components/admin/edit-quote-request-mod
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { toast } from "sonner"
 import { exportQuoteRequestToPDF } from "@/lib/pdf-export"
+import { Skeleton } from "@/components/ui/skeleton"
 import { QuoteRequest, QuoteRequestStatus } from "@/components/admin/quote-request-modal"
 
 
@@ -303,11 +304,17 @@ export default function QuoteRequestsPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Yükleniyor...
-                    </TableCell>
-                  </TableRow>
+                  Array.from({ length: Math.max(3, itemsPerPage) }).map((_, i) => (
+                    <TableRow key={`skeleton-${i}`}>
+                      <TableCell className="font-medium"><Skeleton className="h-4 w-40" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
+                    </TableRow>
+                  ))
                 ) : paginatedData.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">

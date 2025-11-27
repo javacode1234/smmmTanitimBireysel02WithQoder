@@ -109,7 +109,7 @@ export function TestimonialsSection() {
   }
 
   return (
-    <section id="testimonials" className="py-12 px-4 bg-gradient-to-b from-violet-50 via-white to-pink-50">
+    <section id="testimonials" className="py-12 px-4 bg-gradient-to-b from-primary/10 via-background to-primary/20">
       <div className="container mx-auto">
         {/* Header */}
         <motion.div
@@ -119,7 +119,7 @@ export function TestimonialsSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-10"
         >
-          <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">
             {sectionData.title}
           </h2>
           <p className="text-sm text-muted-foreground max-w-3xl mx-auto">
@@ -136,7 +136,7 @@ export function TestimonialsSection() {
             onClick={prevSlide}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 lg:-translate-x-16 z-20 h-12 w-12 rounded-full bg-red-600 border-2 border-red-600 shadow-xl hover:bg-red-700 hover:border-red-700 hover:scale-110 transition-all duration-300"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 lg:-translate-x-16 z-20 h-12 w-12 rounded-full bg-primary border-2 border-primary shadow-xl hover:bg-primary/90 hover:border-primary/90 hover:scale-110 transition-all duration-300"
           >
             <ChevronLeft className="h-6 w-6 text-white" />
           </Button>
@@ -148,7 +148,7 @@ export function TestimonialsSection() {
             onClick={nextSlide}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 lg:translate-x-16 z-20 h-12 w-12 rounded-full bg-red-600 border-2 border-red-600 shadow-xl hover:bg-red-700 hover:border-red-700 hover:scale-110 transition-all duration-300"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 lg:translate-x-16 z-20 h-12 w-12 rounded-full bg-primary border-2 border-primary shadow-xl hover:bg-primary/90 hover:border-primary/90 hover:scale-110 transition-all duration-300"
           >
             <ChevronRight className="h-6 w-6 text-white" />
           </Button>
@@ -174,7 +174,7 @@ export function TestimonialsSection() {
                   <CardContent className="pt-8 pb-8 px-12 text-center">
                     {/* Quote Icon */}
                     <div className="mb-4 flex justify-center">
-                      <Quote className="h-10 w-10 text-blue-600 opacity-20" />
+                      <Quote className="h-10 w-10 text-primary opacity-20" />
                     </div>
 
                     {/* Rating */}
@@ -203,7 +203,7 @@ export function TestimonialsSection() {
                         <div className="font-semibold text-gray-900">{testimonial.name}</div>
                         <div className="text-sm text-muted-foreground">{testimonial.position}</div>
                         {testimonial.company && (
-                          <div className="text-sm text-blue-600">{testimonial.company}</div>
+                          <div className="text-sm text-primary">{testimonial.company}</div>
                         )}
                       </div>
                     </div>
@@ -225,7 +225,7 @@ export function TestimonialsSection() {
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
               className={`h-2 rounded-full transition-all duration-300 ${
-                index === activeIndex ? 'w-8 bg-blue-600' : 'w-2 bg-gray-300 hover:bg-gray-400'
+                index === activeIndex ? 'w-8 bg-primary' : 'w-2 bg-gray-300 hover:bg-gray-400'
               }`}
               aria-label={`Go to testimonial ${index + 1}`}
             />
@@ -241,19 +241,19 @@ export function TestimonialsSection() {
           className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto"
         >
           <div className="text-center">
-            <div className="text-4xl font-bold text-blue-600 mb-2">500+</div>
+            <div className="text-4xl font-bold text-primary mb-2">500+</div>
             <div className="text-sm text-muted-foreground">Mutlu Müşteri</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-bold text-blue-600 mb-2">%99</div>
+            <div className="text-4xl font-bold text-primary mb-2">%99</div>
             <div className="text-sm text-muted-foreground">Memnuniyet Oranı</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-bold text-blue-600 mb-2">15+</div>
+            <div className="text-4xl font-bold text-primary mb-2">15+</div>
             <div className="text-sm text-muted-foreground">Yıllık Deneyim</div>
           </div>
           <div className="text-center">
-            <div className="text-4xl font-bold text-blue-600 mb-2">24/7</div>
+            <div className="text-4xl font-bold text-primary mb-2">24/7</div>
             <div className="text-sm text-muted-foreground">Destek Hizmeti</div>
           </div>
         </motion.div>

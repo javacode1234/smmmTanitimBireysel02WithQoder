@@ -83,7 +83,7 @@ export function WorkflowSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-10"
         >
-          <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">
             {sectionData.title}
           </h2>
           <p className="text-sm text-muted-foreground max-w-3xl mx-auto">
@@ -121,7 +121,7 @@ export function WorkflowSection() {
                 </motion.div>
                 {index < steps.length - 1 && (
                   <motion.div initial={{ opacity: 0, scale: 0 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.3, delay: index * 0.15 + 0.3 }} className="mx-2">
-                    <ArrowRight className="h-8 w-8 text-blue-400" />
+                    <ArrowRight className="h-8 w-8 text-primary" />
                   </motion.div>
                 )}
               </div>
@@ -154,7 +154,7 @@ export function WorkflowSection() {
               {index < steps.length - 1 && (
                 <div className="flex justify-center my-4">
                   <motion.div initial={{ opacity: 0, y: -10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.3, delay: index * 0.1 + 0.2 }}>
-                    <ArrowRight className="h-8 w-8 text-blue-400 rotate-90" />
+                    <ArrowRight className="h-8 w-8 text-primary rotate-90" />
                   </motion.div>
                 </div>
               )}
@@ -164,13 +164,13 @@ export function WorkflowSection() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.4 }} className="mt-16 text-center">
-          <div className="inline-flex flex-col sm:flex-row items-center gap-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-6 rounded-2xl shadow-xl">
+          <div className="inline-flex flex-col sm:flex-row items-center gap-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white px-8 py-6 rounded-2xl shadow-xl">
             <div className="text-left">
               <div className="font-bold text-xl mb-1">Hemen Başlayalım!</div>
-              <div className="text-blue-100 text-sm">İlk görüşme tamamen ücretsiz</div>
+              <div className="text-violet-100 text-sm">İlk görüşme tamamen ücretsiz</div>
             </div>
             <ArrowRight className="h-6 w-6 hidden sm:block" />
-            <a href="#contact" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors shadow-lg">İletişime Geçin</a>
+            <a href="#contact" className="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-primary/10 transition-colors shadow-lg">İletişime Geçin</a>
           </div>
         </motion.div>
       </div>

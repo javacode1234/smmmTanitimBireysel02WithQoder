@@ -740,8 +740,8 @@ export function WorkflowTab() {
           </Button>
         </div>
         
-        <div className="flex items-center gap-4">
-          <Button onClick={saveAllChanges} disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700">
+      <div className="flex items-center gap-4 w-full sm:w-auto">
+          <Button onClick={saveAllChanges} disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
             {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

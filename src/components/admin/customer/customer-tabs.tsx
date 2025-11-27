@@ -163,7 +163,7 @@ export function CustomerTabs(props: CustomerTabsProps) {
         <CardContent>
           {mounted && (
           <Tabs value={props.activeTab} onValueChange={props.setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="flex flex-wrap w-full gap-2 bg-muted p-2 rounded-lg">
               <TabsTrigger value="company">Şirket Bilgileri</TabsTrigger>
               <TabsTrigger value="branches">Şube Bilgileri</TabsTrigger>
               <TabsTrigger value="authorized">Yetkili Bilgileri</TabsTrigger>
@@ -690,4 +690,3 @@ export function CustomerTabs(props: CustomerTabsProps) {
     </div>
   );
 }
-

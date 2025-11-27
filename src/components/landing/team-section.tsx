@@ -77,7 +77,7 @@ export function TeamSection() {
   }, [])
 
   return (
-    <section id="team" className="py-12 px-4 bg-gradient-to-b from-violet-50 via-white to-indigo-50">
+    <section id="team" className="py-12 px-4 bg-gradient-to-b from-primary/10 via-background to-primary/20">
       <div className="container mx-auto">
         {/* Header */}
         <motion.div
@@ -87,7 +87,7 @@ export function TeamSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-10"
         >
-          <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">
             {sectionData.title}
           </h2>
           <p className="text-sm text-muted-foreground max-w-3xl mx-auto">
@@ -105,11 +105,11 @@ export function TeamSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <Card className="h-full hover:shadow-xl transition-all duration-300 border-2 hover:border-blue-200 group">
+              <Card className="h-full hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/30 group">
                 <CardContent className="pt-6 text-center">
                   {/* Avatar */}
                   <div className="mb-4 flex justify-center">
-                    <Avatar className="h-24 w-24 ring-4 ring-gray-100 group-hover:ring-blue-200 transition-all">
+                    <Avatar className="h-24 w-24 ring-4 ring-gray-100 group-hover:ring-primary/30 transition-all">
                       {member.avatar ? (
                         <AvatarImage src={member.avatar} />
                       ) : null}
@@ -121,7 +121,7 @@ export function TeamSection() {
 
                   {/* Name and Role */}
                   <h3 className="font-bold text-base mb-1 text-gray-900">{member.name}</h3>
-                  <p className="text-[11px] text-blue-600 font-medium mb-3">{member.position}</p>
+                  <p className="text-[11px] text-primary font-medium mb-3">{member.position}</p>
                   
                   {/* Description */}
                   {member.bio && (
@@ -135,7 +135,7 @@ export function TeamSection() {
                     {member.email && (
                       <a 
                         href={`mailto:${member.email}`}
-                        className="flex items-center justify-center gap-2 text-[11px] text-gray-600 hover:text-blue-600 transition-colors"
+                        className="flex items-center justify-center gap-2 text-[11px] text-gray-600 hover:text-primary transition-colors"
                       >
                         <Mail className="h-3 w-3" />
                         <span>{member.email}</span>
@@ -144,7 +144,7 @@ export function TeamSection() {
                     {member.phone && (
                       <a 
                         href={`tel:${member.phone}`}
-                        className="flex items-center justify-center gap-2 text-[11px] text-gray-600 hover:text-blue-600 transition-colors"
+                        className="flex items-center justify-center gap-2 text-[11px] text-gray-600 hover:text-primary transition-colors"
                       >
                         <Phone className="h-3 w-3" />
                         <span>{member.phone}</span>
@@ -160,9 +160,9 @@ export function TeamSection() {
                           href={member.linkedinUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="h-9 w-9 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center transition-colors"
+                          className="h-9 w-9 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors"
                         >
-                          <Linkedin className="h-4 w-4 text-blue-600" />
+                          <Linkedin className="h-4 w-4 text-primary" />
                         </a>
                       )}
                       {member.xUrl && (
@@ -182,9 +182,9 @@ export function TeamSection() {
                           href={member.facebookUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="h-9 w-9 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center transition-colors"
+                          className="h-9 w-9 rounded-lg bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors"
                         >
-                          <Facebook className="h-4 w-4 text-blue-700" />
+                          <Facebook className="h-4 w-4 text-primary" />
                         </a>
                       )}
                       {member.instagramUrl && (
@@ -221,20 +221,20 @@ export function TeamSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-center bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-8 text-white"
+          className="text-center bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl p-8 text-white"
         >
           <Briefcase className="h-12 w-12 mx-auto mb-4" />
           <h3 className="text-2xl font-bold mb-3">
             Ekibimize Katılmak İster misiniz?
           </h3>
-          <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
+          <p className="text-violet-100 mb-6 max-w-2xl mx-auto">
             Büyüyen ekibimize yeni yetenekler arıyoruz. Alanında uzman, 
             gelişime açık profesyoneller için kapımız her zaman açık.
           </p>
           <Button 
             size="lg"
             onClick={() => setCareerModalOpen(true)}
-            className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg font-semibold"
+            className="bg-white text-primary hover:bg-primary/10 shadow-lg font-semibold"
           >
             <Briefcase className="mr-2 h-5 w-5" />
             Kariyer Fırsatlarını İncele

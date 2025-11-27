@@ -688,13 +688,13 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                 <Textarea value={branchForm.address} onChange={(e) => setBranchForm(prev => ({ ...prev, address: e.target.value }))} placeholder="Adres" rows={3} />
               </div>
             </div>
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mt-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mt-4">
+              <div className="flex flex-wrap items-center gap-3">
                 <Label>Filtre</Label>
-                <Input value={branchFilter} onChange={(e) => { setBranchFilter(e.target.value); setBranchPage(1) }} placeholder="Şube adı, adres, il/ilçe" className="w-64" />
+                <Input value={branchFilter} onChange={(e) => { setBranchFilter(e.target.value); setBranchPage(1) }} placeholder="Şube adı, adres, il/ilçe" className="w-full sm:w-64" />
                 <Label>Sayfa Boyutu</Label>
                 <Select value={String(branchPageSize)} onValueChange={(v) => { setBranchPageSize(parseInt(v)); setBranchPage(1) }}>
-                  <SelectTrigger className="w-24">
+                  <SelectTrigger className="w-full sm:w-24">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -754,7 +754,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                 </TableBody>
               </Table>
             </div>
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex flex-col gap-3 sm:flex-row items-start sm:items-center justify-between mt-4">
               {(() => {
                 const filtered = branches.filter(b => {
                   const q = branchFilter.toLowerCase()
@@ -820,12 +820,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-6">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <Label>Filtre</Label>
-                    <Input value={authorizedFilter} onChange={(e) => { setAuthorizedFilter(e.target.value); setAuthorizedPage(1) }} placeholder="Ad, e-posta veya telefon" className="w-64" />
+                    <Input value={authorizedFilter} onChange={(e) => { setAuthorizedFilter(e.target.value); setAuthorizedPage(1) }} placeholder="Ad, e-posta veya telefon" className="w-full sm:w-64" />
                     <Label>Sayfa Boyutu</Label>
                     <Select value={String(authorizedPageSize)} onValueChange={(v) => { setAuthorizedPageSize(parseInt(v)); setAuthorizedPage(1) }}>
-                      <SelectTrigger className="w-24">
+                      <SelectTrigger className="w-full sm:w-24">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -865,7 +865,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                     </TableBody>
                   </Table>
                 </div>
-                <div className="flex items-center justify-between mt-4">
+                <div className="flex flex-col gap-3 sm:flex-row items-start sm:items-center justify-between mt-4">
                   {(() => {
                     const filtered = authorizedPersons.filter(p => {
                       const q = authorizedFilter.toLowerCase()
@@ -965,12 +965,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
               }}>{noteEditingId ? "Güncelle" : "Ekle"}</Button>
             </div>
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mt-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Label>Filtre</Label>
-                <Input value={noteFilter} onChange={(e) => { setNoteFilter(e.target.value); setNotePage(1) }} placeholder="Başlık veya içerik" className="w-64" />
+                <Input value={noteFilter} onChange={(e) => { setNoteFilter(e.target.value); setNotePage(1) }} placeholder="Başlık veya içerik" className="w-full sm:w-64" />
                 <Label>Sayfa Boyutu</Label>
                 <Select value={String(notePageSize)} onValueChange={(v) => { setNotePageSize(parseInt(v)); setNotePage(1) }}>
-                  <SelectTrigger className="w-24">
+                  <SelectTrigger className="w-full sm:w-24">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1012,7 +1012,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
                 </TableBody>
               </Table>
             </div>
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex flex-col gap-3 sm:flex-row items-start sm:items-center justify-between mt-4">
               {(() => {
                 const filtered = notes.filter(n => {
                   const q = noteFilter.toLowerCase()

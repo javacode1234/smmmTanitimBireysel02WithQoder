@@ -34,6 +34,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import Link from "next/link";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -87,7 +88,7 @@ export default function NewCustomerPage() {
   const [authorizedEditingId, setAuthorizedEditingId] = useState<string | null>(null)
   const [authorizedFilter, setAuthorizedFilter] = useState("")
   const [authorizedPage, setAuthorizedPage] = useState(1)
-  const [authorizedPageSize, setAuthorizedPageSize] = useState(10)
+  const [authorizedPageSize, setAuthorizedPageSize] = useState(5)
   
   // Declarations
   const [declarations] = useState<string[]>([]);
@@ -97,7 +98,7 @@ export default function NewCustomerPage() {
   const [noteForm, setNoteForm] = useState<{ title: string; content: string }>({ title: "", content: "" })
   const [noteFilter, setNoteFilter] = useState("")
   const [notePage, setNotePage] = useState(1)
-  const [notePageSize, setNotePageSize] = useState(10)
+  const [notePageSize, setNotePageSize] = useState(5)
   const [noteEditingId, setNoteEditingId] = useState<string | null>(null)
   
   // Documents
@@ -106,7 +107,13 @@ export default function NewCustomerPage() {
   const [docEditingId, setDocEditingId] = useState<string | null>(null)
   const [docFilter, setDocFilter] = useState("")
   const [docPage, setDocPage] = useState(1)
-  const [docPageSize, setDocPageSize] = useState(10)
+  const [docPageSize, setDocPageSize] = useState(5)
+  const [chambers, setChambers] = useState<Array<{ id: string; chamber: string; registryNo: string; membershipDate: string; membershipEndDate: string; status: 'ACTIVE' | 'PASSIVE' }>>([])
+  const [chamberForm, setChamberForm] = useState<{ chamber: string; registryNo: string; membershipDate: string; membershipEndDate: string; status: 'ACTIVE' | 'PASSIVE' }>({ chamber: "", registryNo: "", membershipDate: "", membershipEndDate: "", status: "ACTIVE" })
+  const [chamberEditingId, setChamberEditingId] = useState<string | null>(null)
+  const [chamberFilter, setChamberFilter] = useState("")
+  const [chamberPage, setChamberPage] = useState(1)
+  const [chamberPageSize, setChamberPageSize] = useState(5)
   
   // Tax offices
   const [taxOffices, setTaxOffices] = useState<Array<{id: string, name: string, city?: string | null, district?: string | null}>>([]);
@@ -117,7 +124,7 @@ export default function NewCustomerPage() {
   const [branchEditingId, setBranchEditingId] = useState<string | null>(null)
   const [branchFilter, setBranchFilter] = useState("")
   const [branchPage, setBranchPage] = useState(1)
-  const [branchPageSize, setBranchPageSize] = useState(10)
+  const [branchPageSize, setBranchPageSize] = useState(5)
   const [cityOptions, setCityOptions] = useState<Array<{ id: string; name: string }>>([])
   const [districtOptions, setDistrictOptions] = useState<Array<{ id: string; name: string }>>([])
   const [companyDistrictOptions, setCompanyDistrictOptions] = useState<Array<{ id: string; name: string }>>([])
@@ -126,7 +133,13 @@ export default function NewCustomerPage() {
   const [websiteUrl, setWebsiteUrl] = useState("")
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
   const [activityCodeSearch, setActivityCodeSearch] = useState("")
-  const [activityModalTarget, setActivityModalTarget] = useState<'main' | 'branch'>('main')
+  const [activityModalTarget, setActivityModalTarget] = useState<'main' | 'branch' | 'activity'>('main')
+  const [activities, setActivities] = useState<Array<{ id: string; branchName: string; activityCode: string; startDate: string; endDate: string; status: 'ACTIVE' | 'PASSIVE' }>>([])
+  const [activityForm, setActivityForm] = useState<{ branchName: string; activityCode: string; startDate: string; endDate: string; status: 'ACTIVE' | 'PASSIVE' }>({ branchName: "", activityCode: "", startDate: "", endDate: "", status: 'ACTIVE' })
+  const [activityEditingId, setActivityEditingId] = useState<string | null>(null)
+  const [activityFilter, setActivityFilter] = useState("")
+  const [activityPage, setActivityPage] = useState(1)
+  const [activityPageSize, setActivityPageSize] = useState(5)
   
   // Vergi dairelerini DB'den yükle
   useEffect(() => {
@@ -316,6 +329,7 @@ export default function NewCustomerPage() {
           authorizedAddress: firstAuthorized?.address || "",
           authorizationDate: firstAuthorized?.authorizationDate || null,
           authorizationPeriod: firstAuthorized?.authorizationPeriod || "",
+          authorizationEndDate: computeAuthorizationEndDate(firstAuthorized?.authorizationDate || "", firstAuthorized?.authorizationPeriod || "") || null,
           authorizedFacebookUrl,
           authorizedXUrl,
           authorizedLinkedinUrl,
@@ -378,14 +392,16 @@ export default function NewCustomerPage() {
   };
 
   const addAuthorizedPerson = () => {
-    if (!authorizedForm.name || !authorizedForm.tckn || !authorizedForm.email || !authorizedForm.phone) return;
+    if (!authorizedForm.name || !authorizedForm.tckn) return;
     if (authorizedEditingId) {
       setAuthorizedPersons(prev => prev.map(p => p.id === authorizedEditingId ? { ...p, ...authorizedForm } : p))
       setAuthorizedEditingId(null)
     } else {
       const newItem = { id: `temp-${Date.now()}`, ...authorizedForm };
-      setAuthorizedPersons(prev => [...prev, newItem]);
+      setAuthorizedPersons(prev => [newItem, ...prev]);
+      setAuthorizedPage(1)
     }
+    setAuthorizedFilter("")
     setAuthorizedForm({ name: "", tckn: "", email: "", phone: "", address: "", authorizationDate: "", authorizationPeriod: "" });
   };
 
@@ -439,6 +455,22 @@ export default function NewCustomerPage() {
   const authorizedStart = (authorizedCurrentPage - 1) * authorizedPageSize
   const authorizedPaginated = authorizedFiltered.slice(authorizedStart, authorizedStart + authorizedPageSize)
 
+  const computeAuthorizationEndDate = (start: string, monthsStr: string): string => {
+    const m = parseInt(monthsStr, 10)
+    if (!start || !m || Number.isNaN(m)) return ""
+    const parts = start.split('-').map((x) => parseInt(x, 10))
+    const y = parts[0]
+    const mo = parts[1]
+    const d = parts[2]
+    if (!y || !mo || !d) return ""
+    const dt = new Date(y, mo - 1, d)
+    dt.setMonth(dt.getMonth() + m)
+    const yyyy = String(dt.getFullYear())
+    const mm = String(dt.getMonth() + 1).padStart(2, '0')
+    const dd = String(dt.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-6">
@@ -457,11 +489,30 @@ export default function NewCustomerPage() {
           <CardTitle>Müşteri Bilgileri</CardTitle>
         </CardHeader>
         <CardContent>
+          {!mounted && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <Skeleton className="h-8" />
+                <Skeleton className="h-8" />
+                <Skeleton className="h-8 lg:col-span-2" />
+                <Skeleton className="h-8 lg:col-span-2" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                <Skeleton className="h-24 md:col-span-1" />
+                <Skeleton className="h-10 md:col-span-2" />
+                <Skeleton className="h-10 md:col-span-2" />
+              </div>
+            </div>
+          )}
           {mounted && (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4" id="new-customer-tabs">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4" 
+              id="new-customer-tabs">
+            <TabsList className="flex flex-wrap w-full gap-2 bg-primary p-2 rounded-lg">
               <TabsTrigger value="company">Şirket Bilgileri</TabsTrigger>
+              <TabsTrigger value="chamber">Oda Bilgileri</TabsTrigger>
               <TabsTrigger value="branches">Şube Bilgileri</TabsTrigger>
+              <TabsTrigger value="activities">Faaliyet Bilgileri</TabsTrigger>
               <TabsTrigger value="authorized">Yetkili Bilgileri</TabsTrigger>
               <TabsTrigger value="files">Dosyalar</TabsTrigger>
               <TabsTrigger value="declarations">Beyannameler</TabsTrigger>
@@ -469,7 +520,7 @@ export default function NewCustomerPage() {
             </TabsList>
 
             {/* Company Information */}
-            <TabsContent value="company" className="space-y-4 mt-8 [&_[data-slot=input]]:h-8 [&_[data-slot=input]]:py-1 [&_[data-slot=select-trigger]]:h-8 [&_[data-slot=textarea]]:py-1 [&_[data-slot=textarea]]:min-h-14">
+            <TabsContent value="company" className="space-y-4 mt-15 [&_[data-slot=input]]:h-8 [&_[data-slot=input]]:py-1 [&_[data-slot=select-trigger]]:h-8 [&_[data-slot=textarea]]:py-1 [&_[data-slot=textarea]]:min-h-14">
               {/* Logo Upload Area and Company Info in same row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
                 <div className="md:col-span-1">
@@ -519,8 +570,8 @@ export default function NewCustomerPage() {
                   </div>
                 </div>
                 
-                <div className="md:col-span-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                    <div className="md:col-span-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4">
                     <div>
                       <Label htmlFor="companyType">Şirket Türü</Label>
                       <Select value={companyType} onValueChange={(value: "PERSONAL" | "CAPITAL") => setCompanyType(value)}>
@@ -617,7 +668,7 @@ export default function NewCustomerPage() {
                     </div>
                     <div className="md:col-span-4">
                       <Label htmlFor="mainActivityCode">Ana Faaliyet Kodu</Label>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col md:flex-row gap-2">
                         <Textarea
                           id="mainActivityCode"
                           value={mainActivityCode}
@@ -626,7 +677,7 @@ export default function NewCustomerPage() {
                           className="flex-1 min-h-[64px]"
                           rows={3}
                         />
-                    <Button type="button" variant="outline" onClick={() => { setActivityModalTarget('main'); setIsActivityModalOpen(true) }}>
+                    <Button type="button" variant="outline" className="w-full md:w-auto" onClick={() => { setActivityModalTarget('main'); setIsActivityModalOpen(true) }}>
                       <Search className="h-4 w-4 mr-2" />
                       Seç
                     </Button>
@@ -695,7 +746,7 @@ export default function NewCustomerPage() {
               </div>
               
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="subscriptionFee">Aidat</Label>
                   <div className="relative">
@@ -722,124 +773,48 @@ export default function NewCustomerPage() {
                 
                 
                 
-                <div className="flex items-end gap-4">
-                  <div className="flex-1">
-                    <Label htmlFor="hasEmployees">Sigortalı Çalışan</Label>
-                    <div className="flex gap-4 mt-2">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          id="hasEmployeesYes"
-                          name="hasEmployees"
-                          checked={hasEmployees === true}
-                          onChange={() => setHasEmployees(true)}
-                          className="h-4 w-4 text-blue-600"
-                        />
-                        <Label htmlFor="hasEmployeesYes" className="cursor-pointer">Var</Label>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+                      <div className="flex-1">
+                        <Label htmlFor="hasEmployees">Sigortalı Çalışan</Label>
+                        <div className="flex flex-wrap gap-4 mt-2">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              id="hasEmployeesYes"
+                              name="hasEmployees"
+                              checked={hasEmployees === true}
+                              onChange={() => setHasEmployees(true)}
+                              className="h-4 w-4 text-blue-600"
+                            />
+                            <Label htmlFor="hasEmployeesYes" className="cursor-pointer">Var</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              id="hasEmployeesNo"
+                              name="hasEmployees"
+                              checked={hasEmployees === false}
+                              onChange={() => setHasEmployees(false)}
+                              className="h-4 w-4 text-blue-600"
+                            />
+                            <Label htmlFor="hasEmployeesNo" className="cursor-pointer">Yok</Label>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          id="hasEmployeesNo"
-                          name="hasEmployees"
-                          checked={hasEmployees === false}
-                          onChange={() => setHasEmployees(false)}
-                          className="h-4 w-4 text-blue-600"
-                        />
-                        <Label htmlFor="hasEmployeesNo" className="cursor-pointer">Yok</Label>
-              </div>
-            </div>
-          </div>
-          
-          <Dialog open={isActivityModalOpen} onOpenChange={setIsActivityModalOpen}>
-            <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-hidden p-0">
-              <DialogHeader className="sticky top-0 z-10 bg-muted p-4 border-b">
-                <DialogTitle>Faaliyet Kodu Seç</DialogTitle>
-                <DialogDescription>Tablodan faaliyet kodunu seçin veya arama ile bulun.</DialogDescription>
-              </DialogHeader>
-              <div className="flex-1 overflow-x-hidden overflow-y-hidden px-4 py-3 space-y-3">
-                <Input
-                  id="activitySearch"
-                  value={activityCodeSearch}
-                  onChange={(e) => setActivityCodeSearch((e.target.value || "").toLocaleUpperCase('tr-TR'))}
-                  placeholder="Kod veya açıklama ara"
-                  className="uppercase"
-                />
-                <div className="max-h-[40vh] overflow-x-auto overflow-y-auto">
-                  <Table className="w-full min-w-[700px]" containerClassName="overflow-x-visible overflow-y-visible">
-                    <TableHeader className="sticky top-0 z-10 bg-muted">
-                      <TableRow>
-                        <TableHead className="w-[140px] whitespace-nowrap">İşlem</TableHead>
-                        <TableHead className="whitespace-nowrap">Kod</TableHead>
-                        <TableHead className="whitespace-nowrap">Açıklama</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody className="">
-                      {activityCodeOptions
-                        .filter(o => {
-                          const q = activityCodeSearch.trim().toLocaleUpperCase('tr-TR')
-                          if (!q) return true
-                          const name = (o.name || '')
-                          const parts = name.split(' - ')
-                          const code = (parts[0] || '')
-                          const desc = parts.slice(1).join(' - ')
-                          return (
-                            name.toLocaleUpperCase('tr-TR').includes(q) ||
-                            code.toLocaleUpperCase('tr-TR').includes(q) ||
-                            desc.toLocaleUpperCase('tr-TR').includes(q)
-                          )
-                        })
-                        .slice(0, 500)
-                        .map(o => {
-                          const name = o.name || ''
-                          const parts = name.split(' - ')
-                          const code = parts[0] || ''
-                          const desc = parts.slice(1).join(' - ')
-                          return (
-                            <TableRow key={o.id} className="group">
-                              <TableCell>
-                                <Button variant="outline" className="w-full" onClick={() => {
-                                  if (activityModalTarget === 'main') {
-                                    setMainActivityCode(name)
-                                  } else {
-                                    setBranchForm(prev => ({ ...prev, activityCode: name }))
-                                  }
-                                  setIsActivityModalOpen(false)
-                                }}>Seç</Button>
-                              </TableCell>
-                              <TableCell className="font-mono whitespace-nowrap">{code}</TableCell>
-                              <TableCell className="whitespace-nowrap relative">
-                                {desc || name}
-                                <div className="hidden group-hover:block absolute left-0 top-full z-50 bg-amber-50 text-amber-950 border border-amber-200 dark:bg-amber-100/10 dark:text-amber-200 dark:border-amber-200/40 rounded-md shadow-md mt-1 max-w-[600px] p-2 whitespace-pre-wrap break-words overflow-x-auto overflow-y-auto">
-                                  {desc || name}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-              <DialogFooter className="sticky bottom-0 z-10 bg-muted p-4 border-t">
-                <Button variant="outline" onClick={() => setIsActivityModalOpen(false)}>Kapat</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-                  {hasEmployees && (
-                    <div className="flex-1">
-                      <Label htmlFor="employeeCount">Sigortalı Sayısı</Label>
-                      <Input
-                        id="employeeCount"
-                        type="number"
-                        value={employeeCount || ""}
-                        onChange={(e) => setEmployeeCount(e.target.value ? parseInt(e.target.value) : null)}
-                        placeholder="0"
-                        min="0"
-                      />
+                      {hasEmployees && (
+                        <div className="flex-1">
+                          <Label htmlFor="employeeCount">Sigortalı Sayısı</Label>
+                          <Input
+                            id="employeeCount"
+                            type="number"
+                            value={employeeCount || ""}
+                            onChange={(e) => setEmployeeCount(e.target.value ? parseInt(e.target.value) : null)}
+                            placeholder="0"
+                            min="0"
+                          />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
                 
                 <div>
                   <Label htmlFor="status">Durum</Label>
@@ -868,9 +843,10 @@ export default function NewCustomerPage() {
                   </Select>
                 </div>
               </div>
+              <hr className="my-4" />
               <div>
                 <h3 className="text-base font-medium mb-3">Firma Sosyal Medya Hesapları</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <Label htmlFor="facebookUrl">Facebook</Label>
                     <div className="relative">
@@ -949,6 +925,427 @@ export default function NewCustomerPage() {
                   </div>
 
                 </div>
+              </div>
+              <hr className="my-4" />
+          </TabsContent>
+
+            <TabsContent value="chamber" className="space-y-4 mt-5 [&_[data-slot=input]]:h-8 [&_[data-slot=input]]:py-1 [&_[data-slot=select-trigger]]:h-8 [&_[data-slot=textarea]]:py-1 [&_[data-slot=textarea]]:min-h-14">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="md:col-span-2">
+                  <Label htmlFor="chamberName">Meslek Odası</Label>
+                  <Input
+                    id="chamberName"
+                    value={chamberForm.chamber}
+                    onChange={(e) => setChamberForm(prev => ({ ...prev, chamber: e.target.value }))}
+                    placeholder="Örneğin: İSMMMO"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="registryNo">Sicil No</Label>
+                  <Input
+                    id="registryNo"
+                    value={chamberForm.registryNo}
+                    onChange={(e) => setChamberForm(prev => ({ ...prev, registryNo: e.target.value }))}
+                    placeholder="123456"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="membershipDate">Üyelik Tarihi</Label>
+                  <Input
+                    id="membershipDate"
+                    type="date"
+                    value={chamberForm.membershipDate}
+                    onChange={(e) => setChamberForm(prev => ({ ...prev, membershipDate: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="membershipEndDate">Üyelik Bitiş Tarihi</Label>
+                  <Input
+                    id="membershipEndDate"
+                    type="date"
+                    value={chamberForm.membershipEndDate}
+                    onChange={(e) => {
+                      const v = e.target.value
+                      if (chamberForm.membershipDate && v && v < chamberForm.membershipDate) {
+                        toast.error('Bitiş tarihi üyelik tarihinden önce olamaz')
+                        return
+                      }
+                      const t = new Date()
+                      const yyyy = String(t.getFullYear())
+                      const mm = String(t.getMonth() + 1).padStart(2, '0')
+                      const dd = String(t.getDate()).padStart(2, '0')
+                      const todayStr = `${yyyy}-${mm}-${dd}`
+                      const st = v && v <= todayStr ? 'PASSIVE' : 'ACTIVE'
+                      setChamberForm(prev => ({ ...prev, membershipEndDate: v, status: st }))
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="chamberStatus">Durum</Label>
+                  <Select value={chamberForm.status} onValueChange={(v: 'ACTIVE' | 'PASSIVE') => setChamberForm(prev => ({ ...prev, status: v }))}>
+                    <SelectTrigger id="chamberStatus">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACTIVE">Aktif</SelectItem>
+                      <SelectItem value="PASSIVE">Pasif</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Label>Filtre</Label>
+                  <Input value={chamberFilter} onChange={(e) => { setChamberFilter(e.target.value); setChamberPage(1) }} placeholder="Oda adı veya sicil no" className="w-full sm:w-64" />
+                  <Label>Sayfa Boyutu</Label>
+                  <Select value={String(chamberPageSize)} onValueChange={(v) => { setChamberPageSize(parseInt(v)); setChamberPage(1) }}>
+                    <SelectTrigger className="w-full sm:w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => { setChamberEditingId(null); setChamberForm({ chamber: '', registryNo: '', membershipDate: '', membershipEndDate: '', status: 'ACTIVE' }) }} disabled={!chamberEditingId}>Temizle</Button>
+                  <Button className="bg-violet-600 hover:bg-violet-700 text-white" variant="outline" onClick={() => {
+                    if (!chamberForm.chamber || !chamberForm.registryNo || !chamberForm.membershipDate) return
+                    if (chamberForm.membershipEndDate && chamberForm.membershipDate && chamberForm.membershipEndDate < chamberForm.membershipDate) {
+                      toast.error('Bitiş tarihi üyelik tarihinden önce olamaz')
+                      return
+                    }
+                    const t = new Date()
+                    const yyyy = String(t.getFullYear())
+                    const mm = String(t.getMonth() + 1).padStart(2, '0')
+                    const dd = String(t.getDate()).padStart(2, '0')
+                    const todayStr = `${yyyy}-${mm}-${dd}`
+                    const computedStatus: 'ACTIVE' | 'PASSIVE' = (chamberForm.membershipEndDate && chamberForm.membershipEndDate <= todayStr) ? 'PASSIVE' : 'ACTIVE'
+                    if (chamberEditingId) {
+                      setChambers(prev => prev.map(c => c.id === chamberEditingId ? { ...c, chamber: chamberForm.chamber, registryNo: chamberForm.registryNo, membershipDate: chamberForm.membershipDate, membershipEndDate: chamberForm.membershipEndDate, status: computedStatus } : c))
+                      setChamberEditingId(null)
+                    } else {
+                      const item = { id: `ch-${Date.now()}`, chamber: chamberForm.chamber, registryNo: chamberForm.registryNo, membershipDate: chamberForm.membershipDate, membershipEndDate: chamberForm.membershipEndDate, status: computedStatus }
+                      setChambers(prev => [...prev, item])
+                    }
+                    setChamberForm({ chamber: '', registryNo: '', membershipDate: '', membershipEndDate: '', status: 'ACTIVE' })
+                  }}>{chamberEditingId ? "Güncelle" : "Ekle"}</Button>
+                </div>
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Meslek Odası</TableHead>
+                      <TableHead>Sicil No</TableHead>
+                      <TableHead>Üyelik Tarihi</TableHead>
+                      <TableHead>Bitiş Tarihi</TableHead>
+                      <TableHead>Durum</TableHead>
+                      <TableHead className="text-right">İşlemler</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(() => {
+                      const filtered = chambers.filter(c => {
+                        const q = chamberFilter.toLowerCase()
+                        if (!q) return true
+                        return (c.chamber || '').toLowerCase().includes(q) || (c.registryNo || '').toLowerCase().includes(q)
+                      })
+                      const start = (chamberPage - 1) * chamberPageSize
+                      const paginated = filtered.slice(start, start + chamberPageSize)
+                      return paginated.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">{chamberFilter ? "Arama kriterlerine uygun sonuç bulunamadı" : "Henüz kayıt eklenmemiş"}</TableCell>
+                        </TableRow>
+                      ) : (
+                        paginated.map(c => (
+                          <TableRow key={c.id} onClick={() => { setChamberEditingId(c.id); setChamberForm({ chamber: c.chamber || '', registryNo: c.registryNo || '', membershipDate: c.membershipDate || '', membershipEndDate: c.membershipEndDate || '', status: c.status }) }} className="cursor-pointer">
+                            <TableCell className="font-medium">{c.chamber}</TableCell>
+                            <TableCell>{c.registryNo}</TableCell>
+                            <TableCell>{c.membershipDate}</TableCell>
+                            <TableCell>{c.membershipEndDate}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary">{c.status === 'ACTIVE' ? 'Aktif' : 'Pasif'}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={(e) => { e.stopPropagation(); setChamberEditingId(c.id); setChamberForm({ chamber: c.chamber || '', registryNo: c.registryNo || '', membershipDate: c.membershipDate || '', membershipEndDate: c.membershipEndDate || '', status: c.status }) }}
+                                  title="Düzenle"
+                                >
+                                  <Edit3 className="h-4 w-4" />
+                                </Button>
+                                <Button variant="outline" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); setChambers(prev => prev.filter(x => x.id !== c.id)) }} title="Sil">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )
+                    })()}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {(() => {
+                const total = chambers.filter(c => {
+                  const q = chamberFilter.toLowerCase()
+                  if (!q) return true
+                  return (c.chamber || '').toLowerCase().includes(q) || (c.registryNo || '').toLowerCase().includes(q)
+                }).length
+                const totalPages = Math.ceil(total / chamberPageSize) || 1
+                return totalPages > 1 ? (
+                  <div className="flex flex-col gap-3 sm:flex-row items-start sm:items-center justify-between mt-4">
+                    <div className="text-sm text-muted-foreground">Toplam {total} sonuçtan {(chamberPage - 1) * chamberPageSize + 1}-{Math.min(chamberPage * chamberPageSize, total)} arası gösteriliyor</div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setChamberPage(p => Math.max(1, p - 1))} disabled={chamberPage === 1}>Önceki</Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <Button key={page} variant={chamberPage === page ? "default" : "outline"} size="sm" onClick={() => setChamberPage(page)} className="w-8">{page}</Button>
+                        ))}
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => setChamberPage(p => Math.min(totalPages, p + 1))} disabled={chamberPage === totalPages}>Sonraki</Button>
+                    </div>
+                  </div>
+                ) : null
+              })()}
+            </TabsContent>
+
+            <TabsContent value="activities" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="md:col-span-1">
+                  <Label htmlFor="activityBranch">Şube Adı</Label>
+                  {branches.length > 0 ? (
+                    <Select value={activityForm.branchName} onValueChange={(v) => setActivityForm((p) => ({ ...p, branchName: v }))}>
+                      <SelectTrigger id="activityBranch">
+                        <SelectValue placeholder="Şube seçin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {branches.map((b) => (
+                          <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input id="activityBranch" value={activityForm.branchName} onChange={(e) => setActivityForm((p) => ({ ...p, branchName: e.target.value }))} placeholder="Şube adı" />
+                  )}
+                </div>
+                <div className="md:col-span-1">
+                  <Label htmlFor="activityCode">Faaliyet Kodu</Label>
+                  <div className="flex gap-2">
+                    <Textarea
+                      id="activityCode"
+                      value={activityForm.activityCode}
+                      onChange={(e) => setActivityForm((p) => ({ ...p, activityCode: e.target.value }))}
+                      placeholder="62.01 - Bilgisayar programlama faaliyetleri"
+                      className="flex-1 min-h-[64px]"
+                      rows={3}
+                    />
+                    <Button type="button" variant="outline" onClick={() => { setActivityModalTarget('activity'); setIsActivityModalOpen(true) }}>
+                      <Search className="h-4 w-4 mr-2" />
+                      Seç
+                    </Button>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <Label htmlFor="activityStart">Faaliyet Başlama Tarihi</Label>
+                      <Input id="activityStart" type="date" value={activityForm.startDate} onChange={(e) => setActivityForm((p) => ({ ...p, startDate: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label htmlFor="activityEnd">Faaliyet Bitiş Tarihi</Label>
+                      <Input
+                        id="activityEnd"
+                        type="date"
+                        value={activityForm.endDate}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          setActivityForm((p) => ({ ...p, endDate: v, status: v ? 'PASSIVE' : 'ACTIVE' }))
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="activityStatus">Durum</Label>
+                      <Select value={activityForm.status} onValueChange={(v: 'ACTIVE' | 'PASSIVE') => setActivityForm((p) => ({ ...p, status: v }))}>
+                        <SelectTrigger id="activityStatus">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ACTIVE">Aktif</SelectItem>
+                          <SelectItem value="PASSIVE">Pasif</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <div className="md:col-span-2 flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => { setActivityForm({ branchName: "", activityCode: "", startDate: "", endDate: "", status: 'ACTIVE' }); setActivityEditingId(null) }}>Temizle</Button>
+                  <Button className="bg-violet-600 hover:bg-violet-700 text-white" onClick={() => {
+                    if (!activityForm.activityCode || !activityForm.branchName) return
+                    if (activityEditingId) {
+                      setActivities((prev) => prev.map((a) => a.id === activityEditingId ? { ...a, ...activityForm } : a))
+                    } else {
+                      const id = `activity-${Date.now()}`
+                      setActivities((prev) => [...prev, { id, ...activityForm }])
+                    }
+                    setActivityForm({ branchName: "", activityCode: "", startDate: "", endDate: "", status: 'ACTIVE' })
+                    setActivityEditingId(null)
+                  }}>{activityEditingId ? 'Güncelle' : 'Ekle'}</Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Label>Filtre</Label>
+                  <Input value={activityFilter} onChange={(e) => { setActivityFilter(e.target.value); setActivityPage(1) }} placeholder="Şube, kod, tarih, durum" className="w-full sm:w-64" />
+                  <Label>Sayfa Boyutu</Label>
+                  <Select value={String(activityPageSize)} onValueChange={(v) => { setActivityPageSize(parseInt(v)); setActivityPage(1) }}>
+                    <SelectTrigger className="w-full sm:w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="rounded-md border mt-2">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Şube</TableHead>
+                      <TableHead>Kod</TableHead>
+                      <TableHead>Başlama</TableHead>
+                      <TableHead>Bitiş</TableHead>
+                      <TableHead>Durum</TableHead>
+                      <TableHead className="text-right">İşlemler</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(() => {
+                      const filtered = activities.filter(a => {
+                        const q = activityFilter.toLowerCase()
+                        if (!q) return true
+                        const name = a.activityCode || ""
+                        return (
+                          (a.branchName || "").toLowerCase().includes(q) ||
+                          name.toLowerCase().includes(q) ||
+                          (a.startDate || "").toLowerCase().includes(q) ||
+                          (a.endDate || "").toLowerCase().includes(q) ||
+                          (a.status || "").toLowerCase().includes(q)
+                        )
+                      })
+                      const totalPages = Math.max(1, Math.ceil(filtered.length / activityPageSize))
+                      const currentPage = Math.min(activityPage, totalPages)
+                      const start = (currentPage - 1) * activityPageSize
+                      const paginated = filtered.slice(start, start + activityPageSize)
+                      return paginated.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">{activityFilter ? "Arama kriterlerine uygun sonuç bulunamadı" : "Faaliyet eklenmemiş"}</TableCell>
+                        </TableRow>
+                      ) : (
+                        paginated.map((a) => {
+                          const name = a.activityCode || ''
+                          const parts = name.split(' - ')
+                          const code = parts[0] || ''
+                          const desc = parts.slice(1).join(' - ')
+                          return (
+                            <TableRow key={a.id} onDoubleClick={() => { setActivityEditingId(a.id); setActivityForm({ branchName: a.branchName, activityCode: a.activityCode, startDate: a.startDate, endDate: a.endDate, status: a.status }) }} className="group">
+                              <TableCell>{a.branchName || '-'}</TableCell>
+                              <TableCell className="font-mono whitespace-nowrap relative overflow-visible">
+                                {code}
+                                <div className="absolute left-0 top-full z-[1000] bg-amber-50 text-amber-950 border border-amber-200 dark:bg-amber-100/10 dark:text-amber-200 dark:border-amber-200/40 rounded-md shadow-md mt-1 max-w-[600px] p-2 whitespace-pre-wrap break-words overflow-x-auto overflow-y-auto opacity-0 group-hover:opacity-100 pointer-events-none">
+                                  {desc || name}
+                                </div>
+                              </TableCell>
+                              <TableCell>{a.startDate || '-'}</TableCell>
+                              <TableCell>{a.endDate || '-'}</TableCell>
+                              <TableCell>
+                                {a.status === 'ACTIVE' ? (
+                                  <Badge className="bg-green-100 text-green-800 border-green-300">Aktif</Badge>
+                                ) : (
+                                  <Badge className="bg-red-100 text-red-800 border-red-300">Pasif</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={(e) => { e.stopPropagation(); setActivityForm({ branchName: a.branchName, activityCode: a.activityCode, startDate: a.startDate, endDate: a.endDate, status: a.status }); setActivityEditingId(a.id) }}
+                                    title="Düzenle"
+                                  >
+                                    <Edit3 className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="outline" size="sm" onClick={() => setActivities((prev) => prev.filter((x) => x.id !== a.id))} className="text-red-600">Sil</Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
+                      )
+                    })()}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row items-start sm:items-center justify-between mt-4">
+                {(() => {
+                  const filtered = activities.filter(a => {
+                    const q = activityFilter.toLowerCase()
+                    if (!q) return true
+                    const name = a.activityCode || ""
+                    return (
+                      (a.branchName || "").toLowerCase().includes(q) ||
+                      name.toLowerCase().includes(q) ||
+                      (a.startDate || "").toLowerCase().includes(q) ||
+                      (a.endDate || "").toLowerCase().includes(q) ||
+                      (a.status || "").toLowerCase().includes(q)
+                    )
+                  })
+                  const total = filtered.length
+                  const totalPages = Math.ceil(total / activityPageSize)
+                  const start = (activityPage - 1) * activityPageSize
+                  const end = Math.min(start + activityPageSize, total)
+                  return (
+                    <>
+                      <div className="text-sm text-muted-foreground">
+                        Toplam {total} kayıttan {total === 0 ? 0 : start + 1}-{end} arası gösteriliyor
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setActivityPage(p => Math.max(1, p - 1))} disabled={activityPage === 1}>Önceki</Button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.max(1, totalPages) }, (_, i) => i + 1).map((page) => (
+                            <Button
+                              key={page}
+                              variant={activityPage === page ? "default" : "outline"}
+                              size="sm"
+                              className="w-8"
+                              onClick={() => setActivityPage(page)}
+                            >
+                              {page}
+                            </Button>
+                          ))}
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => setActivityPage(p => Math.min(Math.max(1, totalPages), p + 1))} disabled={activityPage === Math.max(1, totalPages)}>Sonraki</Button>
+                      </div>
+                    </>
+                  )
+                })()}
               </div>
             </TabsContent>
 
@@ -1033,12 +1430,12 @@ export default function NewCustomerPage() {
                 </div>
               </div>
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <Label>Filtre</Label>
-                  <Input value={branchFilter} onChange={(e) => { setBranchFilter(e.target.value); setBranchPage(1) }} placeholder="Şube adı, adres, il/ilçe" className="w-64" />
+                  <Input value={branchFilter} onChange={(e) => { setBranchFilter(e.target.value); setBranchPage(1) }} placeholder="Şube adı, adres, il/ilçe" className="w-full sm:w-64" />
                   <Label>Sayfa Boyutu</Label>
                   <Select value={String(branchPageSize)} onValueChange={(v) => { setBranchPageSize(parseInt(v)); setBranchPage(1) }}>
-                    <SelectTrigger className="w-24">
+                    <SelectTrigger className="w-full sm:w-24">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1053,7 +1450,7 @@ export default function NewCustomerPage() {
                   {branchEditingId && (
                     <Button variant="outline" onClick={() => { setBranchEditingId(null); setBranchForm({ name: "", openingDate: "", closingDate: "", activityCode: "", city: "", district: "", address: "" })}}>Temizle</Button>
                   )}
-                  <Button variant="outline" onClick={addBranch}>{branchEditingId ? "Güncelle" : "Ekle"}</Button>
+                  <Button className="bg-violet-600 hover:bg-violet-700 text-white" variant="outline" onClick={addBranch}>{branchEditingId ? "Güncelle" : "Ekle"}</Button>
                 </div>
               </div>
               <div className="rounded-md border">
@@ -1115,7 +1512,7 @@ export default function NewCustomerPage() {
                   </TableBody>
                 </Table>
               </div>
-              <div className="flex items-center justify-between mt-4">
+              <div className="flex flex-col gap-3 sm:flex-row items-start sm:items-center justify-between mt-4">
                 {(() => {
                   const total = branchFiltered.length
                   const start = (branchCurrentPage - 1) * branchPageSize
@@ -1186,15 +1583,6 @@ export default function NewCustomerPage() {
                     placeholder="(5__) ___ __ __"
                   />
                 </div>
-                <div className="md:col-span-2">
-                  <Label>Adres</Label>
-                  <Textarea
-                    value={authorizedForm.address}
-                    onChange={(e) => setAuthorizedForm(prev => ({ ...prev, address: e.target.value }))}
-                    placeholder="Adres"
-                    rows={3}
-                  />
-                </div>
                 <div>
                   <Label>Yetki Tarihi</Label>
                   <Input
@@ -1213,10 +1601,28 @@ export default function NewCustomerPage() {
                     min="1"
                   />
                 </div>
+                <div>
+                  <Label>Yetki Bitiş Tarihi</Label>
+                  <Input
+                    type="date"
+                    value={computeAuthorizationEndDate(authorizedForm.authorizationDate, authorizedForm.authorizationPeriod)}
+                    readOnly
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Adres</Label>
+                  <Textarea
+                    value={authorizedForm.address}
+                    onChange={(e) => setAuthorizedForm(prev => ({ ...prev, address: e.target.value }))}
+                    placeholder="Adres"
+                    rows={3}
+                  />
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-medium mb-3">Yetkili Sosyal Medya Hesapları</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <hr className="my-4" />
+                <div>
+                  <h3 className="text-base font-medium mb-3">Yetkili Sosyal Medya Hesapları</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   <div>
                     <Label htmlFor="authorizedFacebookUrl">Facebook</Label>
                     <div className="relative">
@@ -1278,7 +1684,7 @@ export default function NewCustomerPage() {
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="authorizedThreadsUrl">Threads</Label>
+                    <Label htmlFor="authorizedThreadsUrl">Nsosyal</Label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <MessageSquare className="h-4 w-4 text-muted-foreground" />
@@ -1294,13 +1700,14 @@ export default function NewCustomerPage() {
                   </div>
                 </div>
               </div>
+              <hr className="my-4" />
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <Label>Filtre</Label>
-                  <Input value={authorizedFilter} onChange={(e) => { setAuthorizedFilter(e.target.value); setAuthorizedPage(1) }} placeholder="Ad, TCKN, e-posta veya telefon" className="w-64" />
+                  <Input value={authorizedFilter} onChange={(e) => { setAuthorizedFilter(e.target.value); setAuthorizedPage(1) }} placeholder="Ad, TCKN, e-posta veya telefon" className="w-full sm:w-64" />
                   <Label>Sayfa Boyutu</Label>
                   <Select value={String(authorizedPageSize)} onValueChange={(v) => { setAuthorizedPageSize(parseInt(v)); setAuthorizedPage(1) }}>
-                    <SelectTrigger className="w-24">
+                    <SelectTrigger className="w-full sm:w-24">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1313,7 +1720,7 @@ export default function NewCustomerPage() {
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => { setAuthorizedEditingId(null); setAuthorizedForm({ name: "", tckn: "", email: "", phone: "", address: "", authorizationDate: "", authorizationPeriod: "" }) }} disabled={!authorizedEditingId}>Temizle</Button>
-                  <Button variant="outline" onClick={addAuthorizedPerson}>{authorizedEditingId ? "Güncelle" : "Ekle"}</Button>
+                  <Button className="bg-violet-600 hover:bg-violet-700 text-white" onClick={addAuthorizedPerson}>{authorizedEditingId ? "Güncelle" : "Ekle"}</Button>
                 </div>
               </div>
               <div className="rounded-md border">
@@ -1341,6 +1748,15 @@ export default function NewCustomerPage() {
                           <TableCell>{p.phone}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => { e.stopPropagation(); setAuthorizedEditingId(p.id); setAuthorizedForm({ name: p.name || "", tckn: p.tckn || "", email: p.email || "", phone: p.phone || "", address: p.address || "", authorizationDate: p.authorizationDate || "", authorizationPeriod: p.authorizationPeriod || "" }) }}
+                                title="Düzenle"
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </Button>
                               <Button variant="outline" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); removeAuthorizedPerson(p.id) }} title="Sil">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -1411,12 +1827,12 @@ export default function NewCustomerPage() {
                 </div>
               </div>
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <Label>Filtre</Label>
-                  <Input value={docFilter} onChange={(e) => { setDocFilter(e.target.value); setDocPage(1) }} placeholder="Dosya adı" className="w-64" />
+                  <Input value={docFilter} onChange={(e) => { setDocFilter(e.target.value); setDocPage(1) }} placeholder="Dosya adı" className="w-full sm:w-64" />
                   <Label>Sayfa Boyutu</Label>
                   <Select value={String(docPageSize)} onValueChange={(v) => { setDocPageSize(parseInt(v)); setDocPage(1) }}>
-                    <SelectTrigger className="w-24">
+                    <SelectTrigger className="w-full sm:w-24">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1470,6 +1886,15 @@ export default function NewCustomerPage() {
                             <TableCell>{d.uploadDate}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={(e) => { e.stopPropagation(); setDocEditingId(d.id); setDocForm({ name: d.name || "", file: d.file || "" }) }}
+                                  title="Düzenle"
+                                >
+                                  <Edit3 className="h-4 w-4" />
+                                </Button>
                                 <Button variant="outline" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); window.open(d.file, '_blank') }} title="Görüntüle">
                                   <Eye className="h-4 w-4" />
                                 </Button>
@@ -1485,7 +1910,7 @@ export default function NewCustomerPage() {
                   </TableBody>
                 </Table>
               </div>
-              <div className="flex items-center justify-between mt-4">
+              <div className="flex flex-col gap-3 sm:flex-row items-start sm:items-center justify-between mt-4">
                 {(() => {
                   const filtered = documents.filter(d => {
                     const q = docFilter.toLowerCase()
@@ -1544,12 +1969,12 @@ export default function NewCustomerPage() {
                 </div>
               </div>
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <Label>Filtre</Label>
-                  <Input value={noteFilter} onChange={(e) => { setNoteFilter(e.target.value); setNotePage(1) }} placeholder="Başlık veya içerik" className="w-64" />
+                  <Input value={noteFilter} onChange={(e) => { setNoteFilter(e.target.value); setNotePage(1) }} placeholder="Başlık veya içerik" className="w-full sm:w-64" />
                   <Label>Sayfa Boyutu</Label>
                   <Select value={String(notePageSize)} onValueChange={(v) => { setNotePageSize(parseInt(v)); setNotePage(1) }}>
-                    <SelectTrigger className="w-24">
+                    <SelectTrigger className="w-full sm:w-24">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1605,7 +2030,7 @@ export default function NewCustomerPage() {
                   </TableBody>
                 </Table>
               </div>
-              <div className="flex items-center justify-between mt-4">
+              <div className="flex flex-col gap-3 sm:flex-row items-start sm:items-center justify-between mt-4">
                 {(() => {
                   const filtered = notes.filter(n => {
                     const q = noteFilter.toLowerCase()
@@ -1644,6 +2069,88 @@ export default function NewCustomerPage() {
               </div>
             </TabsContent>
           </Tabs>
+
+          <Dialog open={isActivityModalOpen} onOpenChange={setIsActivityModalOpen}>
+            <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-hidden p-0">
+              <DialogHeader className="sticky top-0 z-10 bg-muted p-4 border-b relative">
+                <DialogTitle>Faaliyet Kodu Seç</DialogTitle>
+                <DialogDescription>Tablodan faaliyet kodunu seçin veya arama ile bulun.</DialogDescription>
+                <Button type="button" variant="ghost" size="icon" className="absolute right-2 top-2 h-8 w-8" onClick={() => setIsActivityModalOpen(false)} aria-label="Kapat">
+                  <X className="h-4 w-4" />
+                </Button>
+              </DialogHeader>
+              <div className="flex-1 overflow-x-hidden overflow-y-hidden px-4 py-3 space-y-3">
+                <Input
+                  id="activitySearch"
+                  value={activityCodeSearch}
+                  onChange={(e) => setActivityCodeSearch(e.target.value || "")}
+                  placeholder="Kod veya açıklama ara"
+                />
+                <div className="max-h-[40vh] overflow-x-auto overflow-y-auto">
+                  <Table className="w-full min-w-[700px]" containerClassName="overflow-x-visible overflow-y-visible">
+                    <TableHeader className="sticky top-0 z-10 bg-muted">
+                      <TableRow>
+                        <TableHead className="w-[140px] whitespace-nowrap">İşlem</TableHead>
+                        <TableHead className="whitespace-nowrap">Kod</TableHead>
+                        <TableHead className="whitespace-nowrap">Açıklama</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {activityCodeOptions
+                        .filter(o => {
+                          const q = activityCodeSearch.trim().toLocaleLowerCase('tr-TR')
+                          if (!q) return true
+                          const name = (o.name || '')
+                          const parts = name.split(' - ')
+                          const code = (parts[0] || '')
+                          const desc = parts.slice(1).join(' - ')
+                          return (
+                            name.toLocaleLowerCase('tr-TR').includes(q) ||
+                            code.toLocaleLowerCase('tr-TR').includes(q) ||
+                            desc.toLocaleLowerCase('tr-TR').includes(q)
+                          )
+                        })
+                        .slice(0, 500)
+                        .map(o => {
+                          const name = o.name || ''
+                          const parts = name.split(' - ')
+                          const code = parts[0] || ''
+                          const desc = parts.slice(1).join(' - ')
+                          return (
+                            <TableRow key={o.id} className="group">
+                              <TableCell>
+                                <Button variant="outline" className="w-full" onClick={() => {
+                                  if (activityModalTarget === 'main') {
+                                    setMainActivityCode(name)
+                                  } else if (activityModalTarget === 'branch') {
+                                    setBranchForm(prev => ({ ...prev, activityCode: name }))
+                                  } else if (activityModalTarget === 'activity') {
+                                    setActivityForm(prev => ({ ...prev, activityCode: name }))
+                                  }
+                                  setIsActivityModalOpen(false)
+                                }}>Seç</Button>
+                              </TableCell>
+                              <TableCell className="font-mono whitespace-nowrap">{code}</TableCell>
+                              <TableCell className="whitespace-nowrap relative overflow-visible">
+                                {desc || name}
+                                <div className="absolute left-0 top-full z-[1000] bg-amber-50 text-amber-950 border border-amber-200 dark:bg-amber-100/10 dark:text-amber-200 dark:border-amber-200/40 rounded-md shadow-md mt-1 max-w-[600px] p-2 whitespace-pre-wrap break-words overflow-x-auto overflow-y-auto opacity-0 group-hover:opacity-100 pointer-events-none">
+                                  {desc || name}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+              <DialogFooter className="sticky bottom-0 z-10 bg-muted p-4 border-t">
+                <Button variant="outline" onClick={() => setIsActivityModalOpen(false)}>Kapat</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+            </>
           )}
 
           <div className="flex justify-end gap-2 mt-8">

@@ -19,7 +19,7 @@ export default function HomePage() {
   return (
     <main className="min-h-screen">
       
-      <div className="bg-blue-50">
+      <div className="bg-primary/10">
         <Navbar />  
       </div>
       

@@ -109,7 +109,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-end gap-2">
               <Button disabled={loading} onClick={() => upload('/api/import/activity-codes', activityCodesFile, 'NACE')}>Yükle</Button>
-              <Button variant="outline" disabled={loading} onClick={() => downloadCSV('nace_kodlari.csv', ['code','tanim'], [['62.01','Bilgisayar programlama faaliyetleri'],['62.02','Bilgi teknolojisi danışmanlık faaliyetleri'],['69.20','Muhasebe, defter tutma ve denetim faaliyetleri']], ';')}>Örnek CSV indir</Button>
+              <Button variant="outline" disabled={loading} onClick={() => downloadCSV('nace_kodlari.csv', ['code','name'], [['62.01','Bilgisayar programlama faaliyetleri'],['62.02','Bilgi teknolojisi danışmanlık faaliyetleri'],['69.20','Muhasebe, defter tutma ve denetim faaliyetleri']], ';')}>Örnek CSV indir</Button>
             </div>
           </div>
         </CardContent>

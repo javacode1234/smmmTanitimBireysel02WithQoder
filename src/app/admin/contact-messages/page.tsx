@@ -26,6 +26,7 @@ import { EditContactMessageModal } from "@/components/admin/edit-contact-message
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { toast } from "sonner"
 import { exportContactMessageToPDF } from "@/lib/pdf-export"
+import { Skeleton } from "@/components/ui/skeleton"
 
 type ContactMessageStatus = 'NEW' | 'PENDING' | 'REPLIED' | 'RESOLVED'
 
@@ -283,11 +284,18 @@ export default function ContactMessagesPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Yüklen iyor...
-                    </TableCell>
-                  </TableRow>
+                  Array.from({ length: Math.max(3, itemsPerPage) }).map((_, i) => (
+                    <TableRow key={`skeleton-${i}`}>
+                      <TableCell className="font-medium">
+                        <Skeleton className="h-4 w-40" />
+                      </TableCell>
+                      <TableCell><Skeleton className="h-4 w-60" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
+                    </TableRow>
+                  ))
                 ) : paginatedData.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">

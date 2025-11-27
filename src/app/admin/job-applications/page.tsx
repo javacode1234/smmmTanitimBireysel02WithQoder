@@ -26,6 +26,7 @@ import { EditJobApplicationModal } from "@/components/admin/edit-job-application
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { toast } from "sonner"
 import { exportJobApplicationToPDF } from "@/lib/pdf-export"
+import { Skeleton } from "@/components/ui/skeleton"
 
 type ApplicationStatus = 'NEW' | 'REVIEWING' | 'INTERVIEWED' | 'REJECTED' | 'ACCEPTED'
 
@@ -314,11 +315,17 @@ export default function JobApplicationsPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      Yükleniyor...
-                    </TableCell>
-                  </TableRow>
+                  Array.from({ length: Math.max(3, itemsPerPage) }).map((_, i) => (
+                    <TableRow key={`skeleton-${i}`}>
+                      <TableCell className="font-medium"><Skeleton className="h-4 w-40" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
+                    </TableRow>
+                  ))
                 ) : paginatedData.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">

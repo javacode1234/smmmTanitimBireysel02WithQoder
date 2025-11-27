@@ -184,7 +184,7 @@ export default function SignInPage() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 bg-white/5 backdrop-blur-sm">
+            <TabsList className="flex flex-wrap w-full gap-2 mb-6 bg-white/5 backdrop-blur-sm p-2 rounded-lg">
               <TabsTrigger 
                 value="admin" 
                 className="data-[state=active]:bg-white data-[state=active]:text-primary text-white font-semibold"

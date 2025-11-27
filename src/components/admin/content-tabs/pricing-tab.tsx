@@ -723,7 +723,7 @@ export function PricingTab() {
 
       {/* Tabs for Plans and Additional Services */}
       <Tabs defaultValue="plans" className="space-y-6">
-        <TabsList className="grid w-full md:w-[400px] grid-cols-2">
+        <TabsList className="flex flex-wrap w-full gap-2 bg-muted p-2 rounded-lg md:w-[400px]">
           <TabsTrigger value="plans">Paket Fiyatları</TabsTrigger>
           <TabsTrigger value="services">Ek Hizmetler</TabsTrigger>
         </TabsList>
@@ -1032,14 +1032,14 @@ export function PricingTab() {
       </Tabs>
 
       {/* Actions */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <Button onClick={() => setIsResetDialogOpen(true)} variant="outline" className="border-amber-600 text-amber-600 hover:bg-amber-50">
             <RotateCcw className="h-4 w-4 mr-2" />
             Varsayılan Değerlere Sıfırla
           </Button>
           
-          <Button onClick={saveDefaultsToDatabase} disabled={!isDatabaseEmpty || isSavingDefaults} variant="default" className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+          <Button onClick={saveDefaultsToDatabase} disabled={!isDatabaseEmpty || isSavingDefaults} variant="default" className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 w-full sm:w-auto">
             {isSavingDefaults ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1054,7 +1054,7 @@ export function PricingTab() {
           </Button>
         </div>
         
-        <Button onClick={saveAllChanges} disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700">
+        <Button onClick={saveAllChanges} disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
           {saving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

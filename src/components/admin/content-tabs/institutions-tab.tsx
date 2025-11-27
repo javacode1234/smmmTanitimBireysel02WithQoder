@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -603,11 +604,48 @@ export function InstitutionsTab() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Bölüm Ayarları</CardTitle>
+            <CardDescription>Kurumlar bölümünün başlık ve açıklaması</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-9" />
+            <Skeleton className="h-24" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Kurumlar Bölümü</CardTitle>
+                <CardDescription>Ana sayfada görüntülenecek kurumlar</CardDescription>
+              </div>
+              <Skeleton className="h-9 w-32" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-4 mb-4">
+              <Skeleton className="h-9 flex-1" />
+              <Skeleton className="h-9 w-48" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={`inst-skel-${i}`} className="p-4 border rounded-md">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     )
   }
 
@@ -881,13 +919,13 @@ export function InstitutionsTab() {
       </Card>
 
       {/* Bottom Action Buttons */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <Button 
             onClick={() => setIsResetDialogOpen(true)} 
             disabled={isResetting}
             variant="outline"
-            className="border-amber-600 text-amber-600 hover:bg-amber-50"
+            className="border-amber-600 text-amber-600 hover:bg-amber-50 w-full sm:w-auto"
           >
             {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {!isResetting && <RotateCcw className="mr-2 h-4 w-4" />}
@@ -898,7 +936,7 @@ export function InstitutionsTab() {
             onClick={saveDefaultsToDatabase} 
             disabled={isSavingDefaults}
             variant="default"
-            className={`bg-blue-600 hover:bg-blue-700 ${!isDatabaseEmpty ? 'opacity-50' : ''}`}
+            className={`bg-blue-600 hover:bg-blue-700 ${!isDatabaseEmpty ? 'opacity-50' : ''} w-full sm:w-auto`}
           >
             {isSavingDefaults ? (
               <>
@@ -914,7 +952,7 @@ export function InstitutionsTab() {
           </Button>
         </div>
 
-        <Button onClick={handleBulkSave} disabled={isSaving} size="lg" className="bg-green-600 hover:bg-green-700">
+        <Button onClick={handleBulkSave} disabled={isSaving} size="lg" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           <Save className="mr-2 h-4 w-4" />
           Tüm Değişiklikleri Kaydet

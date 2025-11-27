@@ -126,8 +126,8 @@ export function FAQSection() {
           className="text-center mb-10"
         >
           <div className="inline-flex items-center gap-2 mb-3">
-            <HelpCircle className="h-8 w-8 text-blue-600" />
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+            <HelpCircle className="h-8 w-8 text-primary" />
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">
               {sectionData.title}
             </h2>
           </div>
@@ -144,7 +144,7 @@ export function FAQSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-white rounded-2xl shadow-lg p-6 mb-4 border-2 border-blue-100"
+          className="bg-white rounded-2xl shadow-lg p-6 mb-4 border-2 border-primary/20"
         >
           <h3 className="text-center text-sm font-semibold text-gray-700 mb-4">Kategori Seçin:</h3>
           <div className="flex flex-wrap justify-center gap-3">
@@ -158,8 +158,8 @@ export function FAQSection() {
               size="lg"
               className={`rounded-full transition-all font-medium px-6 ${
                 selectedCategoryId === "all" 
-                  ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg scale-105" 
-                  : "hover:border-blue-400 hover:bg-blue-50"
+                  ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg scale-105" 
+                  : "hover:border-primary hover:bg-primary/10"
               }`}
             >
               Tümü
@@ -175,8 +175,8 @@ export function FAQSection() {
                 size="lg"
                 className={`rounded-full transition-all font-medium px-6 ${
                   selectedCategoryId === category.id 
-                    ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg scale-105" 
-                    : "hover:border-blue-400 hover:bg-blue-50"
+                    ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg scale-105" 
+                    : "hover:border-primary hover:bg-primary/10"
                 }`}
               >
                 {category.name}
@@ -193,10 +193,10 @@ export function FAQSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl shadow-lg p-6 mb-8 border-2 border-green-200"
+          className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl shadow-lg p-6 mb-8 border-2 border-violet-200"
         >
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Calendar className="h-5 w-5 text-green-600" />
+            <Calendar className="h-5 w-5 text-primary" />
             <h3 className="text-center text-sm font-semibold text-gray-700">Başlangıç Tarihi Seçin:</h3>
           </div>
           <div className="flex flex-col items-center gap-3">
@@ -207,7 +207,7 @@ export function FAQSection() {
                 setStartDate(e.target.value)
                 setOpenIndex(null)
               }}
-              className="px-4 py-3 rounded-xl border-2 border-green-300 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200 transition-all text-sm font-medium w-full max-w-xs"
+              className="px-4 py-3 rounded-xl border-2 border-violet-300 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200 transition-all text-sm font-medium w-full max-w-xs"
               max={new Date().toISOString().split('T')[0]}
             />
             {startDate && (
@@ -218,13 +218,13 @@ export function FAQSection() {
                 }}
                 variant="outline"
                 size="sm"
-                className="rounded-full border-green-400 text-green-700 hover:bg-green-50"
+                className="rounded-full border-violet-400 text-violet-700 hover:bg-violet-50"
               >
                 Filtreyi Temizle
               </Button>
             )}
             {startDate && (
-              <p className="text-xs text-green-700 font-medium">
+              <p className="text-xs text-violet-700 font-medium">
                 {new Date(startDate).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' })} 
                 {' '} tarihinden bugüne kadar ({filteredFAQs.length} sonuç)
               </p>
@@ -244,19 +244,19 @@ export function FAQSection() {
               transition={{ duration: 0.5, delay: index * 0.05 }}
             >
               <Card 
-                className="overflow-hidden border-2 hover:border-blue-200 transition-all duration-300 cursor-pointer"
+                className="overflow-hidden border-2 hover:border-primary/30 transition-all duration-300 cursor-pointer"
                 onClick={() => toggleFAQ(index)}
               >
                 <CardContent className="p-0">
                   {/* Question */}
-                  <div className="flex items-center justify-between p-4 hover:bg-blue-50/50 transition-colors">
+                  <div className="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors">
                     <div className="flex-1 pr-4">
                       <h3 className="font-semibold text-sm text-gray-900">
                         {faq.question}
                       </h3>
                       <div className="flex items-center gap-1.5 mt-2">
-                        <Calendar className="h-3.5 w-3.5 text-green-600" />
-                        <span className="text-xs text-green-600 font-medium">
+                        <Calendar className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-xs text-primary font-medium">
                           {new Date(faq.createdAt).toLocaleDateString('tr-TR', { 
                             year: 'numeric', 
                             month: 'long', 
@@ -270,14 +270,14 @@ export function FAQSection() {
                       transition={{ duration: 0.3 }}
                       className="flex-shrink-0"
                     >
-                      <ChevronDown className={`h-5 w-5 ${openIndex === index ? 'text-blue-600' : 'text-gray-400'}`} />
+                      <ChevronDown className={`h-5 w-5 ${openIndex === index ? 'text-primary' : 'text-gray-400'}`} />
                     </motion.div>
                   </div>
 
                   {/* Answer */}
                   {openIndex === index && (
                     <div className="overflow-hidden">
-                      <div className="px-4 pb-4 pt-0 border-t bg-blue-50/30">
+                      <div className="px-4 pb-4 pt-0 border-t bg-primary/5">
                         <p className="text-xs text-gray-700 leading-relaxed pt-3">
                           {faq.answer}
                         </p>
@@ -297,18 +297,18 @@ export function FAQSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-10 text-center bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl p-6 text-white"
+          className="mt-10 text-center bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl p-6 text-white"
         >
           <h3 className="text-lg font-bold mb-2">
             Başka Sorularınız mı Var?
           </h3>
-          <p className="text-blue-100 mb-4 text-sm">
+          <p className="text-violet-100 mb-4 text-sm">
             Uzman ekibimiz tüm sorularınızı yanıtlamak için hazır. 
             Hemen bizimle iletişime geçin.
           </p>
           <a
             href="#contact"
-            className="inline-block bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-colors shadow-lg text-sm"
+            className="inline-block bg-white text-primary px-6 py-2 rounded-lg font-semibold hover:bg-primary/10 transition-colors shadow-lg text-sm"
           >
             İletişime Geç
           </a>

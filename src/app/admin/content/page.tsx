@@ -70,48 +70,48 @@ export default function ContentManagementPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6" id="admin-content-tabs">
-        <TabsList className="grid w-full grid-cols-5 lg:grid-cols-11 h-auto">
-          <TabsTrigger value="site-settings" className="flex flex-col gap-1 py-3">
+        <TabsList className="flex flex-wrap w-full gap-1 bg-primary p-2 rounded-lg">
+          <TabsTrigger value="site-settings" className="flex flex-col gap-1 p-8">
             <Settings className="h-4 w-4" />
             <span className="text-xs">Site Ayarları</span>
           </TabsTrigger>
-          <TabsTrigger value="hero" className="flex flex-col gap-1 py-3">
+          <TabsTrigger value="hero" className="flex flex-col gap-1 p-8">
             <Home className="h-4 w-4" />
             <span className="text-xs">Hero</span>
           </TabsTrigger>
-          <TabsTrigger value="clients" className="flex flex-col gap-1 py-3">
+          <TabsTrigger value="clients" className="flex flex-col gap-1 p-8">
             <Users className="h-4 w-4" />
             <span className="text-xs">Kurumlar</span>
           </TabsTrigger>
-          <TabsTrigger value="about" className="flex flex-col gap-1 py-3">
+          <TabsTrigger value="about" className="flex flex-col gap-1 p-8">
             <Info className="h-4 w-4" />
             <span className="text-xs">Hakkımızda</span>
           </TabsTrigger>
-          <TabsTrigger value="services" className="flex flex-col gap-1 py-3">
+          <TabsTrigger value="services" className="flex flex-col gap-1 p-8">
             <Briefcase className="h-4 w-4" />
             <span className="text-xs">Hizmetler</span>
           </TabsTrigger>
-          <TabsTrigger value="workflow" className="flex flex-col gap-1 py-3">
+          <TabsTrigger value="workflow" className="flex flex-col gap-1 p-8">
             <Workflow className="h-4 w-4" />
             <span className="text-xs">Süreç</span>
           </TabsTrigger>
-          <TabsTrigger value="pricing" className="flex flex-col gap-1 py-3">
+          <TabsTrigger value="pricing" className="flex flex-col gap-1 p-8">
             <Banknote className="h-4 w-4" />
             <span className="text-xs">Fiyatlar</span>
           </TabsTrigger>
-          <TabsTrigger value="testimonials" className="flex flex-col gap-1 py-3">
+          <TabsTrigger value="testimonials" className="flex flex-col gap-1 p-8">
             <MessageSquare className="h-4 w-4" />
             <span className="text-xs">Yorumlar</span>
           </TabsTrigger>
-          <TabsTrigger value="team" className="flex flex-col gap-1 py-3">
+          <TabsTrigger value="team" className="flex flex-col gap-1 p-8">
             <UserCircle className="h-4 w-4" />
             <span className="text-xs">Ekip</span>
           </TabsTrigger>
-          <TabsTrigger value="faq" className="flex flex-col gap-1 py-3">
+          <TabsTrigger value="faq" className="flex flex-col gap-1 p-8">
             <HelpCircle className="h-4 w-4" />
             <span className="text-xs">SSS</span>
           </TabsTrigger>
-          <TabsTrigger value="legal" className="flex flex-col gap-1 py-3">
+          <TabsTrigger value="legal" className="flex flex-col gap-1 p-8">
             <FileText className="h-4 w-4" />
             <span className="text-xs">Yasal</span>
           </TabsTrigger>

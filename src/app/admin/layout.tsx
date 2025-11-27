@@ -41,9 +41,15 @@ export default function AdminLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarState, setSidebarState] = useState<"open" | "collapsed" | "hidden">("open")
+  const [isMobile, setIsMobile] = useState<boolean>(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false)
   const [isNavigating, setIsNavigating] = useState(false)
 
   const handleToggleSidebar = () => {
+    if (isMobile) {
+      setMobileSidebarOpen((prev) => !prev)
+      return
+    }
     if (sidebarState === "open") {
       setSidebarState("collapsed")
     } else if (sidebarState === "collapsed") {
@@ -74,6 +80,10 @@ export default function AdminLayout({
     setTimeout(() => {
       setIsNavigating(false)
     }, 100)
+
+    if (isMobile) {
+      setMobileSidebarOpen(false)
+    }
   }
 
   const handleLogout = () => {
@@ -84,35 +94,54 @@ export default function AdminLayout({
   const sidebarWidthPx = sidebarState === "open" ? "256px" : sidebarState === "collapsed" ? "80px" : "0px"
   const mainMargin = sidebarState === "open" ? "pl-64" : sidebarState === "collapsed" ? "pl-20" : "pl-0"
 
-  // Ensure proper cleanup on unmount
+  const effectiveSidebarWidthPx = isMobile ? "0px" : sidebarWidthPx
+  const effectiveMainMargin = isMobile ? "pl-0" : mainMargin
+
+  // Ensure proper cleanup on unmount and handle responsive sidebar
   useEffect(() => {
-    let isComponentMounted = true;
-    
-    // Listen for close-all-dialogs event
-    const handleCloseAllDialogs = () => {
-      if (!isComponentMounted) return;
-      // This is just a placeholder - individual components will handle their own dialog closing
-    };
-    
-    if (typeof window !== 'undefined') {
-      window.addEventListener('close-all-dialogs', handleCloseAllDialogs);
-    }
-    
-    return () => {
-      isComponentMounted = false;
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('close-all-dialogs', handleCloseAllDialogs);
+    let isComponentMounted = true
+
+    const updateIsMobile = () => {
+      if (!isComponentMounted) return
+      const mobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false
+      setIsMobile(mobile)
+      if (mobile) {
+        setSidebarState("hidden")
       }
-    };
-  }, []);
+    }
+
+    const handleCloseAllDialogs = () => {
+      if (!isComponentMounted) return
+      // placeholder for dialog close
+    }
+
+    updateIsMobile()
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', updateIsMobile)
+      window.addEventListener('close-all-dialogs', handleCloseAllDialogs)
+    }
+
+    return () => {
+      isComponentMounted = false
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', updateIsMobile)
+        window.removeEventListener('close-all-dialogs', handleCloseAllDialogs)
+      }
+    }
+  }, [])
 
   return (
     <BreadcrumbProvider>
       <div className="min-h-screen bg-gray-100" suppressHydrationWarning>
       {/* Sidebar */}
       <aside 
-        className={`fixed left-0 top-0 z-40 h-screen ${sidebarWidth} bg-gray-50 border-r border-slate-200 transition-all duration-300 overflow-hidden`}
-        style={{ transitionProperty: 'width, transform' }}
+        className={
+          isMobile
+            ? `fixed left-0 top-0 z-50 h-screen w-64 bg-gray-50 border-r border-slate-200 transition-transform duration-300 overflow-hidden ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+            : `fixed left-0 top-0 z-40 h-screen ${sidebarWidth} bg-gray-50 border-r border-slate-200 transition-all duration-300 overflow-hidden`
+        }
+        style={{ transitionProperty: isMobile ? 'transform' : 'width, transform' }}
       >
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center border-b px-6 gap-3">
@@ -124,7 +153,7 @@ export default function AdminLayout({
               className="object-contain flex-shrink-0"
               priority={true}
             />
-            {sidebarState === "open" && (
+            {!isMobile && sidebarState === "open" && (
               <h1 className="text-xl font-bold text-primary whitespace-nowrap">SMMM Admin</h1>
             )}
           </div>
@@ -143,16 +172,16 @@ export default function AdminLayout({
                       ? "bg-primary text-white"
                       : "text-slate-700 hover:bg-primary/10 hover:text-primary"
                   }`}
-                  title={sidebarState !== "open" ? item.name : ""}
+                  title={!isMobile && sidebarState !== "open" ? item.name : ""}
                 >
                   <item.icon className="h-5 w-5 flex-shrink-0" />
-                  {sidebarState === "open" && <span className="whitespace-nowrap">{item.name}</span>}
+                  {(isMobile || sidebarState === "open") && <span className="whitespace-nowrap">{item.name}</span>}
                 </Link>
               )
             })}
           </nav>
           <div className="border-t p-4">
-            {sidebarState === "open" ? (
+            {(isMobile || sidebarState === "open") ? (
               <Button variant="outline" className="w-full" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Çıkış Yap
@@ -166,9 +195,17 @@ export default function AdminLayout({
         </div>
       </aside>
 
+      {/* Mobile Overlay */}
+      {isMobile && mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* Main Content */}
-      <main className={`${mainMargin} transition-all duration-300`} style={{ transitionProperty: 'padding-left' }} suppressHydrationWarning>
-        <DashboardNavbar userType="admin" sidebarState={sidebarState} onToggleSidebar={handleToggleSidebar} sidebarWidth={sidebarWidthPx} />
+      <main className={`${effectiveMainMargin} transition-all duration-300`} style={{ transitionProperty: 'padding-left' }} suppressHydrationWarning>
+        <DashboardNavbar userType="admin" sidebarState={sidebarState} onToggleSidebar={handleToggleSidebar} sidebarWidth={effectiveSidebarWidthPx} />
         <div className="p-8 mt-16" suppressHydrationWarning>
           <Breadcrumb userType="admin" />
           {children}
