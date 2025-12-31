@@ -7,16 +7,23 @@ import { Button } from "@/components/ui/button"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
+import { turkishTaxOffices } from "@/lib/tax-offices"
+
 interface TaxOffice {
   id: string
   name: string
 }
 
+const defaultTaxOffices: TaxOffice[] = turkishTaxOffices.map((office, index) => ({
+  id: index.toString(),
+  name: office.name
+}))
+
 interface TaxOfficeComboboxProps {
   id?: string
   value: string
   onValueChange: (value: string) => void
-  taxOffices: TaxOffice[]
+  taxOffices?: TaxOffice[]
   placeholder?: string
   searchPlaceholder?: string
   emptyMessage?: string
@@ -30,7 +37,7 @@ export function TaxOfficeCombobox({
   id,
   value,
   onValueChange,
-  taxOffices,
+  taxOffices = defaultTaxOffices,
   placeholder = "Vergi dairesi seçin...",
   searchPlaceholder = "Vergi dairesi ara...",
   emptyMessage = "Vergi dairesi bulunamadı.",
@@ -42,7 +49,8 @@ export function TaxOfficeCombobox({
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
 
-  const filteredOffices = taxOffices.filter(office => 
+  const offices = taxOffices || defaultTaxOffices
+  const filteredOffices = offices.filter(office => 
     office.name.toLowerCase().includes(search.toLowerCase())
   )
   const displayOffices = filteredOffices.slice(0, maxItemsToShow)
@@ -60,7 +68,7 @@ export function TaxOfficeCombobox({
           >
             {(() => {
               const selected = value
-                ? (taxOffices.find((office) => office.name === value)?.name ?? value)
+                ? (offices.find((office) => office.name === value)?.name ?? value)
                 : placeholder
               if (displayMode === 'name') {
                 return (
@@ -92,7 +100,7 @@ export function TaxOfficeCombobox({
             <CommandList className="max-h-72 overflow-auto">
               <CommandEmpty>{emptyMessage}</CommandEmpty>
               <CommandGroup>
-                {(search.length < minCharsToSearch && taxOffices.length > maxItemsToShow) ? null : displayOffices.map((office) => (
+                {(search.length < minCharsToSearch && offices.length > maxItemsToShow) ? null : displayOffices.map((office) => (
                   <CommandItem
                     key={office.id}
                     value={office.name}
@@ -127,7 +135,7 @@ export function TaxOfficeCombobox({
                     />
                   </CommandItem>
                 ))}
-                {(search.length < minCharsToSearch && taxOffices.length > maxItemsToShow) && (
+                {(search.length < minCharsToSearch && offices.length > maxItemsToShow) && (
                   <CommandItem key="hint" value="">
                     <div className="text-muted-foreground text-sm">Aramak için en az {minCharsToSearch} karakter girin</div>
                   </CommandItem>

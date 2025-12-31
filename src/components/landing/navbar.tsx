@@ -106,7 +106,7 @@ export function Navbar() {
                 />
               )}
             </div>
-            <div className="font-bold text-xl text-primary">{siteSettings.siteName || "SMMM"}</div>
+            <div className="font-bold text-xl text-violet-700">{siteSettings.siteName || "SMMM"}</div>
           </Link>
 
           {/* Desktop Menu */}

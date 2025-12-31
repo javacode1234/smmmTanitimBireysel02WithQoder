@@ -41,9 +41,9 @@ export function TermsModal({ open, onOpenChange }: TermsModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-500 bg-clip-text text-transparent">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden p-0">
+        <DialogHeader className="sticky top-0 z-10 bg-primary text-primary-foreground p-4 border-b relative">
+          <DialogTitle className="text-2xl font-bold">
             {title}
           </DialogTitle>
           {lastUpdated ? (
@@ -55,8 +55,11 @@ export function TermsModal({ open, onOpenChange }: TermsModalProps) {
               Kullanım koşulları içeriğini aşağıda görüntüleyebilirsiniz.
             </DialogDescription>
           )}
+          <Button type="button" variant="ghost" size="icon" className="absolute right-2 top-2 h-8 w-8" onClick={() => onOpenChange(false)} aria-label="Kapat">
+            ✕
+          </Button>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-3">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -68,7 +71,7 @@ export function TermsModal({ open, onOpenChange }: TermsModalProps) {
             />
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="sticky bottom-0 z-10 bg-muted p-4 border-t">
           <Button onClick={() => onOpenChange(false)}>Kapat</Button>
         </DialogFooter>
       </DialogContent>

@@ -6,7 +6,6 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { DashboardNavbar } from "@/components/dashboard/navbar"
 import { Breadcrumb } from "@/components/dashboard/breadcrumb"
-import { BreadcrumbProvider } from "@/contexts/breadcrumb-context"
 import Image from "next/image"
 import { 
   LayoutDashboard, 
@@ -132,7 +131,6 @@ export default function AdminLayout({
   }, [])
 
   return (
-    <BreadcrumbProvider>
       <div className="min-h-screen bg-gray-100" suppressHydrationWarning>
       {/* Sidebar */}
       <aside 
@@ -212,6 +210,5 @@ export default function AdminLayout({
         </div>
       </main>
       </div>
-    </BreadcrumbProvider>
   )
 }

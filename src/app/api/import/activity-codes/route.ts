@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       const XLSX = XLSXMod.default || XLSXMod
       const wb = XLSX.read(buf, { type: 'buffer' })
       const ws = wb.Sheets[wb.SheetNames[0]]
-      const rawRows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' })
+      const rawRows: Array<Record<string, unknown>> = XLSX.utils.sheet_to_json(ws, { defval: '' }) as Array<Record<string, unknown>>
       if (!rawRows.length) return NextResponse.json({ error: 'Boş Excel' }, { status: 400 })
       const headers = Object.keys(rawRows[0] || {})
       const codeKey = headers.find(k => /^code$/i.test(k))
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       const codeKey = keys.find(k => /^code$/i.test(k)) || keys.find(k => /^kod$/i.test(k)) || keys[0]
       const descKey = keys.find(k => /^tanim$/i.test(k)) || keys.find(k => /^name$/i.test(k)) || keys[1]
       const rawCode = String(r[codeKey as string] ?? '').trim()
-      let code = normalizeCode(rawCode)
+      const code = normalizeCode(rawCode)
       const tr = descKey ? String(r[descKey as string] ?? '').trim() : ''
       if (!code) continue
       try {
@@ -173,8 +173,8 @@ function parseCSVFlexible(input: string): Array<Record<string, unknown>> {
 }
 async function decodeCSV(buf: Buffer): Promise<string> {
   try {
-    const iconvMod: any = await import('iconv-lite')
-    const iconv = iconvMod.default || iconvMod
+    const iconvMod: unknown = await import('iconv-lite')
+    const iconv = (iconvMod as { default?: { decode: (b: Buffer, enc: string) => string }; decode?: (b: Buffer, enc: string) => string }).default || (iconvMod as { decode: (b: Buffer, enc: string) => string })
     const tryDecode = (enc: string) => {
       try { return iconv.decode(buf, enc) } catch { return '' }
     }

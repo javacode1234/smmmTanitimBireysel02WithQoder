@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { DynamicFavicon } from "@/components/dynamic-favicon";
 import DomErrorBoundary from "@/components/dom-error-boundary";
+import { BreadcrumbProvider } from "@/contexts/breadcrumb-context";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,7 +34,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <BreadcrumbProvider>
+              {children}
+            </BreadcrumbProvider>
             <Toaster />
           </ThemeProvider>
         </DomErrorBoundary>

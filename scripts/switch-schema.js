@@ -12,31 +12,16 @@
   console.log(`Switching Prisma schema for ${env} environment...`)
 
 try {
-  let sourceSchema
-  
-  if (env === 'development') {
-    // For development, use the MySQL schema
-    sourceSchema = path.join(__dirname, '..', 'prisma', 'schema.prisma.original')
-    console.log('Using MySQL schema for development')
-  } else {
-    // For production/vercel, use the default schema (MySQL)
-    sourceSchema = path.join(__dirname, '..', 'prisma', 'schema.prisma.original')
-    
-    // If the original schema doesn't exist, create it from the current schema
-    if (!fs.existsSync(sourceSchema)) {
-      const currentSchema = path.join(__dirname, '..', 'prisma', 'schema.prisma')
-      fs.copyFileSync(currentSchema, sourceSchema)
-      console.log('Created backup of original schema')
-    }
-    
-    console.log('Using MySQL/PostgreSQL schema for production')
+  // Do not override current schema; ensure backup exists and stays in sync
+  const currentSchema = path.join(__dirname, '..', 'prisma', 'schema.prisma')
+  const backupSchema = path.join(__dirname, '..', 'prisma', 'schema.prisma.original')
+  try {
+    fs.copyFileSync(currentSchema, backupSchema)
+    console.log('Synced prisma/schema.prisma to prisma/schema.prisma.original')
+  } catch (e) {
+    console.warn('Could not sync schema backup:', e?.message || e)
   }
-
-  // Copy the appropriate schema to the main schema file
-  const targetSchema = path.join(__dirname, '..', 'prisma', 'schema.prisma')
-  fs.copyFileSync(sourceSchema, targetSchema)
-  
-  console.log(`Successfully switched to ${env} schema!`)
+  console.log(`Schema switch noop for ${env} environment (keeping current schema)`) 
 } catch (error) {
   console.error('Error switching schema:', error.message)
   process.exit(1)

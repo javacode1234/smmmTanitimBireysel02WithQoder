@@ -347,3 +347,22 @@ export async function PUT(request: NextRequest) {
     )
   }
 }
+
+// Mark accrual as paid or update fields
+export async function PATCH(request: NextRequest) {
+  try {
+    const data = await request.json() as { id?: string; isPaid?: boolean; paymentDate?: string }
+    if (!data.id) {
+      return NextResponse.json({ error: 'Tahakkuk ID gerekli' }, { status: 400 })
+    }
+    const updateData: Record<string, unknown> = {}
+    if (typeof data.isPaid === 'boolean') updateData.isPaid = data.isPaid
+    if (data.paymentDate) updateData.paymentDate = new Date(data.paymentDate)
+    updateData.updatedAt = new Date()
+    const updated = await prisma.subscriptionaccrual.update({ where: { id: data.id }, data: updateData })
+    return NextResponse.json(updated)
+  } catch (error) {
+    console.error('Error updating subscription accrual:', error)
+    return NextResponse.json({ error: 'Tahakkuk güncellenemedi' }, { status: 500 })
+  }
+}

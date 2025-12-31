@@ -2,7 +2,7 @@ import { PrismaClient, Prisma } from '@prisma/client'
 import fetch from 'node-fetch'
 import * as fs from 'fs'
 import * as path from 'path'
-let XLSX: any
+let XLSX: typeof import('xlsx') | null = null
 import { turkishTaxOffices } from '../src/lib/tax-offices'
 import bcrypt from 'bcryptjs'
 
@@ -38,12 +38,13 @@ async function main() {
     })
     console.log('✅ Site settings created:', settings.siteName)
     try {
-      console.log('🏷️ Seeding activity codes (dev, TR XLS) ...')
+      console.log('🏷️ Seeding activity codes (dev) ...')
       await prisma.activitycode.deleteMany({})
       await seedActivityCodesFromLocalXLS()
-      console.log('✅ Activity codes seeded (dev, TR XLS)')
+      await seedActivityCodesFromCSV()
+      console.log('✅ Activity codes seeded (dev)')
     } catch (e) {
-      console.warn('⚠️ Skipping dev TR XLS activity codes seed:', e instanceof Error ? e.message : e)
+      console.warn('⚠️ Skipping dev activity codes seed:', e instanceof Error ? e.message : e)
     }
     try {
       console.log('🗺️ Seeding cities/districts (dev)...')
@@ -448,12 +449,12 @@ async function main() {
     })
   }
 
-  // Seed Activity Codes
   try {
     console.log('🏷️ Seeding activity codes...')
     await prisma.activitycode.deleteMany({})
     await seedActivityCodesFromLocalXLS()
-    console.log('✅ Activity codes seeded (full list if CSV available)')
+    await seedActivityCodesFromCSV()
+    console.log('✅ Activity codes seeded')
   } catch (e) {
     console.warn('⚠️ Skipping activity codes seed:', e instanceof Error ? e.message : e)
   }
@@ -621,16 +622,22 @@ async function seedActivityCodesFromLocalXLS() {
     if (!filePath) { console.log('ℹ️ Turkish XLS not found, skipping.'); return }
 
     if (!XLSX) {
-      try { XLSX = require('xlsx') } catch (e) { console.warn('⚠️ Missing xlsx dependency, install with: npm i xlsx'); return }
+      try {
+        const mod: unknown = await import('xlsx')
+        XLSX = (mod as { default?: typeof import('xlsx') }).default || (mod as typeof import('xlsx'))
+      } catch (e) {
+        console.warn('⚠️ Missing xlsx dependency, install with: npm i xlsx')
+        return
+      }
     }
 
     console.log('📥 Reading Excel:', filePath)
     const wb = XLSX.readFile(filePath)
     const wsName = wb.SheetNames[0]
     const ws = wb.Sheets[wsName]
-    const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' })
+    const rows: Array<Record<string, unknown>> = XLSX.utils.sheet_to_json(ws, { defval: '' }) as Array<Record<string, unknown>>
     // Try to detect columns
-    const detect = (row: any) => {
+    const detect = (row: Record<string, unknown>) => {
       const keys = Object.keys(row)
       const codeKey = keys.find(k => /kod|code|nace/i.test(k)) || keys[0]
       const descKey = keys.find(k => /tanim|tanım|aciklama|açıklama|description|ad/i.test(k)) || keys[1] || keys[0]
@@ -640,8 +647,10 @@ async function seedActivityCodesFromLocalXLS() {
 
     let count = 0, updates = 0
     for (const r of rows) {
-      let raw = String(r[codeKey] || '').trim()
-      const tr = String(r[descKey] || '').trim()
+      const rawVal = r[codeKey] as string | number | undefined
+      const descVal = r[descKey] as string | number | undefined
+      let raw = String(rawVal || '').trim()
+      const tr = String(descVal || '').trim()
       if (!raw || !tr) continue
       // Normalize codes: accept forms like 620101, 62.01.01, 62-01-01, etc.
       raw = raw.replace(/[^0-9]/g, '')

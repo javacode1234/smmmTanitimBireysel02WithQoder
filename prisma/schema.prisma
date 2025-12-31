@@ -105,57 +105,6 @@ model additionalservice {
   updatedAt DateTime
 }
 
-model announcement {
-  id                 String               @id
-  title              String
-  message            String               @db.Text
-  type               announcement_type    @default(INFO)
-  targetAll          Boolean              @default(true)
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime
-  announcementclient announcementclient[]
-}
-
-model announcementclient {
-  id             String       @id
-  announcementId String
-  clientId       String
-  read           Boolean      @default(false)
-  announcement   announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade, map: "AnnouncementClient_announcementId_fkey")
-  client         client       @relation(fields: [clientId], references: [id], onDelete: Cascade, map: "AnnouncementClient_clientId_fkey")
-
-  @@unique([announcementId, clientId], map: "AnnouncementClient_announcementId_clientId_key")
-  @@index([clientId], map: "AnnouncementClient_clientId_fkey")
-}
-
-model client {
-  id                 String               @id
-  userId             String               @unique(map: "Client_userId_key")
-  companyName        String
-  taxNumber          String               @unique(map: "Client_taxNumber_key")
-  phone              String?
-  address            String?              @db.Text
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime
-  announcementclient announcementclient[]
-  user               user                 @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Client_userId_fkey")
-  collection         collection[]
-}
-
-model collection {
-  id        String          @id
-  clientId  String
-  amount    Decimal         @db.Decimal(10, 2)
-  type      collection_type @default(INCOME)
-  date      DateTime
-  note      String?         @db.Text
-  createdAt DateTime        @default(now())
-  updatedAt DateTime
-  client    client          @relation(fields: [clientId], references: [id], onDelete: Cascade, map: "Collection_clientId_fkey")
-
-  @@index([clientId], map: "Collection_clientId_fkey")
-}
-
 model contactmessage {
   id        String                @id
   name      String
@@ -177,7 +126,6 @@ model customer {
   email                      String?
   address                    String?
   city                       String?
-  district                   String?
   mainActivityCode           String?
   facebookUrl                String?
   xUrl                       String?
@@ -200,6 +148,12 @@ model customer {
   authorizationDate          DateTime?
   authorizationPeriod        String?
   notes                      String?                      @db.LongText
+  partners                   String?                      @db.LongText
+  branches                   String?                      @db.LongText
+  chambers                   String?                      @db.LongText
+  activities                 String?                      @db.LongText
+  authorizedPersons          String?                      @db.LongText
+  messages                   String?                      @db.LongText
   status                     customer_status              @default(ACTIVE)
   onboardingStage            customer_onboardingStage     @default(LEAD)
   createdAt                  DateTime                     @default(now())
@@ -208,8 +162,6 @@ model customer {
   passwords                  String?                      @db.LongText
   taxPeriodType              customer_taxPeriodType?
   declarations               String?                      @db.LongText
-  authorizedPersons          String?                      @db.LongText
-  branches                   String?                      @db.LongText
   hasEmployees               Boolean?                     @default(false)
   employeeCount              Int?                         // New field for insurance employee count
   taxOfficeId                String? 
@@ -341,18 +293,6 @@ model legaldocument {
   updatedAt   DateTime
 }
 
-model message {
-  id        String   @id
-  userId    String
-  subject   String
-  message   String   @db.Text
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Message_userId_fkey")
-
-  @@index([userId], map: "Message_userId_fkey")
-}
-
 model pricingfeature {
   id          String      @id
   planId      String
@@ -404,16 +344,6 @@ model quoterequest {
   updatedAt   DateTime
 }
 
-model reminder {
-  id        String   @id
-  title     String
-  message   String   @db.Text
-  date      DateTime
-  completed Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-}
-
 model service {
   id          String   @id
   icon        String   @default("FileText")
@@ -460,22 +390,6 @@ model session {
   @@index([userId], map: "Session_userId_fkey")
 }
 
-model settings {
-  id          String   @id
-  companyName String
-  logo        String?
-  taxNumber   String?
-  email       String?
-  phone       String?
-  address     String?  @db.Text
-  smtpHost    String?
-  smtpPort    Int?
-  smtpUser    String?
-  smtpPass    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime
-}
-
 model sitesettings {
   id              String   @id
   siteName        String   @default("SMMM Ofisi")
@@ -512,8 +426,8 @@ model subscriptionaccrual {
   carryForwardToPeriodId                                                        String?
   createdAt                                                                     DateTime          @default(now())
   updatedAt                                                                     DateTime
-  accountingperiod_subscriptionaccrual_accountingPeriodIdToaccountingperiod     accountingperiod  @relation("subscriptionaccrual_accountingPeriodIdToaccountingperiod", fields: [accountingPeriodId], references: [id], onDelete: Cascade, map: "SubscriptionAccrual_accountingPeriodId_fkey")
-  accountingperiod_subscriptionaccrual_carryForwardToPeriodIdToaccountingperiod accountingperiod? @relation("subscriptionaccrual_carryForwardToPeriodIdToaccountingperiod", fields: [carryForwardToPeriodId], references: [id], onDelete: SetNull, map: "SubscriptionAccrual_carryForwardToPeriodId_fkey")
+  accountingPeriod                                                                accountingperiod  @relation("subscriptionaccrual_accountingPeriodIdToaccountingperiod", fields: [accountingPeriodId], references: [id])
+  carryForwardToPeriod                                                            accountingperiod? @relation("subscriptionaccrual_carryForwardToPeriodIdToaccountingperiod", fields: [carryForwardToPeriodId], references: [id])
   customer                                                                      customer          @relation(fields: [customerId], references: [id], onDelete: Cascade, map: "SubscriptionAccrual_customerId_fkey")
 
   @@index([accountingPeriodId], map: "SubscriptionAccrual_accountingPeriodId_idx")
@@ -521,18 +435,6 @@ model subscriptionaccrual {
   @@index([customerId], map: "SubscriptionAccrual_customerId_idx")
   @@index([dueDate], map: "SubscriptionAccrual_dueDate_idx")
   @@index([isPaid], map: "SubscriptionAccrual_isPaid_idx")
-}
-
-model taxoffice {
-  id        String   @id
-  name      String   @unique(map: "TaxOffice_name_key")
-  city      String?
-  district  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-
-  @@index([city], map: "TaxOffice_city_idx")
-  @@index([name], map: "TaxOffice_name_idx")
 }
 
 model taxreturn {
@@ -621,8 +523,6 @@ model user {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime
   account       account[]
-  client        client?
-  message       message[]
   session       session[]
 }
 
@@ -659,18 +559,6 @@ enum legaldocument_type {
   PRIVACY_POLICY
   TERMS_OF_USE
   KVKK
-}
-
-enum announcement_type {
-  INFO
-  WARNING
-  REMINDER
-  URGENT
-}
-
-enum collection_type {
-  INCOME
-  EXPENSE
 }
 
 enum declarationconfig_frequency {
@@ -753,7 +641,6 @@ enum customer_taxPeriodType {
 model TaxOffice {
   id        String   @id @default(cuid())
   name      String   @unique
-  code      String?  @unique
   city      String?
   district  String?
   createdAt DateTime @default(now())
@@ -764,33 +651,13 @@ model TaxOffice {
   @@index([city], map: "TaxOffice_city_idx")
 }
 
-model city {
-  id        String     @id @default(cuid())
-  name      String     @unique
-  code      String?    @unique
-  districts district[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-}
-
-model district {
-  id        String   @id @default(cuid())
-  name      String
-  code      String?  @unique
-  cityId    String
-  city      city     @relation(fields: [cityId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([cityId, name], map: "district_city_name_unique")
-}
-
 model activitycode {
   id        String   @id @default(cuid())
   code      String   @unique
   name      String   @db.Text
-  trName    String?  @db.Text
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([name(length: 191)], map: "ActivityCode_name_idx")
 }

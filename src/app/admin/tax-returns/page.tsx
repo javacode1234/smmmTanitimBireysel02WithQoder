@@ -55,17 +55,10 @@ type Customer = {
   taxNumber: string | null
 }
 
+import { DECLARATION_TYPES } from "@/lib/declaration-logic"
+
 // Common tax return types in Turkey
-const TAX_RETURN_TYPES = [
-  "KDV (Katma Değer Vergisi)",
-  "Muhtasar (Stopaj Beyannamesi)",
-  "Gelir Vergisi",
-  "Kurumlar Vergisi",
-  "Geçici Vergi",
-  "Damga Vergisi",
-  "Veraset ve İntikal Vergisi",
-  "Diğer"
-]
+const TAX_RETURN_TYPES = Object.values(DECLARATION_TYPES)
 
 export default function TaxReturnsPage() {
   const [isMounted, setIsMounted] = useState(false)

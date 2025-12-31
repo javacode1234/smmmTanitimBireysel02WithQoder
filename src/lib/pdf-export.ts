@@ -242,6 +242,38 @@ export const exportQuoteRequestToPDF = (request: QuoteRequest) => {
   doc.save(`teklif_${request.id}.pdf`)
 }
 
+export const exportAccountSummaryToPDF = (summary: { customerName: string; year: number; rows: Array<{ id: string; description: string; amount: number; dueDate: string; isPaid?: boolean; paymentDate?: string | null }>; total: number; paid: number; carryForward: number }) => {
+  const doc = new jsPDF()
+  doc.setFontSize(16)
+  doc.text('HESAP OZETI', 20, 20)
+  doc.setLineWidth(0.5)
+  doc.line(20, 25, 190, 25)
+  doc.setFontSize(10)
+  let y = 35
+  doc.text(`Müşteri: ${summary.customerName}`, 20, y); y += 7
+  doc.text(`Yıl: ${summary.year}`, 20, y); y += 12
+  doc.setFontSize(12)
+  doc.text('TAHAKKUKLAR', 20, y); y += 7
+  doc.setFontSize(10)
+  summary.rows.forEach((r) => {
+    if (y > 270) { doc.addPage(); y = 20 }
+    const paidText = r.isPaid ? ` (Ödendi ${r.paymentDate ? new Date(r.paymentDate).toLocaleDateString('tr-TR') : ''})` : ''
+    doc.text(`- ${r.description} | ${new Date(r.dueDate).toLocaleDateString('tr-TR')} | ${r.amount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}${paidText}`, 20, y)
+    y += 6
+  })
+  y += 10
+  if (y > 270) { doc.addPage(); y = 20 }
+  doc.setFontSize(12)
+  doc.text('OZET', 20, y); y += 7
+  doc.setFontSize(10)
+  doc.text(`Toplam Borç: ${summary.total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}`, 20, y); y += 6
+  doc.text(`Toplam Ödeme: ${summary.paid.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}`, 20, y); y += 6
+  doc.text(`Devreden Bakiye: ${summary.carryForward.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}`, 20, y); y += 12
+  doc.setFontSize(8)
+  doc.text(`Bu belge ${new Date().toLocaleDateString('tr-TR')} tarihinde olusturulmustur.`, 20, y)
+  doc.save(`hesap_ozeti_${summary.customerName}_${summary.year}.pdf`)
+}
+
 
 
 // Status label helpers
