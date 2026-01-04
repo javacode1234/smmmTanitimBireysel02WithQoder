@@ -793,7 +793,7 @@ export function ServicesTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">Icon</TableHead>
+                <TableHead className="w-[80px]">Simge</TableHead>
                 <TableHead>Başlık</TableHead>
                 <TableHead>Açıklama</TableHead>
                 <TableHead className="w-[100px]">Özellikler</TableHead>
@@ -1201,7 +1201,7 @@ export function ServicesTab() {
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label>Icon</Label>
+                  <Label>Simge</Label>
                   <Select
                     value={editingService.icon}
                     onValueChange={(value) => setEditingService({ ...editingService, icon: value })}

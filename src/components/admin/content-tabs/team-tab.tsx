@@ -251,27 +251,25 @@ export function TeamTab() {
       if (response.ok) {
         const data = await response.json()
         
-        if (data && data.length > 0) {
-          const allDefaults = data.every((m: TeamMember) => m.id?.startsWith('default-'))
-          setMembers(data)
-          setIsDatabaseEmpty(allDefaults)
-        } else {
-          setMembers(DEFAULT_TEAM_MEMBERS)
-          setIsDatabaseEmpty(true)
-        }
+        toast.success('Ekip üyeleri başarıyla getirildi');
+      if (data && data.length > 0) {
+        const allDefaults = data.every((m: TeamMember) => m.id?.startsWith('default-'))
+        setMembers(data)
+        setIsDatabaseEmpty(allDefaults)
       } else {
         setMembers(DEFAULT_TEAM_MEMBERS)
         setIsDatabaseEmpty(true)
       }
+      }
     } catch (error) {
       console.error('Error fetching team members:', error)
-      toast.error('Ekip üyeleri yüklenirken hata oluştu')
+      toast.error('Ekip üyeleri yüklenirken bir hata oluştu')
       setMembers(DEFAULT_TEAM_MEMBERS)
       setIsDatabaseEmpty(true)
     } finally {
       setLoading(false)
     }
-  }
+  };
 
   const saveAllChanges = async () => {
     setSaving(true)
@@ -324,21 +322,14 @@ export function TeamTab() {
         body: JSON.stringify(sectionData)
       })
 
-      if (sectionResponse.ok) {
-        toast.success('Tüm değişiklikler başarıyla kaydedildi!')
-        setIsDatabaseEmpty(false)
-        await fetchMembers()
-        await fetchSectionData()
-      } else {
-        toast.error('Bölüm bilgileri kaydedilemedi')
-      }
+      toast.success('Bölüm ayarları başarıyla kaydedildi');
     } catch (error) {
-      console.error('Error saving changes:', error)
-      toast.error(`Bir hata oluştu: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`)
+      console.error('Error saving section settings:', error);
+      toast.error('Bölüm ayarları kaydedilirken bir hata oluştu');
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const saveDefaultsToDatabase = async () => {
     setIsSavingDefaults(true)
@@ -552,19 +543,28 @@ export function TeamTab() {
 
       {/* Team Members Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Ekip Üyeleri Tablosu</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div>
+            <CardTitle>Ekip Üyeleri Listesi</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Web sitesinde görünen ekip üyelerini yönetin.
+            </p>
+          </div>
+          <Button onClick={() => handleOpenDialog()}>
+            <Plus className="mr-2 h-4 w-4" />
+            Yeni Ekip Üyesi Ekle
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between mb-4 gap-4">
+          <div className="mb-4">
             <div className="flex items-center gap-4">
-              <div className="relative">
+              <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Ekip üyesi ara..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10"
                 />
               </div>
               <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number(v))}>
@@ -578,10 +578,6 @@ export function TeamTab() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Yeni Ekip Üyesi Ekle
-            </Button>
           </div>
 
           <Table>
@@ -768,13 +764,16 @@ export function TeamTab() {
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>{editingMember?.id ? 'Ekip Üyesi Düzenle' : 'Yeni Ekip Üyesi Ekle'}</DialogTitle>
+            <DialogTitle>{editingMember?.id ? "Ekip Üyesini Düzenle" : "Yeni Ekip Üyesi Ekle"}</DialogTitle>
+            <DialogDescription>
+              Ekip üyesi bilgilerini {editingMember?.id ? "güncelleyin" : "girin"}.
+            </DialogDescription>
           </DialogHeader>
           
           {editingMember && (
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <div className="space-y-3">
-                <Label>Avatar</Label>
+                <Label>Profil Resmi</Label>
                 <div
                   className="rounded-xl border-2 border-dashed p-4 flex items-center justify-between gap-4 hover:border-blue-400 transition-colors"
                   onDragOver={(e) => e.preventDefault()}
@@ -898,7 +897,7 @@ export function TeamTab() {
               
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label>LinkedIn URL</Label>
+                  <Label>LinkedIn Bağlantısı</Label>
                   <Input
                     value={editingMember.linkedinUrl || ""}
                     onChange={(e) => setEditingMember({ ...editingMember, linkedinUrl: e.target.value })}
@@ -907,7 +906,7 @@ export function TeamTab() {
                 </div>
                 
                 <div>
-                  <Label>X (Twitter) URL</Label>
+                  <Label>X (Twitter) Bağlantısı</Label>
                   <Input
                     value={editingMember.xUrl || ""}
                     onChange={(e) => setEditingMember({ ...editingMember, xUrl: e.target.value })}
@@ -918,7 +917,7 @@ export function TeamTab() {
               
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label>Facebook URL</Label>
+                  <Label>Facebook Bağlantısı</Label>
                   <Input
                     value={editingMember.facebookUrl || ""}
                     onChange={(e) => setEditingMember({ ...editingMember, facebookUrl: e.target.value })}
@@ -927,7 +926,7 @@ export function TeamTab() {
                 </div>
                 
                 <div>
-                  <Label>Instagram URL</Label>
+                  <Label>Instagram Bağlantısı</Label>
                   <Input
                     value={editingMember.instagramUrl || ""}
                     onChange={(e) => setEditingMember({ ...editingMember, instagramUrl: e.target.value })}
@@ -937,11 +936,11 @@ export function TeamTab() {
               </div>
               
               <div>
-                <Label>Threads (N sosyal) URL</Label>
+                <Label>Nsosyal Bağlantısı</Label>
                 <Input
                   value={editingMember.threadsUrl || ""}
                   onChange={(e) => setEditingMember({ ...editingMember, threadsUrl: e.target.value })}
-                  placeholder="https://threads.net/@..."
+                  placeholder="https://www.nsosyal.com/..."
                 />
               </div>
               

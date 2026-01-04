@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import crypto from 'node:crypto'
+import { generateAccrualsForCustomer, getTurkishMonthName } from '@/lib/subscription-logic'
 
 // Generate monthly subscription accruals for all active customers
 export async function POST() {
   try {
-    // Get the current date to determine which month to generate accruals for
-    const now = new Date()
-    const targetYear = now.getFullYear()
-    
     // Get all active customers with subscription fees
     const customers = await prisma.customer.findMany({
       where: {
@@ -21,104 +18,24 @@ export async function POST() {
         id: true,
         companyName: true,
         subscriptionFee: true,
-        establishmentDate: true
+        establishmentDate: true,
+        serviceStartDate: true,
+        feeAccrualDay: true
       }
     })
     
-    const createdAccruals = []
+    let allCreatedAccruals: any[] = []
     
-    // For each customer, create monthly accruals from establishment date onwards
+    // For each customer, create monthly accruals
     for (const customer of customers) {
-      // Skip if no establishment date
-      if (!customer.establishmentDate) continue
-      
-      const establishmentDate = new Date(customer.establishmentDate)
-      const establishmentYear = establishmentDate.getFullYear()
-      const establishmentMonth = establishmentDate.getMonth() // 0-indexed
-      
-      // Generate accruals from establishment date to current date
-      for (let year = establishmentYear; year <= targetYear; year++) {
-        // Determine start and end months for this year
-        const startMonth = (year === establishmentYear) ? establishmentMonth : 0 // January
-        const endMonth = (year === targetYear) ? now.getMonth() : 11 // December or current month
-        
-        // Create accounting period if it doesn't exist
-        let accountingPeriod = await prisma.accountingperiod.findFirst({
-          where: {
-            customerId: customer.id,
-            year: year
-          }
-        })
-        
-        // If no accounting period exists, create one
-        if (!accountingPeriod) {
-          const startDate = new Date(year, 0, 1) // January 1st
-          const endDate = new Date(year, 11, 31) // December 31st
-          
-          accountingPeriod = await prisma.accountingperiod.create({
-            data: {
-              id: crypto.randomUUID(),
-              customer: { connect: { id: customer.id } },
-              year: year,
-              startDate,
-              endDate,
-              updatedAt: new Date()
-            }
-          })
-        }
-        
-        // Parse the subscription fee (remove currency symbol and convert to number)
-        const feeAmount = parseFloat(customer.subscriptionFee!.replace('₺', '').replace(',', '.'))
-        
-        if (isNaN(feeAmount) || feeAmount <= 0) continue
-        
-        // Generate accruals for each month in the range
-        for (let month = startMonth; month <= endMonth; month++) {
-          // Check if an accrual already exists for this customer and month
-          const existingAccrual = await prisma.subscriptionaccrual.findFirst({
-            where: {
-              customerId: customer.id,
-              accountingPeriodId: accountingPeriod.id,
-              dueDate: {
-                gte: new Date(year, month, 1),
-                lt: new Date(year, month + 1, 1)
-              }
-            }
-          })
-          
-          // If no accrual exists, create one
-          if (!existingAccrual) {
-            // Create the accrual for this month (due at the end of the month)
-            const dueDate = new Date(year, month, 28) // Due at the end of the month
-            
-            const accrual = await prisma.subscriptionaccrual.create({
-              data: {
-                id: crypto.randomUUID(),
-                customerId: customer.id,
-                accountingPeriodId: accountingPeriod.id,
-                amount: feeAmount,
-                dueDate,
-                description: `${year} ${getTurkishMonthName(month + 1)} ayı aidatı`,
-                updatedAt: new Date()
-              }
-            })
-            
-            createdAccruals.push({
-              customerId: customer.id,
-              companyName: customer.companyName,
-              accrualId: accrual.id,
-              amount: feeAmount,
-              dueDate: accrual.dueDate
-            })
-          }
-        }
-      }
+      const accruals = await generateAccrualsForCustomer(customer, false)
+      allCreatedAccruals = [...allCreatedAccruals, ...accruals]
     }
     
     return NextResponse.json({
       message: 'Aidat tahakkukları başarıyla oluşturuldu',
-      count: createdAccruals.length,
-      accruals: createdAccruals
+      count: allCreatedAccruals.length,
+      accruals: allCreatedAccruals
     })
     
   } catch (error) {
@@ -130,7 +47,8 @@ export async function POST() {
   }
 }
 
-// Get Turkish month name
+// Get Turkish month name (now imported from subscription-logic)
+/*
 function getTurkishMonthName(month: number): string {
   const months = [
     '', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
@@ -138,11 +56,393 @@ function getTurkishMonthName(month: number): string {
   ]
   return months[month] || ''
 }
+*/
 
 // Get subscription accruals for a specific customer
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const mode = searchParams.get('mode')
+
+    if (mode === 'stats') {
+      try {
+        const type = searchParams.get('type') // 'card' or 'chart'
+        const now = new Date()
+        const currentYear = now.getFullYear()
+        const currentMonth = now.getMonth()
+
+        if (type === 'chart') {
+          // Calculate date range (last 12 months)
+          const endDate = new Date(currentYear, currentMonth + 1, 1) // First day of next month
+          const startDate = new Date(currentYear, currentMonth - 11, 1) // 11 months ago
+
+          // Fetch all active customers to process count in memory
+          const allCustomers = await prisma.customer.findMany({
+            where: { status: 'ACTIVE' },
+            select: {
+              id: true,
+              serviceStartDate: true,
+              establishmentDate: true,
+              createdAt: true,
+              transactions: true
+            }
+          })
+
+          // Fetch all relevant accruals in the date range
+          const allAccruals = await prisma.subscriptionaccrual.findMany({
+            where: {
+              dueDate: { gte: startDate, lt: endDate }
+            },
+            select: {
+              amount: true,
+              dueDate: true,
+              customerId: true
+            }
+          })
+
+          const chartData = []
+          for (let i = 11; i >= 0; i--) {
+            const date = new Date(currentYear, currentMonth - i, 1)
+            const year = date.getFullYear()
+            const month = date.getMonth()
+            const monthStart = new Date(year, month, 1)
+            const monthEnd = new Date(year, month + 1, 1)
+
+            // Count customers active at this point in time
+            const customerCount = allCustomers.filter(c => {
+              const start = c.serviceStartDate || c.establishmentDate || c.createdAt
+              return start < monthEnd
+            }).length
+
+            // Sum accruals for this month
+            let accrualSum = 0
+            for (const acc of allAccruals) {
+              if (acc.dueDate >= monthStart && acc.dueDate < monthEnd) {
+                const customer = allCustomers.find(c => c.id === acc.customerId)
+                if (customer) {
+                  const start = customer.serviceStartDate || customer.establishmentDate || customer.createdAt
+                  if (acc.dueDate >= start) {
+                    accrualSum += Number(acc.amount)
+                  }
+                }
+              }
+            }
+
+            // Sum income for this month using Transactions (Cash Basis)
+            let incomeSum = 0
+            for (const customer of allCustomers) {
+              if (customer.transactions) {
+                try {
+                  const transactions = JSON.parse(customer.transactions)
+                  if (Array.isArray(transactions)) {
+                    for (const t of transactions) {
+                      if (t.type === 'CREDIT' && t.date) {
+                        const tDate = new Date(t.date)
+                        if (tDate >= monthStart && tDate < monthEnd) {
+                           incomeSum += Number(t.amount)
+                        }
+                      }
+                    }
+                  }
+                } catch (e) {
+                  // Ignore parse errors
+                }
+              }
+            }
+
+            chartData.push({
+              name: date.toLocaleDateString('tr-TR', { month: 'short', year: 'numeric' }),
+              customers: customerCount,
+              accrual: accrualSum,
+              income: incomeSum
+            })
+          }
+          return NextResponse.json(chartData)
+        }
+
+        if (type === 'distribution') {
+            const period = searchParams.get('period') || 'this-month'
+            const basis = searchParams.get('basis') || 'cash' // 'cash' or 'accrual'
+            const now = new Date()
+            let startDate: Date, endDate: Date
+
+            if (period === 'this-month') {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+            } else if (period === 'last-month') {
+                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+                endDate = new Date(now.getFullYear(), now.getMonth(), 1)
+            } else if (period === 'this-year') {
+                startDate = new Date(now.getFullYear(), 0, 1)
+                endDate = new Date(now.getFullYear() + 1, 0, 1)
+            } else if (period === 'last-year') {
+                startDate = new Date(now.getFullYear() - 1, 0, 1)
+                endDate = new Date(now.getFullYear(), 0, 1)
+            } else {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+            }
+
+            const distribution: Record<string, number> = {}
+            let total = 0
+
+            if (basis === 'accrual') {
+                // Accrual basis: Filter by due date, ignore payment status
+                const accruals = await prisma.subscriptionaccrual.findMany({
+                    where: {
+                        dueDate: {
+                            gte: startDate,
+                            lt: endDate
+                        }
+                    },
+                    include: {
+                        customer: {
+                            select: {
+                                ledgerType: true,
+                                companyClass: true,
+                                serviceStartDate: true,
+                                establishmentDate: true,
+                                createdAt: true
+                            }
+                        }
+                    }
+                })
+
+                for (const accrual of accruals) {
+                    const c = accrual.customer
+                    if (!c) continue
+
+                    const start = c.serviceStartDate || c.establishmentDate || c.createdAt
+                    if (accrual.dueDate < start) {
+                        continue
+                    }
+
+                    let groupName = 'Diğer'
+                    if (c.companyClass === 'SINIF_1') {
+                        groupName = '1. Sınıf'
+                    } else if (c.companyClass === 'SINIF_2') {
+                        groupName = '2. Sınıf'
+                    } else if (c.ledgerType) {
+                        groupName = c.ledgerType
+                    }
+
+                    const amount = Number(accrual.amount)
+                    
+                    if (!distribution[groupName]) {
+                        distribution[groupName] = 0
+                    }
+                    distribution[groupName] += amount
+                    total += amount
+                }
+            } else {
+                // Cash basis: Use Transactions
+                // Fetch all customers (we need to filter transactions in memory)
+                // Optimization: In a real app, transactions should be in a separate table.
+                // Since they are JSON, we must fetch all customers.
+                const allCustomers = await prisma.customer.findMany({
+                    select: {
+                        companyClass: true,
+                        ledgerType: true,
+                        transactions: true
+                    }
+                })
+
+                for (const c of allCustomers) {
+                    if (c.transactions) {
+                        try {
+                            const transactions = JSON.parse(c.transactions)
+                            if (Array.isArray(transactions)) {
+                                for (const t of transactions) {
+                                    if (t.type === 'CREDIT' && t.date) {
+                                        const tDate = new Date(t.date)
+                                        if (tDate >= startDate && tDate < endDate) {
+                                            let groupName = 'Diğer'
+                                            if (c.companyClass === 'SINIF_1') {
+                                                groupName = '1. Sınıf'
+                                            } else if (c.companyClass === 'SINIF_2') {
+                                                groupName = '2. Sınıf'
+                                            } else if (c.ledgerType) {
+                                                groupName = c.ledgerType
+                                            }
+
+                                            const amount = Number(t.amount)
+                                            if (!distribution[groupName]) {
+                                                distribution[groupName] = 0
+                                            }
+                                            distribution[groupName] += amount
+                                            total += amount
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            // Ignore
+                        }
+                    }
+                }
+            }
+
+            const result = Object.entries(distribution).map(([name, value]) => ({
+                name,
+                value
+            })).sort((a, b) => b.value - a.value)
+
+            return NextResponse.json({
+                data: result,
+                total
+            })
+        }
+
+ 
+        
+        // Card Stats
+        // Date Ranges
+        // now, currentYear, currentMonth are already defined at the top of the try block
+
+        // Last Month
+        const startOfLastMonth = new Date(currentYear, currentMonth - 1, 1)
+        const endOfLastMonth = new Date(currentYear, currentMonth, 1)
+        
+        // Two Months Ago (for monthly trend)
+        const startOfTwoMonthsAgo = new Date(currentYear, currentMonth - 2, 1)
+        const endOfTwoMonthsAgo = new Date(currentYear, currentMonth - 1, 1)
+
+        // Last Year
+        const startOfLastYear = new Date(currentYear - 1, 0, 1)
+        const endOfLastYear = new Date(currentYear, 0, 1)
+
+        // Two Years Ago (for yearly trend)
+        const startOfTwoYearsAgo = new Date(currentYear - 2, 0, 1)
+        const endOfTwoYearsAgo = new Date(currentYear - 1, 0, 1)
+
+        // Helper to calculate income (Tahsilat)
+        const calculateValidIncome = async (start: Date, end: Date) => {
+            const payments = await prisma.subscriptionaccrual.findMany({
+                where: {
+                    isPaid: true,
+                    paymentDate: {
+                        gte: start,
+                        lt: end
+                    }
+                },
+                select: {
+                    amount: true,
+                    dueDate: true,
+                    customer: {
+                        select: {
+                            serviceStartDate: true,
+                            establishmentDate: true,
+                            createdAt: true
+                        }
+                    }
+                }
+            })
+
+            let sum = 0
+            for (const payment of payments) {
+                if (!payment.customer) continue
+                const serviceStart = payment.customer.serviceStartDate || payment.customer.establishmentDate || payment.customer.createdAt
+                if (payment.dueDate >= serviceStart) {
+                    sum += Number(payment.amount)
+                }
+            }
+            return sum
+        }
+
+        // Helper to calculate accrual (Tahakkuk)
+        const calculateValidAccrual = async (start: Date, end: Date) => {
+            const accruals = await prisma.subscriptionaccrual.findMany({
+                where: {
+                    dueDate: {
+                        gte: start,
+                        lt: end
+                    }
+                },
+                select: {
+                    amount: true,
+                    dueDate: true,
+                    customer: {
+                        select: {
+                            serviceStartDate: true,
+                            establishmentDate: true,
+                            createdAt: true
+                        }
+                    }
+                }
+            })
+
+            let sum = 0
+            for (const accrual of accruals) {
+                if (!accrual.customer) continue
+                const serviceStart = accrual.customer.serviceStartDate || accrual.customer.establishmentDate || accrual.customer.createdAt
+                if (accrual.dueDate >= serviceStart) {
+                    sum += Number(accrual.amount)
+                }
+            }
+            return sum
+        }
+
+        // 1. Income Stats (Tahsilat)
+        const lastMonthIncome = await calculateValidIncome(startOfLastMonth, endOfLastMonth)
+        const twoMonthsAgoIncome = await calculateValidIncome(startOfTwoMonthsAgo, endOfTwoMonthsAgo)
+        const lastYearIncome = await calculateValidIncome(startOfLastYear, endOfLastYear)
+        const twoYearsAgoIncome = await calculateValidIncome(startOfTwoYearsAgo, endOfTwoYearsAgo)
+
+        let incomeMonthlyGrowth = 0
+        if (twoMonthsAgoIncome > 0) {
+            incomeMonthlyGrowth = ((lastMonthIncome - twoMonthsAgoIncome) / twoMonthsAgoIncome) * 100
+        } else if (lastMonthIncome > 0) {
+            incomeMonthlyGrowth = 100
+        }
+
+        let incomeYearlyGrowth = 0
+        if (twoYearsAgoIncome > 0) {
+            incomeYearlyGrowth = ((lastYearIncome - twoYearsAgoIncome) / twoYearsAgoIncome) * 100
+        } else if (lastYearIncome > 0) {
+            incomeYearlyGrowth = 100
+        }
+
+        // 2. Accrual Stats (Tahakkuk)
+        const lastMonthAccrual = await calculateValidAccrual(startOfLastMonth, endOfLastMonth)
+        const twoMonthsAgoAccrual = await calculateValidAccrual(startOfTwoMonthsAgo, endOfTwoMonthsAgo)
+        const lastYearAccrual = await calculateValidAccrual(startOfLastYear, endOfLastYear)
+        const twoYearsAgoAccrual = await calculateValidAccrual(startOfTwoYearsAgo, endOfTwoYearsAgo)
+
+        let accrualMonthlyGrowth = 0
+        if (twoMonthsAgoAccrual > 0) {
+            accrualMonthlyGrowth = ((lastMonthAccrual - twoMonthsAgoAccrual) / twoMonthsAgoAccrual) * 100
+        } else if (lastMonthAccrual > 0) {
+            accrualMonthlyGrowth = 100
+        }
+
+        let accrualYearlyGrowth = 0
+        if (twoYearsAgoAccrual > 0) {
+            accrualYearlyGrowth = ((lastYearAccrual - twoYearsAgoAccrual) / twoYearsAgoAccrual) * 100
+        } else if (lastYearAccrual > 0) {
+            accrualYearlyGrowth = 100
+        }
+
+        return NextResponse.json({
+          incomeStats: {
+            monthly: lastMonthIncome,
+            yearly: lastYearIncome,
+            monthlyGrowth: incomeMonthlyGrowth.toFixed(1),
+            yearlyGrowth: incomeYearlyGrowth.toFixed(1)
+          },
+          accrualStats: {
+            monthly: lastMonthAccrual,
+            yearly: lastYearAccrual,
+            monthlyGrowth: accrualMonthlyGrowth.toFixed(1),
+            yearlyGrowth: accrualYearlyGrowth.toFixed(1)
+          }
+        })
+
+      } catch (error) {
+        console.error('Error calculating income stats:', error)
+        return NextResponse.json({ error: 'Stats calculation failed' }, { status: 500 })
+      }
+    }
+
     const customerId = searchParams.get('customerId')
     const year = searchParams.get('year')
     
@@ -162,7 +462,6 @@ export async function GET(request: NextRequest) {
         orderBy: {
           dueDate: 'asc'
         },
-        // no include to avoid type issues; client uses fields from accruals
       })
       
       return NextResponse.json(accruals)
@@ -195,7 +494,6 @@ export async function PUT(request: NextRequest) {
     console.log('Generating accruals for customer:', customerId)
     
     if (!customerId) {
-      console.log('Customer ID is missing')
       return NextResponse.json(
         { error: 'Müşteri ID gereklidir' },
         { status: 400 }
@@ -209,126 +507,20 @@ export async function PUT(request: NextRequest) {
         id: true,
         companyName: true,
         subscriptionFee: true,
-        establishmentDate: true
+        establishmentDate: true,
+        serviceStartDate: true,
+        feeAccrualDay: true
       }
     })
     
-    console.log('Customer data:', JSON.stringify(customer, null, 2))
-    
     if (!customer) {
-      console.log('Customer not found')
       return NextResponse.json(
         { error: 'Müşteri bulunamadı' },
         { status: 404 }
       )
     }
     
-    if (!customer.subscriptionFee || !customer.establishmentDate) {
-      console.log('Missing subscription fee or establishment date')
-      return NextResponse.json(
-        { error: 'Müşterinin aidat bilgisi veya kuruluş tarihi eksik' },
-        { status: 400 }
-      )
-    }
-    
-    const createdAccruals = []
-    const establishmentDate = new Date(customer.establishmentDate)
-    const establishmentYear = establishmentDate.getFullYear()
-    const establishmentMonth = establishmentDate.getMonth() // 0-indexed
-    const now = new Date()
-    const targetYear = now.getFullYear()
-    
-    console.log('Establishment date:', establishmentDate)
-    console.log('Target year:', targetYear)
-    
-    // Generate accruals from establishment date to current date
-    for (let year = establishmentYear; year <= targetYear; year++) {
-      // Determine start and end months for this year
-      const startMonth = (year === establishmentYear) ? establishmentMonth : 0 // January
-      const endMonth = (year === targetYear) ? now.getMonth() : 11 // December or current month
-      
-      console.log(`Processing year ${year}: months ${startMonth} to ${endMonth}`)
-      
-      // Create accounting period if it doesn't exist
-      let accountingPeriod = await prisma.accountingperiod.findFirst({
-        where: {
-          customerId: customer.id,
-          year: year
-        }
-      })
-      
-      // If no accounting period exists, create one
-      if (!accountingPeriod) {
-        const startDate = new Date(year, 0, 1) // January 1st
-        const endDate = new Date(year, 11, 31) // December 31st
-        
-        console.log(`Creating accounting period for year ${year}`)
-        
-        accountingPeriod = await prisma.accountingperiod.create({
-          data: {
-            id: crypto.randomUUID(),
-            customer: { connect: { id: customer.id } },
-            year: year,
-            startDate,
-            endDate,
-            updatedAt: new Date()
-          }
-        })
-      }
-      
-      // Parse the subscription fee (remove currency symbol and convert to number)
-      const feeAmount = parseFloat(customer.subscriptionFee!.replace('₺', '').replace(',', '.'))
-      
-      console.log('Fee amount:', feeAmount)
-      
-      if (isNaN(feeAmount) || feeAmount <= 0) {
-        console.log('Invalid fee amount')
-        continue
-      }
-      
-      // Generate accruals for each month in the range
-      for (let month = startMonth; month <= endMonth; month++) {
-        // Check if an accrual already exists for this customer and month
-        const existingAccrual = await prisma.subscriptionaccrual.findFirst({
-          where: {
-            customerId: customer.id,
-            accountingPeriodId: accountingPeriod.id,
-            dueDate: {
-              gte: new Date(year, month, 1),
-              lt: new Date(year, month + 1, 1)
-            }
-          }
-        })
-        
-        // If no accrual exists, create one
-        if (!existingAccrual) {
-          // Create the accrual for this month (due at the end of the month)
-          const dueDate = new Date(year, month, 28) // Due at the end of the month
-          
-          console.log(`Creating accrual for ${year}-${month + 1}: amount ${feeAmount}`)
-          
-          const accrual = await prisma.subscriptionaccrual.create({
-            data: {
-              id: crypto.randomUUID(),
-              customerId: customer.id,
-              accountingPeriodId: accountingPeriod.id,
-              amount: feeAmount,
-              dueDate,
-              description: `${year} ${getTurkishMonthName(month + 1)} ayı aidatı`,
-              updatedAt: new Date()
-            }
-          })
-          
-          createdAccruals.push({
-            customerId: customer.id,
-            companyName: customer.companyName,
-            accrualId: accrual.id,
-            amount: feeAmount,
-            dueDate: accrual.dueDate
-          })
-        }
-      }
-    }
+    const createdAccruals = await generateAccrualsForCustomer(customer, true)
     
     console.log('Successfully created accruals:', createdAccruals.length)
     

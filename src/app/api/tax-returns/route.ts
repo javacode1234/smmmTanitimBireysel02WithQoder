@@ -1,9 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { generateTaxReturnsForDuePeriod, generateHistoricalTaxReturns } from '@/lib/tax-return-service'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const mode = searchParams.get('mode')
+
+    if (mode === 'stats') {
+      try {
+        const now = new Date()
+        const currentYear = now.getFullYear()
+        const currentMonth = now.getMonth() // 0-11
+        
+        // This month range
+        const startOfCurrentMonth = new Date(currentYear, currentMonth, 1)
+        const endOfCurrentMonth = new Date(currentYear, currentMonth + 1, 1)
+
+        // Last month range
+        const startOfLastMonth = new Date(currentYear, currentMonth - 1, 1)
+        const endOfLastMonth = new Date(currentYear, currentMonth, 1)
+
+        // Same month last year range
+        const startOfLastYearMonth = new Date(currentYear - 1, currentMonth, 1)
+        const endOfLastYearMonth = new Date(currentYear - 1, currentMonth + 1, 1)
+
+        // Count for this month (due date)
+        const currentMonthCount = await prisma.taxreturn.count({
+          where: {
+            dueDate: {
+              gte: startOfCurrentMonth,
+              lt: endOfCurrentMonth
+            }
+          }
+        })
+
+        // Count for last month
+        const lastMonthCount = await prisma.taxreturn.count({
+          where: {
+            dueDate: {
+              gte: startOfLastMonth,
+              lt: endOfLastMonth
+            }
+          }
+        })
+
+        // Count for same month last year
+        const lastYearMonthCount = await prisma.taxreturn.count({
+          where: {
+            dueDate: {
+              gte: startOfLastYearMonth,
+              lt: endOfLastYearMonth
+            }
+          }
+        })
+
+        let monthlyGrowthRate = 0
+        if (lastMonthCount > 0) {
+          monthlyGrowthRate = ((currentMonthCount - lastMonthCount) / lastMonthCount) * 100
+        } else if (currentMonthCount > 0) {
+          monthlyGrowthRate = 100
+        }
+
+        let yearlyGrowthRate = 0
+        if (lastYearMonthCount > 0) {
+          yearlyGrowthRate = ((currentMonthCount - lastYearMonthCount) / lastYearMonthCount) * 100
+        } else if (currentMonthCount > 0) {
+          yearlyGrowthRate = 100
+        }
+
+        return NextResponse.json({
+          currentMonthCount,
+          monthlyGrowthRate: monthlyGrowthRate.toFixed(1),
+          yearlyGrowthRate: yearlyGrowthRate.toFixed(1)
+        })
+      } catch (error) {
+        console.error('Error calculating declaration stats:', error)
+        return NextResponse.json({ error: 'Stats calculation failed' }, { status: 500 })
+      }
+    }
+
     const id = searchParams.get('id')
     const customerId = searchParams.get('customerId')
     const period = searchParams.get('period')
@@ -14,6 +90,22 @@ export async function GET(request: NextRequest) {
     const dueDateYear = searchParams.get('dueDateYear')
     const dueDateMonth = searchParams.get('dueDateMonth')
     const periodFilter = searchParams.get('periodFilter')
+    const sync = searchParams.get('sync') // Force sync historical data
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
+    const sort = searchParams.get('sort')
+
+    // Generate missing tax returns if looking at a specific period
+    if (dueDateYear && dueDateMonth) {
+      await generateTaxReturnsForDuePeriod(parseInt(dueDateYear), parseInt(dueDateMonth))
+    }
+    
+    // If sync requested or filter is 'all', ensure historical data exists
+    // We do this check only if specific period filters are NOT set (meaning we want a broad view)
+    if (sync === 'true' || (periodFilter === 'all' && !dueDateYear && !year)) {
+      // Run optimized historical generation
+      // This is safe to run frequently as it checks existingSet in memory
+      await generateHistoricalTaxReturns(customerId || undefined)
+    }
 
     // If ID is provided, return single tax return
     if (id) {
@@ -76,42 +168,20 @@ export async function GET(request: NextRequest) {
       const startDate = new Date(yearNum, monthNum - 1, 1)
       const endDate = new Date(yearNum, monthNum, 1)
       
-      // For Turkish tax system, some declarations for previous month are due in current month
-      // For example, December declarations are due in January
-      // So we also need to include declarations from previous month that are due in current month
-      const prevMonthStartDate = new Date(yearNum, monthNum - 2, 1);
-      const prevMonthEndDate = new Date(yearNum, monthNum - 1, 1);
-      
-      where.OR = [
-        {
-          dueDate: {
-            gte: startDate,
-            lt: endDate
-          }
-        },
-        {
-          // Include declarations from previous month that are due in current month
-          // Specifically for KDV and Muhtasar declarations which have this pattern
-          dueDate: {
-            gte: prevMonthStartDate,
-            lt: prevMonthEndDate
-          },
-          type: {
-            contains: 'KDV'
-          }
-        },
-        {
-          // Include declarations from previous month that are due in current month
-          // Specifically for KDV and Muhtasar declarations which have this pattern
-          dueDate: {
-            gte: prevMonthStartDate,
-            lt: prevMonthEndDate
-          },
-          type: {
-            contains: 'Muhtasar'
-          }
-        }
-      ];
+      where.dueDate = {
+        gte: startDate,
+        lt: endDate
+      }
+    }
+
+    // Determine sort order
+    let orderBy: any = [
+      { dueDate: 'asc' },
+      { createdAt: 'desc' }
+    ]
+    
+    if (sort === 'latest') {
+      orderBy = { createdAt: 'desc' }
     }
 
     // Fetch tax returns
@@ -127,10 +197,8 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: [
-        { dueDate: 'asc' },
-        { createdAt: 'desc' }
-      ],
+      orderBy,
+      take: limit,
     })
 
     // Filter out tax returns that are before establishment date

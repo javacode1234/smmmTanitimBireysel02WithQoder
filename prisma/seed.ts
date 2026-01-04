@@ -1,8 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client'
-import fetch from 'node-fetch'
 import * as fs from 'fs'
 import * as path from 'path'
-let XLSX: typeof import('xlsx') | null = null
+import * as iconv from 'iconv-lite'
 import { turkishTaxOffices } from '../src/lib/tax-offices'
 import bcrypt from 'bcryptjs'
 
@@ -37,22 +36,15 @@ async function main() {
       },
     })
     console.log('✅ Site settings created:', settings.siteName)
-    try {
-      console.log('🏷️ Seeding activity codes (dev) ...')
-      await prisma.activitycode.deleteMany({})
-      await seedActivityCodesFromLocalXLS()
-      await seedActivityCodesFromCSV()
-      console.log('✅ Activity codes seeded (dev)')
-    } catch (e) {
-      console.warn('⚠️ Skipping dev activity codes seed:', e instanceof Error ? e.message : e)
-    }
+    
     try {
       console.log('🗺️ Seeding cities/districts (dev)...')
       const cityNames = Array.from(new Set((turkishTaxOffices || []).map(o => o.city).filter(Boolean)))
-      for (const name of cityNames) {
-        await prisma.city.upsert({ where: { name }, update: {}, create: { name } })
-      }
-      console.log('✅ Cities seeded (dev)')
+      // Use id-based upsert for dev as well if possible, but for now just skip or use name if id not available
+      // The production seed uses IDs from CSV. For dev without CSV, we might skip or use dummy IDs.
+      // Since we rely on CSVs now, let's just skip the dev-only city seed if we don't have IDs.
+      // Or we can just let the main seed logic handle it if files exist.
+      console.log('ℹ️ Skipping dev-only city seed, relying on main seed logic.')
     } catch (e) {
       console.warn('⚠️ Skipping dev cities/districts seed:', e instanceof Error ? e.message : e)
     }
@@ -96,17 +88,6 @@ async function main() {
       image: '',
       createdAt: new Date(),
       updatedAt: new Date(),
-      client: {
-        create: {
-          id: 'client-1-id',
-          companyName: 'ABC Ticaret Ltd. Şti.',
-          taxNumber: '1234567890',
-          phone: '0533 987 6543',
-          address: 'Atatürk Cad. No: 123 Merkez/İstanbul',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      },
     },
   })
   console.log('✅ Client user created:', clientUser.email)
@@ -124,17 +105,6 @@ async function main() {
       image: '',
       createdAt: new Date(),
       updatedAt: new Date(),
-      client: {
-        create: {
-          id: 'client-2-id',
-          companyName: 'XYZ Danışmanlık A.Ş.',
-          taxNumber: '9876543210',
-          phone: '0532 123 4567',
-          address: 'İnönü Mah. Cumhuriyet Cad. No: 45 Kadıköy/İstanbul',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      },
     },
   })
   console.log('✅ Client user 2 created:', clientUser2.email)
@@ -142,6 +112,18 @@ async function main() {
   // Seed Tax Offices
   try {
     console.log('🏛️ Seeding tax offices...')
+    // Ensure specific tax offices exist for seeded customers
+    await prisma.taxOffice.upsert({
+      where: { id: 'tax-ist-avrupa' },
+      create: { id: 'tax-ist-avrupa', name: 'Mecidiyeköy V.D.', city: 'İstanbul', district: 'Şişli' },
+      update: {}
+    })
+    await prisma.taxOffice.upsert({
+      where: { id: 'tax-ist-anadolu' },
+      create: { id: 'tax-ist-anadolu', name: 'Kadıköy V.D.', city: 'İstanbul', district: 'Kadıköy' },
+      update: {}
+    })
+    
     const officeData = (turkishTaxOffices || []).map(o => ({ name: o.name, city: o.city, district: o.district }))
     if (officeData.length > 0) {
       await prisma.taxOffice.createMany({ data: officeData, skipDuplicates: true })
@@ -250,6 +232,143 @@ async function main() {
     ],
     skipDuplicates: true,
   })
+
+  console.log('✅ Job applications seeded')
+
+  // Seed Cities and Districts from CSV
+  console.log('🗺️ Seeding cities, districts and tax offices from CSV files...')
+  
+  // Cache for city names to use in Tax Office seeding
+  const cityNames = new Map<number, string>()
+  
+  try {
+    // Seed Cities
+    const citiesPath = 'C:\\Users\\muammer\\Desktop\\smmmProjeDosyalar\\iller.csv'
+    if (fs.existsSync(citiesPath)) {
+      console.log(`Reading cities from ${citiesPath}...`)
+      const buffer = fs.readFileSync(citiesPath)
+      const content = iconv.decode(buffer, 'win1254')
+      
+      const lines = content.split('\n')
+      let successCount = 0
+
+      // Skip header (index 0)
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (!line) continue
+
+        const parts = line.split(';')
+        if (parts.length >= 2) {
+          const id = parseInt(parts[0])
+          const name = parts[1].trim()
+
+          if (!isNaN(id) && name) {
+            cityNames.set(id, name) // Cache for tax offices
+            
+            await prisma.city.upsert({
+              where: { id },
+              update: { name },
+              create: { id, name },
+            })
+            successCount++
+          }
+        }
+      }
+      console.log(`Cities seeded: ${successCount}`)
+    } else {
+      console.warn(`File not found: ${citiesPath}`)
+    }
+
+    // Seed Districts
+    const districtsPath = 'C:\\Users\\muammer\\Desktop\\smmmProjeDosyalar\\ilceler.csv'
+    if (fs.existsSync(districtsPath)) {
+      console.log(`Reading districts from ${districtsPath}...`)
+      const buffer = fs.readFileSync(districtsPath)
+      const content = iconv.decode(buffer, 'win1254')
+      
+      const lines = content.split('\n')
+      let successCount = 0
+
+      // Skip header (index 0)
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (!line) continue
+
+        const parts = line.split(';')
+        if (parts.length >= 3) {
+          // districtCode;cityCode;name
+          const id = parseInt(parts[0])
+          const cityId = parseInt(parts[1])
+          const name = parts[2].trim()
+
+          if (!isNaN(id) && !isNaN(cityId) && name) {
+            await prisma.district.upsert({
+              where: { id },
+              update: { name, cityId },
+              create: { id, name, cityId },
+            })
+            successCount++
+          }
+        }
+      }
+      console.log(`Districts seeded: ${successCount}`)
+    } else {
+      console.warn(`File not found: ${districtsPath}`)
+    }
+
+    // Seed Tax Offices
+    const taxOfficesPath = 'C:\\Users\\muammer\\Desktop\\smmmProjeDosyalar\\vergi_daireleri.csv'
+    if (fs.existsSync(taxOfficesPath)) {
+      console.log(`Reading tax offices from ${taxOfficesPath}...`)
+      // Note: CSV is UTF-8 based on check.
+      const buffer = fs.readFileSync(taxOfficesPath)
+      const content = buffer.toString('utf-8')
+      
+      const lines = content.split('\n')
+      let successCount = 0
+      
+      // Skip header (index 0)
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (!line) continue
+
+        const parts = line.split(';')
+        // Format: id;cityId;districtName;code;name
+        if (parts.length >= 5) {
+          const cityId = parseInt(parts[1])
+          const districtName = parts[2].trim()
+          const code = parts[3].trim()
+          const name = parts[4].trim()
+
+          const cityName = cityNames.get(cityId) || ''
+
+          if (name) {
+            // Upsert by name
+            await prisma.taxOffice.upsert({
+              where: { name },
+              update: {
+                city: cityName,
+                district: districtName
+              },
+              create: {
+                name,
+                city: cityName,
+                district: districtName
+              }
+            })
+            successCount++
+          }
+        }
+      }
+      console.log(`Tax offices seeded: ${successCount}`)
+    } else {
+      console.warn(`File not found: ${taxOfficesPath}`)
+    }
+
+  } catch (e) {
+    console.error('Error seeding locations from CSV:', e)
+  }
+
 
   // Seed Quote Requests
   console.log('💼 Seeding quote requests...')
@@ -396,7 +515,6 @@ async function main() {
       enabled: true, 
       dueDay: 17, 
       quarterOffset: 2, 
-      skipQuarter: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -407,7 +525,6 @@ async function main() {
       enabled: true, 
       dueDay: 17, 
       quarterOffset: 2, 
-      skipQuarter: true,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -450,56 +567,84 @@ async function main() {
   }
 
   try {
-    console.log('🏷️ Seeding activity codes...')
-    await prisma.activitycode.deleteMany({})
-    await seedActivityCodesFromLocalXLS()
-    await seedActivityCodesFromCSV()
-    console.log('✅ Activity codes seeded')
+    console.log('🏷️ Seeding activity codes from nace6_temiz.csv...')
+    // Delete all existing to ensure clean slate from the new file
+    // Note: Model name is ActivityCode, so prisma.activityCode
+    // If using older client, might be different, but we will generate client.
+    // However, to be safe with existing code style which uses lowercase models, 
+    // I should check if I should name the model `activitycode` or `ActivityCode`.
+    // The user's other models are lowercase (`model customer`, `model user`).
+    // Consistency: I should probably rename my model to `activitycode` in schema to match others?
+    // But `ActivityCode` is standard Prisma naming.
+    // The existing code at line 43 uses `prisma.activitycode.deleteMany`.
+    // This implies the previous model was `activitycode`.
+    // If I used `model ActivityCode`, the client will likely use `prisma.activityCode`.
+    // To avoid breaking the `prisma.activitycode` usages in lines 43 and 525 (which I am replacing),
+    // I should probably stick to `prisma.activityCode` in my new code, but I need to make sure
+    // I replace ALL occurrences or update the model name.
+    
+    // Let's check the schema again. `model customer` is lowercase.
+    // I'll update my schema addition to be `model activitycode` to match the project convention!
+    // This will make `prisma.activitycode` valid (lowercase).
+    
+    // WAIT. If I change the model to `activitycode`, then `prisma.activitycode` works.
+    // Let's revert the schema change and make it `model activitycode`.
+    
+    // Actually, I can just use `ActivityCode` and update the usages in seed.ts.
+    // But `model customer` is lowercase. It's better to follow the project convention.
+    // So I will update schema first.
+    
+    const nacePath = 'C:\\Users\\muammer\\Desktop\\smmmProjeDosyalar\\nace6_temiz.csv'
+    if (fs.existsSync(nacePath)) {
+      console.log(`Reading NACE codes from ${nacePath}...`)
+      await prisma.activitycode.deleteMany({})
+      
+      const content = fs.readFileSync(nacePath, 'utf-8')
+      const lines = content.split('\n')
+      let successCount = 0
+
+      // Skip header (index 0)
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (!line) continue
+        
+        // Regex for CSV parsing (handles quoted strings)
+        const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
+        
+        if (parts.length >= 2) {
+          const code = parts[0].trim()
+          let name = parts[1].trim()
+          
+          if (name.startsWith('"') && name.endsWith('"')) {
+            name = name.slice(1, -1)
+          }
+
+          if (code && name) {
+            await prisma.activitycode.create({
+              data: {
+                code,
+                name,
+                isActive: true
+              }
+            })
+            successCount++
+          }
+        }
+      }
+      console.log(`Activity codes seeded: ${successCount}`)
+    } else {
+      console.warn(`File not found: ${nacePath}`)
+    }
   } catch (e) {
     console.warn('⚠️ Skipping activity codes seed:', e instanceof Error ? e.message : e)
   }
 
-  // Seed Cities and Districts
-  try {
-    console.log('🗺️ Seeding cities and districts...')
-    const cityNames = Array.from(new Set((turkishTaxOffices || []).map(o => o.city).filter(Boolean)))
-    const cityMap: Record<string, string> = {}
-    for (const name of cityNames) {
-      const city = await prisma.city.upsert({
-        where: { name },
-        update: {},
-        create: { name },
-      })
-      cityMap[name] = city.id
-    }
+  // Skipped legacy city/district seed to avoid conflicts/errors
 
-    const byCity: Record<string, Set<string>> = {}
-    for (const o of turkishTaxOffices || []) {
-      if (!o.city || !o.district) continue
-      byCity[o.city] = byCity[o.city] || new Set<string>()
-      byCity[o.city].add(o.district)
-    }
-
-    for (const [cityName, districts] of Object.entries(byCity)) {
-      const cityId = cityMap[cityName]
-      if (!cityId) continue
-      for (const dist of districts) {
-        const key = `${cityId}:${dist}`
-        try {
-          await prisma.district.upsert({
-            where: { cityId_name: { cityId, name: dist } },
-            update: {},
-            create: { cityId, name: dist },
-          })
-        } catch {}
-      }
-    }
-    console.log('✅ Cities and districts seeded')
-  } catch (e) {
-    console.warn('⚠️ Skipping cities/districts seed:', e instanceof Error ? e.message : e)
-  }
 
   // Supplement cities/districts with a public TR dataset (if available)
+  // Skipped to avoid conflicts with CSV data
+  /*
   try {
     console.log('🗺️ Supplementing cities/districts from public TR dataset...')
     const url = 'https://gist.githubusercontent.com/sercanov/c63063e4b40c756d4040a0be694895e9/raw/turkiye.json'
@@ -507,14 +652,7 @@ async function main() {
     if (res.ok) {
       const map = await res.json() as Record<string, string[]>
       for (const [cityName, dists] of Object.entries(map)) {
-        const city = await prisma.city.upsert({ where: { name: cityName }, update: {}, create: { name: cityName } })
-        for (const distName of dists) {
-          await prisma.district.upsert({
-            where: { cityId_name: { cityId: city.id, name: distName } },
-            update: {},
-            create: { cityId: city.id, name: distName },
-          })
-        }
+        // ... code removed/commented
       }
       console.log('✅ Cities/districts supplemented from TR dataset')
     } else {
@@ -523,6 +661,7 @@ async function main() {
   } catch (e) {
     console.warn('⚠️ Skipping TR cities/districts supplement:', e instanceof Error ? e.message : e)
   }
+  */
 
   console.log('✅ Database seeding completed successfully!')
   console.log('')
@@ -541,147 +680,4 @@ main()
     await prisma.$disconnect()
   })
   
-// Helper: Seed activity codes from public CSV (NACE Rev.2)
-async function seedActivityCodesFromCSV() {
-  try {
-    console.log('📥 Fetching NACE Rev.2 CSV (classes) ...')
-    const url = 'https://gist.githubusercontent.com/b-rodrigues/4218d6daa8275acce80ebef6377953fe/raw/nace_rev2.csv'
-    const res = await fetch(url)
-    if (!res.ok) throw new Error(`Failed to download CSV: ${res.status}`)
-    const csv = await res.text()
-    const rows = parseCSV(csv)
-    // Expect headers: Order,Level,Code,Parent,Description,...
-    const header = rows[0]
-    const idxLevel = header.indexOf('Level')
-    const idxCode = header.indexOf('Code')
-    const idxDesc = header.indexOf('Description')
-    if (idxLevel < 0 || idxCode < 0 || idxDesc < 0) throw new Error('CSV headers not found')
-    const items = rows.slice(1)
-      .filter(r => String(r[idxLevel]).trim() === '4')
-      .map(r => ({ code: String(r[idxCode]).trim(), name: String(r[idxDesc]).trim() }))
-      .filter(i => /\d{2}\.\d{2}/.test(i.code) && i.name)
-    let count = 0
-    for (const it of items) {
-      await prisma.activitycode.upsert({
-        where: { code: it.code },
-        update: { name: it.name, isActive: true },
-        create: { code: it.code, name: it.name, isActive: true },
-      })
-      count++
-      if (count % 200 === 0) console.log(`  ↳ Seeded ${count} activity codes...`)
-    }
-    console.log(`✅ Seeded ${count} activity codes from CSV`)
-  } catch (e) {
-    console.warn('⚠️ Could not seed activity codes from CSV:', e instanceof Error ? e.message : e)
-  }
-}
 
-// Minimal CSV parser supporting quotes
-function parseCSV(input: string): string[][] {
-  const rows: string[][] = []
-  let row: string[] = []
-  let cell = ''
-  let inQuotes = false
-  for (let i = 0; i < input.length; i++) {
-    const ch = input[i]
-    if (inQuotes) {
-      if (ch === '"') {
-        if (input[i + 1] === '"') { cell += '"'; i++; } else { inQuotes = false }
-      } else {
-        cell += ch
-      }
-    } else {
-      if (ch === '"') { inQuotes = true }
-      else if (ch === ',') { row.push(cell); cell = '' }
-      else if (ch === '\n' || ch === '\r') {
-        if (cell.length || row.length) { row.push(cell); rows.push(row); row = []; cell = '' }
-        // handle \r\n pairs
-        if (ch === '\r' && input[i + 1] === '\n') i++
-      } else { cell += ch }
-    }
-  }
-  if (cell.length || row.length) { row.push(cell); rows.push(row) }
-  return rows
-}
-
-// Seed from local Turkish XLS (Altılı) if available
-async function seedActivityCodesFromLocalXLS() {
-  try {
-    console.log('📄 Looking for local Turkish NACE Excel...')
-    const envPath = process.env.NACE_TR_XLS_PATH
-    const candidates = [
-      envPath,
-      path.join(process.env.USERPROFILE || '', 'Desktop', 'nacet-6-li-kod.xls'),
-      path.join(process.env.HOME || '', 'Desktop', 'nacet-6-li-kod.xls'),
-      path.join(process.cwd(), 'nacet-6-li-kod.xls'),
-    ].filter(Boolean) as string[]
-    let filePath: string | null = null
-    for (const p of candidates) {
-      try { if (fs.existsSync(p)) { filePath = p; break } } catch {}
-    }
-    if (!filePath) { console.log('ℹ️ Turkish XLS not found, skipping.'); return }
-
-    if (!XLSX) {
-      try {
-        const mod: unknown = await import('xlsx')
-        XLSX = (mod as { default?: typeof import('xlsx') }).default || (mod as typeof import('xlsx'))
-      } catch (e) {
-        console.warn('⚠️ Missing xlsx dependency, install with: npm i xlsx')
-        return
-      }
-    }
-
-    console.log('📥 Reading Excel:', filePath)
-    const wb = XLSX.readFile(filePath)
-    const wsName = wb.SheetNames[0]
-    const ws = wb.Sheets[wsName]
-    const rows: Array<Record<string, unknown>> = XLSX.utils.sheet_to_json(ws, { defval: '' }) as Array<Record<string, unknown>>
-    // Try to detect columns
-    const detect = (row: Record<string, unknown>) => {
-      const keys = Object.keys(row)
-      const codeKey = keys.find(k => /kod|code|nace/i.test(k)) || keys[0]
-      const descKey = keys.find(k => /tanim|tanım|aciklama|açıklama|description|ad/i.test(k)) || keys[1] || keys[0]
-      return { codeKey, descKey }
-    }
-    const { codeKey, descKey } = rows.length ? detect(rows[0]) : { codeKey: 'Kod', descKey: 'Açıklama' }
-
-    let count = 0, updates = 0
-    for (const r of rows) {
-      const rawVal = r[codeKey] as string | number | undefined
-      const descVal = r[descKey] as string | number | undefined
-      let raw = String(rawVal || '').trim()
-      const tr = String(descVal || '').trim()
-      if (!raw || !tr) continue
-      // Normalize codes: accept forms like 620101, 62.01.01, 62-01-01, etc.
-      raw = raw.replace(/[^0-9]/g, '')
-      if (raw.length < 4) continue
-      const code4 = `${raw.slice(0,2)}.${raw.slice(2,4)}`
-      const code6 = raw.length >= 6 ? `${raw.slice(0,2)}.${raw.slice(2,4)}.${raw.slice(4,6)}` : code4
-
-      // Update Turkish name for 4-digit class
-      try {
-        await prisma.activitycode.upsert({
-          where: { code: code4 },
-          update: { name: tr, isActive: true },
-          create: { code: code4, name: tr, isActive: true },
-        })
-        updates++
-      } catch {}
-
-      // Insert 6-digit subclass as separate record
-      if (code6 !== code4) {
-        try {
-          await prisma.activitycode.upsert({
-            where: { code: code6 },
-            update: { name: tr, isActive: true },
-            create: { code: code6, name: tr, isActive: true },
-          })
-          count++
-        } catch {}
-      }
-    }
-    console.log(`✅ Turkish Excel processed. Updated TR names: ${updates}, added subclasses: ${count}`)
-  } catch (e) {
-    console.warn('⚠️ Could not seed from Turkish XLS:', e instanceof Error ? e.message : e)
-  }
-}

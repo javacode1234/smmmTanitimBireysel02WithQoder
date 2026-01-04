@@ -55,22 +55,20 @@ type Customer = {
   taxNumber: string | null
 }
 
-import { DECLARATION_TYPES } from "@/lib/declaration-logic"
 
-// Common tax return types in Turkey
-const TAX_RETURN_TYPES = Object.values(DECLARATION_TYPES)
 
 export default function TaxReturnsPage() {
   const [isMounted, setIsMounted] = useState(false)
   const [taxReturns, setTaxReturns] = useState<TaxReturn[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [declarationTypes, setDeclarationTypes] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [customerFilter, setCustomerFilter] = useState("all")
-  const [periodFilter, setPeriodFilter] = useState("current") // current, all, custom
+  const [periodFilter, setPeriodFilter] = useState("all") // Default to 'all' to show full history
   const [customYear, setCustomYear] = useState(new Date().getFullYear().toString())
   const [customMonth, setCustomMonth] = useState((new Date().getMonth() + 1).toString())
 
@@ -83,7 +81,21 @@ export default function TaxReturnsPage() {
   useEffect(() => {
     setIsMounted(true)
     fetchCustomers()
+    fetchDeclarationTypes()
   }, [])
+
+  const fetchDeclarationTypes = async () => {
+    try {
+      const res = await fetch('/api/declarations-config')
+      if (res.ok) {
+        const data = await res.json()
+        const types = Array.from(new Set(data.map((item: any) => item.type).filter(Boolean))) as string[]
+        setDeclarationTypes(types)
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   const fetchTaxReturns = useCallback(async () => {
     setLoading(true)
@@ -95,6 +107,8 @@ export default function TaxReturnsPage() {
       } else if (periodFilter === "custom") {
         params.set("dueDateYear", customYear)
         params.set("dueDateMonth", customMonth)
+      } else if (periodFilter === "all") {
+        params.set("periodFilter", "all")
       }
       if (typeFilter !== "all") {
         params.set("type", typeFilter)
@@ -172,6 +186,11 @@ export default function TaxReturnsPage() {
     }
   }
 
+  const isOverdue = (taxReturn: TaxReturn) => {
+    if (taxReturn.isSubmitted) return false
+    return new Date(taxReturn.dueDate) < new Date()
+  }
+
   const filteredTaxReturns = taxReturns.filter(tr => {
     const matchesSearch = searchTerm === "" || 
       tr.customer.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -180,7 +199,27 @@ export default function TaxReturnsPage() {
     
     const matchesCustomer = customerFilter === "all" || tr.customerId === customerFilter
     
-    return matchesSearch && matchesCustomer
+    // Filter out future periods (unless explicitly searching for them via custom filter)
+    // "Sadece geçmiş dönemler listelenecek"
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const currentMonth = now.getMonth() + 1
+    
+    let isPastPeriod = true
+    if (periodFilter !== 'custom') {
+        // Check if period is in the past
+        // Logic: year < currentYear OR (year == currentYear AND month < currentMonth)
+        // If month is null (yearly return), assume it belongs to the full year, so strictly past year is required.
+        if (tr.year > currentYear) {
+            isPastPeriod = false
+        } else if (tr.year === currentYear) {
+            if (tr.month === null || tr.month >= currentMonth) {
+                isPastPeriod = false
+            }
+        }
+    }
+
+    return matchesSearch && matchesCustomer && isPastPeriod
   })
 
   // Pagination
@@ -280,7 +319,7 @@ export default function TaxReturnsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tüm Tipler</SelectItem>
-                {TAX_RETURN_TYPES.map(type => (
+                {declarationTypes.map(type => (
                   <SelectItem key={type} value={type}>{type}</SelectItem>
                 ))}
               </SelectContent>
@@ -319,7 +358,7 @@ export default function TaxReturnsPage() {
           <CardTitle>Beyannameler ({filteredTaxReturns.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -371,7 +410,13 @@ export default function TaxReturnsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleToggleSubmitted(tr)}
-                          className={tr.isSubmitted ? "text-green-600" : "text-red-600"}
+                          className={
+                            tr.isSubmitted 
+                              ? "text-green-600 hover:text-green-700 hover:bg-green-50" 
+                              : isOverdue(tr)
+                                ? "text-red-600 hover:text-red-700 hover:bg-red-50 font-medium"
+                                : "text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                          }
                         >
                           {tr.isSubmitted ? (
                             <>
@@ -381,7 +426,7 @@ export default function TaxReturnsPage() {
                           ) : (
                             <>
                               <XCircle className="h-4 w-4 mr-1" />
-                              Verilmedi
+                              {isOverdue(tr) ? "Gecikti" : "Bekliyor"}
                             </>
                           )}
                         </Button>

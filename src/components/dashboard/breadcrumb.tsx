@@ -21,23 +21,23 @@ export function Breadcrumb({ userType }: BreadcrumbProps) {
   
   // Route name mappings
   const routeNames: Record<string, string> = {
-    admin: "Admin",
-    client: "Müşteri",
-    dashboard: "Dashboard",
+    admin: "Yönetici",
+    client: "Müşteri Paneli",
+    dashboard: "Panel",
     content: "İçerik Yönetimi",
     clients: "Müşteriler",
     customers: "Müşteriler",
     new: "Yeni Müşteri",
     declarations: "Beyannameler",
     announcements: "Duyurular",
-    collections: "Tahsilat",
+    collections: "Tahsilatlar",
     settings: "Ayarlar",
     profile: "Profil",
     account: "Hesap Özeti",
-    messages: "İletişim",
+    messages: "Mesajlar",
     "quote-requests": "Teklif Talepleri",
     "contact-messages": "İletişim Mesajları",
-    "job-applications": "İş Müracaatları",
+    "job-applications": "İş Başvuruları",
   }
 
   const breadcrumbItems = pathSegments.map((segment, index) => {

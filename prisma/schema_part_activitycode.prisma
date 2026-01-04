@@ -1,0 +1,11 @@
+
+model ActivityCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String   @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("activitycode")
+}

@@ -377,7 +377,7 @@ export function SiteSettingsTab() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="info@example.com"
+                placeholder="info@ornek.com"
               />
             </div>
           </div>
@@ -634,7 +634,7 @@ export function SiteSettingsTab() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="facebookUrl">Facebook URL</Label>
+              <Label htmlFor="facebookUrl">Facebook Bağlantısı</Label>
               <Input
                 id="facebookUrl"
                 value={formData.facebookUrl}
@@ -643,7 +643,7 @@ export function SiteSettingsTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="xUrl">X (Twitter) URL</Label>
+              <Label htmlFor="xUrl">X (Twitter) Bağlantısı</Label>
               <Input
                 id="xUrl"
                 value={formData.xUrl}
@@ -655,16 +655,16 @@ export function SiteSettingsTab() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
+              <Label htmlFor="linkedinUrl">LinkedIn Bağlantısı</Label>
               <Input
                 id="linkedinUrl"
                 value={formData.linkedinUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, linkedinUrl: e.target.value }))}
-                placeholder="https://linkedin.com/company/..."
+                placeholder="https://linkedin.com/in/..."
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="instagramUrl">Instagram URL</Label>
+              <Label htmlFor="instagramUrl">Instagram Bağlantısı</Label>
               <Input
                 id="instagramUrl"
                 value={formData.instagramUrl}
@@ -676,7 +676,7 @@ export function SiteSettingsTab() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="youtubeUrl">YouTube URL</Label>
+              <Label htmlFor="youtubeUrl">YouTube Bağlantısı</Label>
               <Input
                 id="youtubeUrl"
                 value={formData.youtubeUrl}
@@ -685,7 +685,7 @@ export function SiteSettingsTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="threadsUrl">Nsosyal URL</Label>
+              <Label htmlFor="threadsUrl">Nsosyal Bağlantısı</Label>
               <Input
                 id="threadsUrl"
                 value={formData.threadsUrl}

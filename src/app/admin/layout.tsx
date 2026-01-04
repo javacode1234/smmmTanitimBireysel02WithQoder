@@ -21,7 +21,7 @@ import {
 } from "lucide-react"
 
 const navigation = [
-  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Panel", href: "/admin", icon: LayoutDashboard },
   { name: "İçerik Yönetimi", href: "/admin/content", icon: FileEdit },
   { name: "Müşteriler", href: "/admin/customers", icon: Users },
   { name: "Beyanname Takibi", href: "/admin/tax-returns", icon: FileSearch },
@@ -204,7 +204,7 @@ export default function AdminLayout({
       {/* Main Content */}
       <main className={`${effectiveMainMargin} transition-all duration-300`} style={{ transitionProperty: 'padding-left' }} suppressHydrationWarning>
         <DashboardNavbar userType="admin" sidebarState={sidebarState} onToggleSidebar={handleToggleSidebar} sidebarWidth={effectiveSidebarWidthPx} />
-        <div className="p-8 mt-16" suppressHydrationWarning>
+        <div className="p-4 md:p-8 mt-32 md:mt-16" suppressHydrationWarning>
           <Breadcrumb userType="admin" />
           {children}
         </div>

@@ -9,12 +9,8 @@ export interface DeclarationConfigSuggestion {
   type: string
   frequency: "MONTHLY" | "QUARTERLY" | "YEARLY"
   dueDay?: number
-  dueHour?: number
-  dueMinute?: number
   dueMonth?: number // For Yearly
   quarterOffset?: number // For Quarterly
-  yearlyCount?: number
-  skipQuarter?: boolean // For avoiding 4th quarter provisional tax
   quarters?: number[] // [1,2,3,4]
 }
 
@@ -36,9 +32,7 @@ export function determineApplicableDeclarations(input: DeclarationLogicInput): D
   suggestions.push({
     type: DECLARATION_TYPES.KDV,
     frequency: "MONTHLY",
-    dueDay: 28,
-    dueHour: 23,
-    dueMinute: 59
+    dueDay: 28
   })
 
   // 2. Muhtasar / Muhtasar SGK
@@ -48,9 +42,7 @@ export function determineApplicableDeclarations(input: DeclarationLogicInput): D
     suggestions.push({
       type: DECLARATION_TYPES.MUHTASAR_SGK,
       frequency: "MONTHLY",
-      dueDay: 26,
-      dueHour: 23,
-      dueMinute: 59
+      dueDay: 26
     })
   } else {
     // Quarterly Muhtasar
@@ -60,8 +52,6 @@ export function determineApplicableDeclarations(input: DeclarationLogicInput): D
       frequency: "QUARTERLY",
       quarterOffset: 1, // Due in the month following the quarter
       dueDay: 26,
-      dueHour: 23,
-      dueMinute: 59,
       quarters: [1, 2, 3, 4]
     })
   }
@@ -81,10 +71,7 @@ export function determineApplicableDeclarations(input: DeclarationLogicInput): D
     frequency: "QUARTERLY",
     quarterOffset: 2, // Due in the 2nd month after quarter end (e.g., Q1 end Mar -> May)
     dueDay: 17,
-    dueHour: 23,
-    dueMinute: 59,
     quarters: [1, 2, 3], // Only first 3 quarters
-    skipQuarter: true // Explicitly skip 4th quarter logic if any
   })
 
   // 4. Annual Tax (Gelir / Kurumlar)
@@ -94,9 +81,7 @@ export function determineApplicableDeclarations(input: DeclarationLogicInput): D
       type: DECLARATION_TYPES.KURUMLAR,
       frequency: "YEARLY",
       dueMonth: 4, // April
-      dueDay: 30,
-      dueHour: 23,
-      dueMinute: 59
+      dueDay: 30
     })
   } else {
     // Gelir Vergisi -> Next Year March 31
@@ -105,8 +90,6 @@ export function determineApplicableDeclarations(input: DeclarationLogicInput): D
       frequency: "YEARLY",
       dueMonth: 3, // March
       dueDay: 31,
-      dueHour: 23,
-      dueMinute: 59
     })
   }
 

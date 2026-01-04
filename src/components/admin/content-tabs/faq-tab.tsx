@@ -36,16 +36,16 @@ const DEFAULT_CATEGORIES: FAQCategory[] = [
   { id: "default-1", name: "Genel", slug: "genel", order: 0 },
   { id: "default-2", name: "Hizmetler", slug: "hizmetler", order: 1 },
   { id: "default-3", name: "Ücretlendirme", slug: "ucretlendirme", order: 2 },
-  { id: "default-4", name: "İşlemler", slug: "islemler", order: 3 },
+  { id: "default-4", name: "İşleyiş", slug: "isleyis", order: 3 },
   { id: "default-5", name: "Teknik", slug: "teknik", order: 4 }
 ]
 
 const DEFAULT_FAQS: FAQ[] = [
-  { id: "default-1", categoryId: "default-1", question: "SMMM (Serbest Muhasebeci Mali Müşavir) nedir?", answer: "SMMM, işletmelerin mali işlemlerini kaydetmek, raporlamak ve vergi mevzuatına uygun şekilde beyan etmek için yetkilendirilmiş profesyonellerdir.", isActive: true, order: 0 },
-  { id: "default-2", categoryId: "default-2", question: "Hangi hizmetleri sunuyorsunuz?", answer: "Muhasebe ve finansal raporlama, vergi danışmanlığı, SGK ve bordro işlemleri, şirket kuruluşu, bağımsız denetim ve mali analiz gibi geniş kapsamlı hizmetler sunuyoruz.", isActive: true, order: 0 },
-  { id: "default-3", categoryId: "default-3", question: "Ücretlendirme nasıl yapılıyor?", answer: "Fiyatlarımız işletmenizin büyüklüğüne, işlem hacmine ve ihtiyaç duyulan hizmetlere göre belirlenir.", isActive: true, order: 0 },
-  { id: "default-4", categoryId: "default-4", question: "Belge ve evrakları nasıl teslim edebilirim?", answer: "Belgelerinizi ofisimize fiziksel olarak getirebilir, kargo ile gönderebilir veya dijital platformumuz üzerinden güvenli şekilde yükleyebilirsiniz.", isActive: true, order: 0 },
-  { id: "default-5", categoryId: "default-5", question: "Gizlilik ve güvenlik nasıl sağlanıyor?", answer: "Tüm finansal verileriniz yasal gizlilik yükümlülüğümüz altında korunur. Dijital sistemlerimiz 256-bit SSL şifreleme ile güvence altındadır.", isActive: true, order: 0 }
+  { id: "default-1", categoryId: "default-1", question: "SMMM (Serbest Muhasebeci Mali Müşavir) nedir?", answer: "SMMM, işletmelerin mali işlemlerini kaydeden, raporlayan ve vergi mevzuatına uygun olarak beyan eden yetkili meslek mensubudur.", isActive: true, order: 0 },
+  { id: "default-2", categoryId: "default-2", question: "Hangi hizmetleri sunuyorsunuz?", answer: "Muhasebe ve mali raporlama, vergi danışmanlığı, SGK ve bordro işlemleri, şirket kuruluşu, bağımsız denetim ve finansal analiz gibi kapsamlı hizmetler sunuyoruz.", isActive: true, order: 0 },
+  { id: "default-3", categoryId: "default-3", question: "Ücretlendirme nasıl belirleniyor?", answer: "Ücretlerimiz, işletmenizin büyüklüğü, işlem hacmi ve ihtiyaç duyulan hizmetlerin kapsamına göre Maliye Bakanlığı'nın asgari ücret tarifesi temel alınarak belirlenmektedir.", isActive: true, order: 0 },
+  { id: "default-4", categoryId: "default-4", question: "Evrakları nasıl teslim edebilirim?", answer: "Evraklarınızı ofisimize fiziksel olarak getirebilir, kargo ile gönderebilir veya dijital platformumuz üzerinden güvenli bir şekilde yükleyebilirsiniz.", isActive: true, order: 0 },
+  { id: "default-5", categoryId: "default-5", question: "Gizlilik ve güvenlik nasıl sağlanıyor?", answer: "Tüm mali verileriniz yasal gizlilik yükümlülüğümüz kapsamında korunmaktadır. Dijital sistemlerimiz 256-bit SSL şifreleme ile güvence altındadır.", isActive: true, order: 0 }
 ]
 
 export function FAQTab() {
@@ -266,7 +266,7 @@ export function FAQTab() {
   useEffect(() => { setFaqCurrentPage(1) }, [faqSearchTerm])
 
   const getCategoryName = (categoryId: string) => {
-    return categories.find(c => c.id === categoryId)?.name || "Bilinmeyen"
+    return categories.find(c => c.id === categoryId)?.name || "Bilinmiyor"
   }
 
   if (loading) {
@@ -276,7 +276,7 @@ export function FAQTab() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader><CardTitle>SSS Bölümü Ayarları</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Sıkça Sorulan Sorular Bölümü</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
@@ -323,7 +323,7 @@ export function FAQTab() {
             </TableHeader>
             <TableBody>
               {paginatedFaqs.length === 0 ? (
-                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">{faqSearchTerm ? "Arama sonucu bulunamadı" : "Henüz soru eklenmemiş"}</TableCell></TableRow>
+                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">{faqSearchTerm ? "Sonuç bulunamadı" : "Henüz soru eklenmedi"}</TableCell></TableRow>
               ) : (
                 paginatedFaqs.map((faq) => {
                   const actualIndex = faqs.findIndex(f => f.id === faq.id)
@@ -373,15 +373,15 @@ export function FAQTab() {
 
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3">
         <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
-          <Button onClick={() => setIsResetDialogOpen(true)} variant="outline" className="border-amber-600 text-amber-600 hover:bg-amber-50"><RotateCcw className="h-4 w-4 mr-2" />Varsayılan Değerlere Sıfırla</Button>
-          <Button onClick={saveDefaultsToDatabase} disabled={!isDatabaseEmpty || isSavingDefaults} variant="default" className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 w-full sm:w-auto">{isSavingDefaults ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Kaydediliyor...</> : <><Save className="h-4 w-4 mr-2" />Varsayılan Değerleri Veritabanına Kaydet</>}</Button>
+          <Button onClick={() => setIsResetDialogOpen(true)} variant="outline" className="border-amber-600 text-amber-600 hover:bg-amber-50"><RotateCcw className="h-4 w-4 mr-2" />Varsayılanlara Sıfırla</Button>
+          <Button onClick={saveDefaultsToDatabase} disabled={!isDatabaseEmpty || isSavingDefaults} variant="default" className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 w-full sm:w-auto">{isSavingDefaults ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Kaydediliyor...</> : <><Save className="h-4 w-4 mr-2" />Varsayılanları Veritabanına Kaydet</>}</Button>
         </div>
         <Button onClick={saveAllChanges} disabled={saving} size="lg" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">{saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Kaydediliyor...</> : <><Save className="mr-2 h-4 w-4" />Tüm Değişiklikleri Kaydet</>}</Button>
       </div>
 
       <Dialog open={isFaqDialogOpen} onOpenChange={(open) => { setIsFaqDialogOpen(open); if (!open) setEditingFaq(null) }}>
         <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-          <DialogHeader><DialogTitle>{editingFaq?.id ? 'Soru Düzenle' : 'Yeni Soru Ekle'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingFaq?.id ? 'Soruyu Düzenle' : 'Yeni Soru Ekle'}</DialogTitle></DialogHeader>
           {editingFaq && (
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <div>
@@ -405,7 +405,7 @@ export function FAQTab() {
                   checked={editingFaq.isActive}
                   onCheckedChange={(checked) => setEditingFaq({ ...editingFaq, isActive: checked === true })}
                 />
-                <Label htmlFor="faqActive" className="cursor-pointer">Soru aktif</Label>
+                <Label htmlFor="faqActive" className="cursor-pointer">Aktif</Label>
               </div>
             </div>
           )}
@@ -416,8 +416,20 @@ export function FAQTab() {
         </DialogContent>
       </Dialog>
 
-      <DeleteConfirmationDialog isOpen={isFaqDeleteDialogOpen} onClose={() => { setIsFaqDeleteDialogOpen(false); setFaqToDelete(null) }} onConfirm={() => faqToDelete && handleDeleteFaq(faqToDelete.id)} title="Soru Sil" description={faqToDelete ? `"${faqToDelete.question}" sorusunu silmek istediğinizden emin misiniz?` : undefined} />
-      <DeleteConfirmationDialog isOpen={isResetDialogOpen} onClose={() => setIsResetDialogOpen(false)} onConfirm={handleReset} title="Varsayılan Değerlere Sıfırla" description="Tüm SSS verilerini silmek ve varsayılan değerlere sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz." />
+      <DeleteConfirmationDialog
+        isOpen={isFaqDeleteDialogOpen}
+        onClose={() => { setIsFaqDeleteDialogOpen(false); setFaqToDelete(null) }}
+        onConfirm={() => faqToDelete && handleDeleteFaq(faqToDelete.id)}
+        title="Soruyu Sil"
+        description={faqToDelete ? `"${faqToDelete.question}" sorusunu silmek istediğinizden emin misiniz?` : undefined}
+      />
+      <DeleteConfirmationDialog
+        isOpen={isResetDialogOpen}
+        onClose={() => setIsResetDialogOpen(false)}
+        onConfirm={handleReset}
+        title="Varsayılanlara Sıfırla"
+        description="Tüm SSS verilerini silip varsayılan değerlere sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz."
+      />
     </div>
   )
 }

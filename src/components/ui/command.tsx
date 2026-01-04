@@ -30,8 +30,8 @@ function Command({
 }
 
 function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
+  title = "Komut Paleti",
+  description = "Çalıştırılacak bir komut arayın...",
   children,
   className,
   showCloseButton = true,

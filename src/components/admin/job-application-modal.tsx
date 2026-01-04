@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -10,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Download, Mail, Phone, Calendar, FileText, Briefcase, GraduationCap, Clock } from "lucide-react"
+import { Download, Mail, Phone, Calendar, FileText, Briefcase, GraduationCap, Clock, Loader2 } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 
 type ApplicationStatus = 'NEW' | 'REVIEWING' | 'INTERVIEWED' | 'REJECTED' | 'ACCEPTED'
@@ -56,6 +58,8 @@ const statusLabels = {
 }
 
 export function JobApplicationModal({ application, isOpen, onClose, onExportPDF }: JobApplicationModalProps) {
+  const [isDownloading, setIsDownloading] = useState(false)
+
   if (!application) return null
 
   const formatDate = (dateString: string) => {
@@ -69,60 +73,77 @@ export function JobApplicationModal({ application, isOpen, onClose, onExportPDF 
     })
   }
 
-  const handleDownloadCV = () => {
-    // Check if application has cvFileData (base64) or cvFilePath (legacy)
-    if (application.cvFileData && application.cvMimeType) {
-      // Convert base64 to blob and download
-      const byteCharacters = atob(application.cvFileData)
+  const downloadBase64 = (base64Data: string, mimeType: string, fileName: string) => {
+    try {
+      const byteCharacters = atob(base64Data)
       const byteNumbers = new Array(byteCharacters.length)
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i)
       }
       const byteArray = new Uint8Array(byteNumbers)
-      const blob = new Blob([byteArray], { type: application.cvMimeType })
+      const blob = new Blob([byteArray], { type: mimeType })
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = application.cvFileName || 'cv.pdf'
+      link.download = fileName || 'cv.pdf'
       
-      // Safely append, click, and remove the link
-      try {
-        if (document.body) {
-          document.body.appendChild(link)
-          link.click()
-          
-          // Use setTimeout to ensure click is processed before removal
-          setTimeout(() => {
-            try {
-              // Check if link still has a parent before removing
-              if (link && link.parentNode && link.parentNode.contains(link)) {
-                link.parentNode.removeChild(link)
-              } else if (link && typeof link.remove === 'function') {
-                link.remove()
-              }
-            } catch (removeError) {
-              console.warn('Error removing download link:', removeError)
-            }
-          }, 100)
-        }
-      } catch (error) {
-        console.warn('Error handling download:', error)
-      } finally {
-        // Revoke URL after a delay to ensure download starts
+      if (document.body) {
+        document.body.appendChild(link)
+        link.click()
+        
         setTimeout(() => {
           try {
-            window.URL.revokeObjectURL(url)
-          } catch (revokeError) {
-            console.warn('Error revoking URL:', revokeError)
+            if (link && link.parentNode && link.parentNode.contains(link)) {
+              link.parentNode.removeChild(link)
+            } else if (link && typeof link.remove === 'function') {
+              link.remove()
+            }
+          } catch (removeError) {
+            console.warn('Error removing download link:', removeError)
           }
-        }, 1000)
+        }, 100)
       }
-    } else if (application.cvFilePath) {
-      // Legacy: Open CV file path in new tab
+    } catch (error) {
+      console.warn('Error handling download:', error)
+      toast.error('Dosya indirilirken hata oluştu')
+    }
+  }
+
+  const handleDownloadCV = async () => {
+    // Check if application has cvFileData (base64)
+    if (application.cvFileData && application.cvMimeType) {
+      downloadBase64(application.cvFileData, application.cvMimeType, application.cvFileName || 'cv.pdf')
+      return
+    }
+
+    // Check if legacy path exists
+    if (application.cvFilePath) {
       window.open(application.cvFilePath, '_blank')
+      return
+    }
+
+    // If no data locally, try fetching from API
+    if (application.cvFileName) {
+      try {
+        setIsDownloading(true)
+        const res = await fetch(`/api/job-applications?id=${application.id}`)
+        if (!res.ok) throw new Error('Başvuru detayları alınamadı')
+        
+        const fullApp = await res.json()
+        
+        if (fullApp.cvFileData && fullApp.cvMimeType) {
+          downloadBase64(fullApp.cvFileData, fullApp.cvMimeType, fullApp.cvFileName || 'cv.pdf')
+        } else {
+          toast.error('CV dosyası bulunamadı')
+        }
+      } catch (err) {
+        console.error(err)
+        toast.error('İndirme sırasında hata oluştu')
+      } finally {
+        setIsDownloading(false)
+      }
     } else {
-      // No CV available
-      alert('CV dosyası bulunamadı')
+       toast.error('CV dosyası bulunamadı')
     }
   }
 

@@ -15,6 +15,7 @@ import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { CustomerSelector } from "@/components/dashboard/customer-selector"
 
 interface DashboardNavbarProps {
   userType: "admin" | "client"
@@ -44,11 +45,11 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
   
   // User data state
   const [userData, setUserData] = useState({
-    name: userType === "admin" ? "Admin Kullanıcı" : "Mükellef Kullanıcı",
+    name: userType === "admin" ? "Yönetici" : "Mükellef",
     email: userType === "admin" ? "admin@smmm.com" : "mukellef@example.com",
     role: userType === "admin" ? "SMMM Yöneticisi" : "Mükellef",
     avatar: "",
-    initials: userType === "admin" ? "AK" : "MK"
+    initials: userType === "admin" ? "AU" : "CU"
   })
 
   // Dropdown SSR: hydration warnings already suppressed on triggers
@@ -153,10 +154,10 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
 
   return (
     <div 
-      className={`h-16 border-b border-slate-200 bg-gray-50 flex items-center justify-between px-8 fixed top-0 right-0 z-20 transition-all duration-300`}
+      className={`min-h-16 h-auto border-b border-slate-200 bg-gray-50 flex flex-wrap md:flex-nowrap items-center justify-between px-4 md:px-8 py-2 md:py-0 fixed top-0 right-0 z-20 transition-all duration-300`}
       style={{ left: sidebarWidth }}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 order-1">
         {/* Toggle Button */}
         <Button
           variant="ghost"
@@ -183,12 +184,12 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
         )}
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-6 order-2 md:order-3 ml-auto md:ml-0">
         {/* Quick Links for Admin */}
         {userType === "admin" && (
           <div className="flex items-center gap-4">
             <DropdownMenu open={isQuoteOpen} onOpenChange={setIsQuoteOpen}>
-              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="Teklif Talepleri">
+              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="Quote Requests">
                 <FileText className="h-5 w-5" />
                 {newQuoteRequestsCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
@@ -198,7 +199,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80 p-0">
                 <div className="p-3 border-b flex items-center justify-between">
-                  <span className="text-sm font-semibold">Teklif Talepleri (Yeni)</span>
+                  <span className="text-sm font-semibold">Teklif İstekleri (Yeni)</span>
                   <Link href="/admin/quote-requests" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsQuoteOpen(false); handleNavigation(e, '/admin/quote-requests') }} className="text-xs text-blue-600 hover:underline">Tümünü Gör</Link>
                 </div>
                 <div className="max-h-64 overflow-y-auto">
@@ -221,7 +222,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
             </DropdownMenu>
 
             <DropdownMenu open={isContactOpen} onOpenChange={setIsContactOpen}>
-              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="İletişim Mesajları">
+              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="Contact Messages">
                 <MessageSquare className="h-5 w-5" />
                 {newContactMessagesCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
@@ -231,8 +232,8 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80 p-0">
                 <div className="p-3 border-b flex items-center justify-between">
-                  <span className="text-sm font-semibold">İletişim Mesajları (Yeni)</span>
-                  <Link href="/admin/contact-messages" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsContactOpen(false); handleNavigation(e, '/admin/contact-messages') }} className="text-xs text-blue-600 hover:underline">Tümünü Gör</Link>
+                  <span className="text-sm font-semibold">Contact Messages (New)</span>
+                  <Link href="/admin/contact-messages" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsContactOpen(false); handleNavigation(e, '/admin/contact-messages') }} className="text-xs text-blue-600 hover:underline">View All</Link>
                 </div>
                 <div className="max-h-64 overflow-y-auto">
                   {newContactMessages.length > 0 ? (
@@ -244,17 +245,17 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
                       </div>
                     ))
                   ) : (
-                    <div className="px-3 py-6 text-sm text-muted-foreground">Yeni kayıt yok</div>
+                    <div className="px-3 py-6 text-sm text-muted-foreground">No new records</div>
                   )}
                 </div>
                 <div className="p-3 border-t text-right">
-                  <Link href="/admin/contact-messages" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsContactOpen(false); handleNavigation(e, '/admin/contact-messages') }} className="text-xs text-blue-600 hover:underline">Sayfaya Git</Link>
+                  <Link href="/admin/contact-messages" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsContactOpen(false); handleNavigation(e, '/admin/contact-messages') }} className="text-xs text-blue-600 hover:underline">Go to Page</Link>
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
             <DropdownMenu open={isJobOpen} onOpenChange={setIsJobOpen}>
-              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="İş Müracaatları">
+              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="Job Applications">
                 <Briefcase className="h-5 w-5" />
                 {newJobApplicationsCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
@@ -264,7 +265,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80 p-0">
                 <div className="p-3 border-b flex items-center justify-between">
-                  <span className="text-sm font-semibold">İş Müracaatları (Yeni)</span>
+                  <span className="text-sm font-semibold">İş Başvuruları (Yeni)</span>
                   <Link href="/admin/job-applications" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsJobOpen(false); handleNavigation(e, '/admin/job-applications') }} className="text-xs text-blue-600 hover:underline">Tümünü Gör</Link>
                 </div>
                 <div className="max-h-64 overflow-y-auto">
@@ -355,6 +356,12 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
           </div>
         )}
       </div>
+
+      {userType === "admin" && (
+        <div className="order-3 md:order-2 w-full md:w-auto mt-2 md:mt-0 md:ml-4">
+          <CustomerSelector />
+        </div>
+      )}
     </div>
   )
 }

@@ -1,5 +1,7 @@
 // PDF Export Utilities using jsPDF
 import jsPDF from 'jspdf'
+import { loadTurkishFont } from './pdf-utils'
+import { formatTL } from './currency'
 
 type ContactMessage = {
   id: string
@@ -258,7 +260,7 @@ export const exportAccountSummaryToPDF = (summary: { customerName: string; year:
   summary.rows.forEach((r) => {
     if (y > 270) { doc.addPage(); y = 20 }
     const paidText = r.isPaid ? ` (Ödendi ${r.paymentDate ? new Date(r.paymentDate).toLocaleDateString('tr-TR') : ''})` : ''
-    doc.text(`- ${r.description} | ${new Date(r.dueDate).toLocaleDateString('tr-TR')} | ${r.amount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}${paidText}`, 20, y)
+    doc.text(`- ${r.description} | ${new Date(r.dueDate).toLocaleDateString('tr-TR')} | ${formatTL(r.amount)}${paidText}`, 20, y)
     y += 6
   })
   y += 10
@@ -266,9 +268,9 @@ export const exportAccountSummaryToPDF = (summary: { customerName: string; year:
   doc.setFontSize(12)
   doc.text('OZET', 20, y); y += 7
   doc.setFontSize(10)
-  doc.text(`Toplam Borç: ${summary.total.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}`, 20, y); y += 6
-  doc.text(`Toplam Ödeme: ${summary.paid.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}`, 20, y); y += 6
-  doc.text(`Devreden Bakiye: ${summary.carryForward.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}`, 20, y); y += 12
+  doc.text(`Toplam Borç: ${formatTL(summary.total)}`, 20, y); y += 6
+  doc.text(`Toplam Ödeme: ${formatTL(summary.paid)}`, 20, y); y += 6
+  doc.text(`Devreden Bakiye: ${formatTL(summary.carryForward)}`, 20, y); y += 12
   doc.setFontSize(8)
   doc.text(`Bu belge ${new Date().toLocaleDateString('tr-TR')} tarihinde olusturulmustur.`, 20, y)
   doc.save(`hesap_ozeti_${summary.customerName}_${summary.year}.pdf`)

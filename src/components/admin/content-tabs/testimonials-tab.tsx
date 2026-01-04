@@ -82,12 +82,12 @@ const DEFAULT_TESTIMONIALS: Testimonial[] = [
   },
   {
     id: "default-2",
-    name: "Zeynep Kaya",
-    position: "İşletme Sahibi",
-    company: "Kaya Tekstil",
-    content: "Şirket kuruluş sürecimizde baştan sona yanımızda oldular. Tüm resmi işlemler sorunsuz tamamlandı. Muhasebe hizmetlerinden de çok memnunuz.",
+    name: "Ayşe Kaya",
+    position: "Kurucu Ortak",
+    company: "Design Studio",
+    content: "Startup olarak başladığımız yolculukta bize verdikleri destek paha biçilemez. Vergi mevzuatı konusundaki hakimiyetleri sayesinde işimize odaklanabiliyoruz.",
     avatar: "",
-    initials: "ZK",
+    initials: "AK",
     color: "from-purple-500 to-purple-600",
     rating: 5,
     isActive: true,
@@ -96,60 +96,21 @@ const DEFAULT_TESTIMONIALS: Testimonial[] = [
   {
     id: "default-3",
     name: "Mehmet Demir",
-    position: "Kurucu Ortak",
-    company: "Demir E-Ticaret",
-    content: "E-ticaret işimiz için özel çözümler sundular. Vergi optimizasyonu konusundaki tavsiyeleri ile önemli tasarruf sağladık. Çok teşekkür ederiz.",
+    position: "Finans Müdürü",
+    company: "Global Lojistik",
+    content: "Karmaşık finansal yapımızı düzenli ve anlaşılır hale getirdiler. Raporlama standartları ve titiz çalışmaları için teşekkür ediyoruz.",
     avatar: "",
     initials: "MD",
-    color: "from-green-500 to-green-600",
-    rating: 5,
+    color: "from-emerald-500 to-emerald-600",
+    rating: 4,
     isActive: true,
     order: 2
-  },
-  {
-    id: "default-4",
-    name: "Ayşe Şahin",
-    position: "Yönetim Kurulu Başkanı",
-    company: "Şahin Danışmanlık",
-    content: "7/24 destek hizmeti gerçekten çok değerli. Acil durumlarda her zaman ulaşabiliyoruz. Profesyonel ekipleri ve hızlı çözümleri için teşekkürler.",
-    avatar: "",
-    initials: "AŞ",
-    color: "from-orange-500 to-orange-600",
-    rating: 5,
-    isActive: true,
-    order: 3
-  },
-  {
-    id: "default-5",
-    name: "Can Öztürk",
-    position: "CEO",
-    company: "Öztürk Holding",
-    content: "Holdingimizdeki tüm şirketlerin muhasebesini yönetiyorlar. Düzenli raporlama ve analiz hizmetleri stratejik kararlarımızda çok önemli rol oynuyor.",
-    avatar: "",
-    initials: "CÖ",
-    color: "from-red-500 to-red-600",
-    rating: 5,
-    isActive: true,
-    order: 4
-  },
-  {
-    id: "default-6",
-    name: "Elif Yıldız",
-    position: "Muhasebe Müdürü",
-    company: "Yıldız İnşaat",
-    content: "Dijital altyapıları ve modern yaklaşımları sayesinde tüm işlemlerimiz çok hızlı ilerliyor. Ekibin bilgisi ve deneyimi gerçekten fark yaratıyor.",
-    avatar: "",
-    initials: "EY",
-    color: "from-cyan-500 to-cyan-600",
-    rating: 5,
-    isActive: true,
-    order: 5
   }
 ]
 
-const DEFAULT_SECTION_DATA = {
+const DEFAULT_SECTION_DATA: SectionData = {
   title: "Müşterilerimiz Ne Diyor?",
-  paragraph: "500'den fazla mutlu müşterimizin deneyimleri. Güven ve memnuniyet odaklı hizmet anlayışımızın en büyük kanıtı."
+  paragraph: "500'den fazla mutlu müşterimizin deneyimleri. Güven ve memnuniyet odaklı hizmet anlayışımızın en büyük kanıtı.",
 }
 
 interface TestimonialsSectionData {
@@ -294,7 +255,7 @@ export function TestimonialsTab() {
       }
     } catch (error) {
       console.error('Error saving changes:', error)
-      toast.error(`Bir hata oluştu: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`)
+      toast.error('Değişiklikler kaydedilirken bir hata oluştu')
     } finally {
       setSaving(false)
     }
@@ -445,27 +406,45 @@ export function TestimonialsTab() {
       {/* Section Settings */}
       <Card>
         <CardHeader>
-          <CardTitle>Yorumlar Bölümü Ayarları</CardTitle>
+          <CardTitle>Bölüm Ayarları</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Müşteri yorumları bölümünün başlık ve açıklama metinlerini düzenleyin.
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label>Bölüm Başlığı</Label>
-              <Input
-                value={sectionData.title}
-                onChange={(e) => setSectionData({ ...sectionData, title: e.target.value })}
-                placeholder="Müşterilerimiz Ne Diyor?"
-              />
-            </div>
-            <div>
-              <Label>Açıklama</Label>
-              <Textarea
-                value={sectionData.paragraph || ""}
-                onChange={(e) => setSectionData({ ...sectionData, paragraph: e.target.value })}
-                placeholder="Bölüm açıklaması"
-                rows={2}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="section-title">Bölüm Başlığı</Label>
+            <Input
+              id="section-title"
+              value={sectionData.title}
+              onChange={(e) => setSectionData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="Müşterilerimiz Ne Diyor?"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="section-paragraph">Bölüm Açıklaması</Label>
+            <Textarea
+              id="section-paragraph"
+              value={sectionData.paragraph || ""}
+              onChange={(e) => setSectionData(prev => ({ ...prev, paragraph: e.target.value }))}
+              placeholder="Bölüm açıklaması..."
+              rows={3}
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={saveAllChanges} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Kaydediliyor...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Ayarları Kaydet
+                </>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>

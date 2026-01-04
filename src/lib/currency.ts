@@ -1,7 +1,7 @@
 export const formatTL = (val: string | number): string => {
   const num = typeof val === 'string' ? parseFloat(val.replace(/[^\d.,-]/g, '').replace(',', '.')) : Number(val)
   if (!isFinite(num)) return typeof val === 'string' ? val : ''
-  return num.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })
+  return num.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' TL'
 }
 
 export const parseTLInput = (input: string): string => {

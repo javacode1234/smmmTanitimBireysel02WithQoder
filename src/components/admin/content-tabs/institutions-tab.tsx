@@ -55,7 +55,7 @@ interface SectionData {
 
 const DEFAULT_SECTION: SectionData = {
   title: "İş Birliği Yaptığımız Kurumlar",
-  paragraph: "Güçlü kurum ortaklıklarımız sayesinde size en kaliteli mali müşavirlik hizmetini sunuyoruz.",
+  paragraph: "Güçlü kurum ortaklıklarımız sayesinde mükelleflerimize en hızlı ve doğru hizmeti sunuyoruz.",
 }
 
 const DEFAULT_INSTITUTIONS: Omit<Institution, 'id'>[] = [
@@ -521,13 +521,13 @@ export function InstitutionsTab() {
         }
       }
 
-      toast.success('Tüm değişiklikler kaydedildi!')
+      toast.success("Kurumlar başarıyla kaydedildi")
       
       // Reload
       await fetchData()
     } catch (error) {
       console.error('Error saving:', error)
-      toast.error('Kaydetme sırasında bir hata oluştu')
+      toast.error("Kurumlar kaydedilirken bir hata oluştu")
     } finally {
       setIsSaving(false)
     }
@@ -553,10 +553,10 @@ export function InstitutionsTab() {
       // 4. Mark database as empty so save defaults button becomes active
       setIsDatabaseEmpty(true)
       
-      toast.success('Varsayılan değerlere sıfırlandı')
+      toast.success("Varsayılan verilere dönüldü")
     } catch (error) {
       console.error('Error resetting:', error)
-      toast.error('Sıfırlama sırasında bir hata oluştu')
+      toast.error("Sıfırlama işlemi sırasında bir hata oluştu")
     }
     setIsResetDialogOpen(false)
   }

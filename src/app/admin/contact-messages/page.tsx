@@ -177,9 +177,9 @@ export default function ContactMessagesPage() {
     setIsDeleteDialogOpen(true)
   }
 
-  const handleExportPDF = (message: ContactMessage) => {
+  const handleExportPDF = async (message: ContactMessage) => {
     try {
-      exportContactMessageToPDF(message)
+      await exportContactMessageToPDF(message)
       toast.success('Mesaj başarıyla dışa aktarıldı!')
     } catch (error) {
       console.error('Error exporting message:', error)

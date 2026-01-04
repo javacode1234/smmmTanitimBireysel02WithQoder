@@ -84,6 +84,9 @@ model accountingperiod {
   year                                                                             Int
   startDate                                                                        DateTime
   endDate                                                                          DateTime
+  monthlyFee                                                                       String?                 // Monthly fee for this specific year
+  feeAccrualDay                                                                    Int?                    @default(1) // Day of month for accrual (1-31)
+  monthlyFees                                                                      String?                 @db.LongText // JSON: Specific fees per month { "1": "1000", ... }
   status                                                                           accountingperiod_status @default(ACTIVE)
   createdAt                                                                        DateTime                @default(now())
   updatedAt                                                                        DateTime
@@ -121,19 +124,27 @@ model customer {
   id                         String                       @id @default(cuid())
   logo                       String?                      @db.LongText
   companyName                String
+  tckn                       String?
   taxNumber                  String?
   phone                      String?
   email                      String?
-  address                    String?
+  website                    String?
+  address                    String?                      @db.Text
   city                       String?
+  district                   String?
+  addressCode                String?
   mainActivityCode           String?
   facebookUrl                String?
   xUrl                       String?
   linkedinUrl                String?
   instagramUrl               String?
+  telegramUrl                String?
   threadsUrl                 String?
   ledgerType                 String?
+  companyType                String?
+  companyClass               String?
   subscriptionFee            String?
+  openingBalance             String?
   establishmentDate          DateTime?
   authorizedName             String?
   authorizedTCKN             String?
@@ -149,6 +160,7 @@ model customer {
   authorizationPeriod        String?
   notes                      String?                      @db.LongText
   partners                   String?                      @db.LongText
+  capitals                   String?                      @db.LongText
   branches                   String?                      @db.LongText
   chambers                   String?                      @db.LongText
   activities                 String?                      @db.LongText
@@ -162,6 +174,7 @@ model customer {
   passwords                  String?                      @db.LongText
   taxPeriodType              customer_taxPeriodType?
   declarations               String?                      @db.LongText
+  transactions               String?                      @db.LongText
   hasEmployees               Boolean?                     @default(false)
   employeeCount              Int?                         // New field for insurance employee count
   taxOfficeId                String? 
@@ -194,7 +207,7 @@ model customerdeclarationsetting {
   skipQuarter   Boolean?                                  @default(false)
   quarters      String?                                   @db.Text
   createdAt     DateTime                                  @default(now())
-  updatedAt     DateTime
+  updatedAt     DateTime                                  @updatedAt
   customer      customer                                  @relation(fields: [customerId], references: [id], onDelete: Cascade, map: "CustomerDeclarationSetting_customerId_fkey")
 
   @@unique([customerId, type], map: "CustomerDeclarationSetting_customerId_type_key")
@@ -660,4 +673,22 @@ model activitycode {
   updatedAt DateTime @updatedAt
 
   @@index([name(length: 191)], map: "ActivityCode_name_idx")
+}
+
+model City {
+  id        Int        @id
+  name      String
+  districts District[]
+
+  @@index([name])
+}
+
+model District {
+  id     Int    @id
+  name   String
+  cityId Int
+  city   City   @relation(fields: [cityId], references: [id])
+
+  @@index([name])
+  @@index([cityId])
 }

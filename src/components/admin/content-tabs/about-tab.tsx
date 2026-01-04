@@ -76,36 +76,36 @@ const DEFAULT_FEATURES: Feature[] = [
     id: "default-1",
     icon: "Award",
     title: "Profesyonel Deneyim",
-    description: "15 yılı aşkın sektör tecrübesi ile işletmenize en iyi hizmeti sunuyoruz.",
+    description: "15 yılı aşkın sektör deneyimimizle işletmenize en iyi hizmeti sunuyoruz.",
     isActive: true
   },
   {
     id: "default-2",
     icon: "Shield",
     title: "Güvenilir Hizmet",
-    description: "Tüm finansal işlemleriniz gizlilik ve güvenlik garantisi altında.",
+    description: "Tüm mali işlemleriniz gizlilik ve güvenlik garantisi altındadır.",
     isActive: true
   },
   {
     id: "default-3",
     icon: "Users",
     title: "Uzman Kadro",
-    description: "Alanında uzman, sertifikalı mali müşavirler ile çalışıyoruz.",
+    description: "Alanında uzman, belgeli mali müşavirlerle çalışıyoruz.",
     isActive: true
   },
   {
     id: "default-4",
     icon: "TrendingUp",
     title: "Sürekli Gelişim",
-    description: "Güncel mevzuat ve teknoloji takibi ile hizmet kalitemizi artırıyoruz.",
+    description: "Güncel mevzuatı ve teknolojiyi takip ederek hizmet kalitemizi artırıyoruz.",
     isActive: true
   }
 ]
 
 const DEFAULT_ABOUT: AboutData = {
   title: "Hakkımızda",
-  subtitle: "Serbest Muhasebeci Mali Müşavir olarak, işletmelerin finansal süreçlerini en verimli şekilde yönetmelerine yardımcı oluyoruz.",
-  description: "Profesyonel kadromuz ve modern teknoloji altyapımız ile sektörde fark yaratıyoruz.",
+  subtitle: "Serbest Muhasebeci Mali Müşavirler olarak, işletmelerin mali süreçlerini en verimli şekilde yönetmelerine yardımcı oluyoruz.",
+  description: "Profesyonel kadromuz ve modern teknolojik altyapımızla sektörde fark yaratıyoruz.",
   features: DEFAULT_FEATURES
 }
 
@@ -250,7 +250,7 @@ export function AboutTab() {
   // Save feature (new or edited)
   const saveFeature = () => {
     if (!editingFeature || !editingFeature.title.trim()) {
-      toast.error("Başlık alanı boş olamaz")
+      toast.error("Başlık alanı boş bırakılamaz")
       return
     }
 
@@ -259,7 +259,7 @@ export function AboutTab() {
     const isExistingFeature = aboutData.features.some((f: Feature) => f.id === editingFeature.id);
     
     if (isExistingFeature) {
-      // Mevcut özelliği güncelle
+      // Update existing feature
       const updatedFeatures = aboutData.features.map((f: Feature) => {
         if (f.id === editingFeature.id) {
           return { ...editingFeature }
@@ -269,7 +269,7 @@ export function AboutTab() {
       setAboutData({ ...aboutData, features: updatedFeatures })
       toast.success("Özellik başarıyla güncellendi")
     } else {
-      // Yeni özelliği ekle
+      // Add new feature
       setAboutData({
         ...aboutData,
         features: [...aboutData.features, { ...editingFeature }]
@@ -328,7 +328,7 @@ export function AboutTab() {
 
   // Reset to default values (state only - no database change)
   const handleReset = () => {
-    // Form'a default değerleri yükle
+    // Load default values into form
     setAboutData(DEFAULT_ABOUT)
     setIsDatabaseEmpty(true)
     
@@ -499,7 +499,7 @@ export function AboutTab() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center">
-                    Hiç özellik bulunamadı
+                    Özellik bulunamadı
                   </TableCell>
                 </TableRow>
               )}
@@ -557,7 +557,7 @@ export function AboutTab() {
         <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
-              {editingFeature?.id?.startsWith("feature-") ? "Yeni Özellik Ekle" : "Özellik Düzenle"}
+              {editingFeature?.id?.startsWith("feature-") ? "Yeni Özellik Ekle" : "Özelliği Düzenle"}
             </DialogTitle>
             <DialogDescription>
               {editingFeature?.id?.startsWith("feature-") 
@@ -578,7 +578,7 @@ export function AboutTab() {
                     onValueChange={(value) => handleFeatureChange("icon", value)}
                   >
                     <SelectTrigger id="icon">
-                      <SelectValue placeholder="Bir ikon seçin" />
+                      <SelectValue placeholder="İkon seçin" />
                     </SelectTrigger>
                     <SelectContent>
                       {AVAILABLE_ICONS.map((icon) => {
@@ -659,7 +659,7 @@ export function AboutTab() {
         }}
         onConfirm={confirmDeleteFeature}
         title="Özelliği Sil"
-        description={`"${featureToDelete?.title}" adlı özelliği silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`}
+        description={`"${featureToDelete?.title}" özelliğini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`}
       />
 
       {/* Reset Confirmation Dialog */}
@@ -667,8 +667,8 @@ export function AboutTab() {
         isOpen={isResetDialogOpen}
         onClose={() => setIsResetDialogOpen(false)}
         onConfirm={handleReset}
-        title="Varsayılan Değerlere Sıfırla"
-        description="Hakkımızda bölümünü varsayılan değerlere sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm özelleştirilmiş içerik kaybolacaktır."
+        title="Varsayılanlara Sıfırla"
+        description="Hakkımızda bölümünü varsayılan değerlere sıfırlamak istediğinize emin misiniz? Bu işlem geri alınamaz ve tüm özelleştirilmiş içerik kaybolacaktır."
       />
 
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3">
@@ -679,7 +679,7 @@ export function AboutTab() {
             className="border-amber-600 text-amber-600 hover:bg-amber-50 w-full sm:w-auto"
           >
             <RotateCcw className="h-4 w-4 mr-2" />
-            Varsayılan Değerlere Sıfırla
+            Varsayılanlara Sıfırla
           </Button>
           
           <Button 
@@ -696,7 +696,7 @@ export function AboutTab() {
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Varsayılan Değerleri Veritabanına Kaydet
+                Varsayılanları Veritabanına Kaydet
               </>
             )}
           </Button>

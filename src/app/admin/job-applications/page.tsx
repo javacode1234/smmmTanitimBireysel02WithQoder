@@ -190,9 +190,9 @@ export default function JobApplicationsPage() {
     setIsDeleteDialogOpen(true)
   }
 
-  const handleExportPDF = (application: JobApplication) => {
+  const handleExportPDF = async (application: JobApplication) => {
     try {
-      exportJobApplicationToPDF(application)
+      await exportJobApplicationToPDF(application)
       toast.success('Başvuru başarıyla dışa aktarıldı!')
     } catch (error) {
       console.error('Error exporting application:', error)

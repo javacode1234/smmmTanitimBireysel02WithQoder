@@ -1,40 +1,35 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { turkishTaxOffices } from '@/lib/tax-offices'
 
 export const runtime = 'nodejs'
 export const revalidate = 0
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    if (prisma.taxOffice) {
-      try {
-        const items = await prisma.taxOffice.findMany({
-          orderBy: { name: 'asc' },
-          select: { id: true, name: true, city: true, district: true },
-        })
-        return NextResponse.json({ taxOffices: items })
-      } catch (err) {
-        const msg = String((err as { message?: string })?.message || '')
-        if (msg.toLowerCase().includes('unknown')) {
-          const items = await prisma.taxOffice.findMany({
-            orderBy: { name: 'asc' },
-            select: { id: true, name: true },
-          })
-          return NextResponse.json({ taxOffices: items })
-        }
-        throw err
+    const { searchParams } = new URL(req.url)
+    const q = (searchParams.get('q') || '').trim().toLocaleLowerCase('tr-TR')
+    
+    // Fetch from database
+    const rows = await prisma.taxOffice.findMany({
+      select: {
+        id: true,
+        name: true,
+        city: true,
+        district: true
+      },
+      orderBy: {
+        name: 'asc'
       }
-    }
-  } catch (error) {
-    const e = error as { code?: string; message?: string }
-    if (e?.code === 'P2021' || e?.message?.includes('does not exist')) {
-    } else {
-      console.error('Error fetching tax offices:', error)
-    }
-  }
+    })
 
-  const fallback = (turkishTaxOffices || []).map((o, idx) => ({ id: `to-${idx}`, name: o.name, city: o.city, district: o.district }))
-  return NextResponse.json({ taxOffices: fallback })
+    const filtered = q
+      ? rows.filter(it => it.name.toLocaleLowerCase('tr-TR').includes(q))
+      : rows
+
+    return NextResponse.json({ taxOffices: filtered })
+  } catch (error: unknown) {
+    console.error('Tax offices fetch error:', error)
+    return NextResponse.json({ taxOffices: [] })
+  }
 }

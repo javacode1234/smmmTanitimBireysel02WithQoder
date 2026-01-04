@@ -179,9 +179,9 @@ export default function QuoteRequestsPage() {
     setIsDeleteDialogOpen(true)
   }
 
-  const handleExportPDF = (request: QuoteRequest) => {
+  const handleExportPDF = async (request: QuoteRequest) => {
     try {
-      exportQuoteRequestToPDF(request)
+      await exportQuoteRequestToPDF(request)
       toast.success('Teklif talebi başarıyla dışa aktarıldı!')
     } catch (error) {
       console.error('Error exporting request:', error)

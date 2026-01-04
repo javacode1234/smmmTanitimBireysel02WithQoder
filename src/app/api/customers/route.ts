@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 import fs from 'fs'
 import path from 'path'
+import crypto from 'crypto'
+import { generateAccrualsForCustomer } from '@/lib/subscription-logic'
 
 type DeleteCreateManyDelegate = {
   deleteMany: (args: unknown) => Prisma.PrismaPromise<unknown>
@@ -23,6 +25,16 @@ function toNullableInt(input: unknown): number | null {
 function toOptionalInt(input: unknown): number | null | undefined {
   if (input === undefined) return undefined
   return toNullableInt(input)
+}
+
+function toNullableStringFromNumber(input: unknown): string | null {
+  if (input === null || input === undefined || input === '') return null
+  return String(input)
+}
+
+function toOptionalStringFromNumber(input: unknown): string | null | undefined {
+  if (input === undefined) return undefined
+  return toNullableStringFromNumber(input)
 }
 
 function toNullableDate(input: unknown): Date | null {
@@ -91,12 +103,17 @@ function ensureDir(dir: string) {
 }
 
 function saveCustomerFile(customerId: string, subPathParts: string[], filename: string, buffer: Buffer): string {
-  const uploadsRoot = path.join(process.cwd(), 'public', 'uploads', 'customers', customerId, ...subPathParts)
-  ensureDir(uploadsRoot)
-  const fullPath = path.join(uploadsRoot, filename)
-  fs.writeFileSync(fullPath, buffer)
-  const urlPath = ['','uploads','customers', customerId, ...subPathParts, filename].join('/')
-  return urlPath
+  try {
+    const uploadsRoot = path.join(process.cwd(), 'public', 'uploads', 'customers', customerId, ...subPathParts)
+    ensureDir(uploadsRoot)
+    const fullPath = path.join(uploadsRoot, filename)
+    fs.writeFileSync(fullPath, buffer)
+    const urlPath = ['','uploads','customers', customerId, ...subPathParts, filename].join('/')
+    return urlPath
+  } catch (error) {
+    console.error(`Error saving file ${filename}:`, error)
+    throw new Error(`Dosya kaydedilemedi: ${filename}`)
+  }
 }
 
 function ensureEnum(val: unknown, allowed: string[], def: string): string {
@@ -106,6 +123,72 @@ function ensureEnum(val: unknown, allowed: string[], def: string): string {
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
+  const mode = searchParams.get('mode')
+
+  if (mode === 'stats') {
+    try {
+      const totalActive = await prisma.customer.count({
+        where: { status: 'ACTIVE' }
+      })
+
+      const now = new Date()
+      const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      const startOfCurrentYear = new Date(now.getFullYear(), 0, 1)
+
+      // Total active customers created before this month
+      const totalLastMonth = await prisma.customer.count({
+        where: { 
+          status: 'ACTIVE',
+          OR: [
+            { serviceStartDate: { not: null, lt: startOfCurrentMonth } },
+            { serviceStartDate: null, establishmentDate: { not: null, lt: startOfCurrentMonth } },
+            { serviceStartDate: null, establishmentDate: null, createdAt: { lt: startOfCurrentMonth } }
+          ]
+        }
+      })
+      
+      // Total active customers created before this year
+      const totalLastYear = await prisma.customer.count({
+        where: {
+          status: 'ACTIVE',
+          OR: [
+            { serviceStartDate: { not: null, lt: startOfCurrentYear } },
+            { serviceStartDate: null, establishmentDate: { not: null, lt: startOfCurrentYear } },
+            { serviceStartDate: null, establishmentDate: null, createdAt: { lt: startOfCurrentYear } }
+          ]
+        }
+      })
+
+      // Calculate growth rates
+      // Monthly Growth: (Current Active - Active at Start of Month) / Active at Start of Month
+      // This represents the net growth of the customer base during the current month.
+      let monthlyGrowthRate = 0
+      if (totalLastMonth > 0) {
+        monthlyGrowthRate = ((totalActive - totalLastMonth) / totalLastMonth) * 100
+      } else if (totalActive > 0) {
+        monthlyGrowthRate = 100 // If we had 0 customers and now have some, that's 100% (or infinite) growth
+      }
+
+      // Yearly Growth: (Current Active - Active at Start of Year) / Active at Start of Year
+      // This represents the net growth of the customer base during the current year (YTD).
+      let yearlyGrowthRate = 0
+      if (totalLastYear > 0) {
+        yearlyGrowthRate = ((totalActive - totalLastYear) / totalLastYear) * 100
+      } else if (totalActive > 0) {
+        yearlyGrowthRate = 100
+      }
+
+      return NextResponse.json({
+        totalActive,
+        monthlyGrowthRate: monthlyGrowthRate.toFixed(1),
+        yearlyGrowthRate: yearlyGrowthRate.toFixed(1)
+      })
+    } catch (error) {
+      console.error('Error calculating stats:', error)
+      return NextResponse.json({ error: 'Stats calculation failed' }, { status: 500 })
+    }
+  }
+
   const id = searchParams.get('id')
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status')
@@ -129,6 +212,8 @@ export async function GET(request: NextRequest) {
         where: { id },
         include: {
           taxOffice: true,
+          customerdeclarationsetting: true,
+          accountingperiod: true,
         },
       })
 
@@ -139,6 +224,8 @@ export async function GET(request: NextRequest) {
       const normalized = {
         ...customer,
         taxOffice: (customer as unknown as { taxOffice?: { name?: string | null } }).taxOffice?.name ?? null,
+        // Map customerdeclarationsetting to a friendlier format if needed, or just pass it through
+        declarationSettings: customer.customerdeclarationsetting
       }
 
       const px: Record<string, unknown> = prisma as unknown as Record<string, unknown>
@@ -205,6 +292,12 @@ export async function GET(request: NextRequest) {
           taxOffice: true,
           email: true,
           phone: true,
+          address: true,
+          city: true,
+          district: true,
+          addressCode: true,
+          website: true,
+          ledgerType: true,
           status: true,
           onboardingStage: true,
           createdAt: true,
@@ -266,14 +359,19 @@ export async function POST(request: NextRequest) {
 
     const createData: Record<string, unknown> = {
       companyName: String(data.companyName),
-      taxNumber: data.taxNumber || null,
+      ...(data.tckn ? { tckn: data.tckn } : {}),
+      ...(data.taxNumber ? { taxNumber: data.taxNumber } : {}),
       ...(taxOfficeRelation ? { taxOffice: taxOfficeRelation } : {}),
-      phone: data.phone || null,
-      email: data.email || null,
-      address: data.address || null,
-      city: data.city || null,
+      ...(data.phone ? { phone: data.phone } : {}),
+      ...(data.email ? { email: data.email } : {}),
+      ...(data.website ? { website: data.website } : {}),
+      ...(data.address ? { address: data.address } : {}),
+      ...(data.city ? { city: data.city } : {}),
+      ...(data.district ? { district: data.district } : {}),
+      ...(data.addressCode ? { addressCode: data.addressCode } : {}),
       ...(data.mainActivityCode !== undefined ? { mainActivityCode: data.mainActivityCode } : {}),
       establishmentDate: toNullableDate(data.establishmentDate),
+      serviceStartDate: toNullableDate(data.serviceStartDate),
       status: ensureEnum(data.status, ['ACTIVE','INACTIVE'], 'ACTIVE'),
       onboardingStage: ensureEnum(data.onboardingStage, ['LEAD','PROSPECT','CUSTOMER'], 'LEAD'),
       ...(data.logo !== undefined ? { logo: data.logo } : {}),
@@ -281,9 +379,12 @@ export async function POST(request: NextRequest) {
       ...(data.xUrl !== undefined ? { xUrl: data.xUrl } : {}),
       ...(data.linkedinUrl !== undefined ? { linkedinUrl: data.linkedinUrl } : {}),
       ...(data.instagramUrl !== undefined ? { instagramUrl: data.instagramUrl } : {}),
+      ...(data.telegramUrl !== undefined ? { telegramUrl: data.telegramUrl } : {}),
       ...(data.threadsUrl !== undefined ? { threadsUrl: data.threadsUrl } : {}),
       ...(data.ledgerType !== undefined ? { ledgerType: data.ledgerType } : {}),
-      ...(data.subscriptionFee !== undefined ? { subscriptionFee: data.subscriptionFee } : {}),
+      ...(data.companyType !== undefined ? { companyType: data.companyType } : {}),
+      ...(data.companyClass !== undefined ? { companyClass: data.companyClass } : {}),
+      ...(data.subscriptionFee !== undefined ? { subscriptionFee: toOptionalStringFromNumber(data.subscriptionFee) } : {}),
       ...(data.employeeCount !== undefined ? { employeeCount: toOptionalInt(data.employeeCount) } : {}),
       ...(data.partners !== undefined ? { partners: toStringOrJson(data.partners) } : {}),
       ...(data.branches !== undefined ? { branches: toStringOrJson(data.branches) } : {}),
@@ -291,6 +392,7 @@ export async function POST(request: NextRequest) {
       ...(data.activities !== undefined ? { activities: toStringOrJson(data.activities) } : {}),
       ...(data.authorizedPersons !== undefined ? { authorizedPersons: toStringOrJson(data.authorizedPersons) } : {}),
       ...(data.messages !== undefined ? { messages: toStringOrJson(data.messages) } : {}),
+      ...(data.transactions !== undefined ? { transactions: toStringOrJson(data.transactions) } : {}),
     }
     
     // hasEmployees alanı varsa ekle
@@ -338,6 +440,24 @@ export async function POST(request: NextRequest) {
 
     if (Object.keys(updatedFields).length) {
       await prisma.customer.update({ where: { id: customer.id }, data: updatedFields as Prisma.customerUpdateInput })
+    }
+
+    // Aidat tahakkuklarını oluştur (Eğer aidat ve kuruluş tarihi varsa)
+    if (createData.subscriptionFee && createData.establishmentDate) {
+      try {
+        console.log('Generating initial accruals for new customer:', customer.id)
+        await generateAccrualsForCustomer({
+          id: customer.id,
+          companyName: customer.companyName,
+          subscriptionFee: customer.subscriptionFee,
+          establishmentDate: customer.establishmentDate,
+          serviceStartDate: customer.serviceStartDate,
+          feeAccrualDay: customer.feeAccrualDay
+        }, true)
+      } catch (accrualError) {
+        console.error('Error generating initial accruals:', accrualError)
+        // Ana işlem başarılı olduğu için hatayı yutmuyoruz ama kullanıcıya döndürmüyoruz, sadece logluyoruz.
+      }
     }
 
     console.log('Customer created successfully:', customer.id)
@@ -404,23 +524,92 @@ export async function PATCH(request: NextRequest) {
       taxOfficeRelationUpdate = { disconnect: true }
     }
 
-  const updateData: Record<string, unknown> = {
+    // Handle accounting periods update if provided
+    if (data.accountingPeriods && Array.isArray(data.accountingPeriods)) {
+      // Check if model exists safely
+      const px = prisma as any;
+      if (!px.accountingperiod) {
+         console.error("AccountingPeriod model not found in Prisma client");
+         // Don't fail the whole request, but maybe log it? Or throw?
+         // If this is critical, we should throw.
+      }
+
+      for (const period of data.accountingPeriods) {
+        if (period.year) {
+          try {
+            const year = parseInt(period.year)
+            const startDate = new Date(year, 0, 1) // Jan 1st
+            const endDate = new Date(year, 11, 31) // Dec 31st
+            
+            // Ensure monthlyFees is a string for Prisma
+            let monthlyFeesString: string | null | undefined = undefined;
+            if (period.monthlyFees) {
+              monthlyFeesString = typeof period.monthlyFees === 'object' 
+                ? JSON.stringify(period.monthlyFees) 
+                : String(period.monthlyFees);
+            }
+
+            console.log(`Upserting accounting period for year ${year}, customer ${id}. MonthlyFees type: ${typeof period.monthlyFees}`);
+            
+            await px.accountingperiod.upsert({
+              where: {
+                customerId_year: {
+                  customerId: id,
+                  year: year
+                }
+              },
+              update: {
+                monthlyFee: period.monthlyFee !== undefined ? String(period.monthlyFee) : undefined,
+                feeAccrualDay: period.feeAccrualDay !== undefined ? parseInt(String(period.feeAccrualDay)) : undefined,
+                monthlyFees: monthlyFeesString,
+                updatedAt: new Date()
+              },
+              create: {
+                id: crypto.randomUUID(),
+                customerId: id,
+                year: year,
+                startDate: startDate,
+                endDate: endDate,
+                monthlyFee: String(period.monthlyFee || "0"),
+                feeAccrualDay: period.feeAccrualDay !== undefined ? parseInt(String(period.feeAccrualDay)) : 1,
+                monthlyFees: monthlyFeesString ?? null,
+                status: 'ACTIVE',
+                updatedAt: new Date()
+              }
+            })
+          } catch (periodError: any) {
+             console.error(`Error upserting accounting period for year ${period.year}:`, periodError);
+             throw new Error(`Yıl ${period.year} için aidat bilgisi kaydedilemedi: ${periodError.message}`);
+          }
+        }
+      }
+    }
+
+    const updateData: Record<string, unknown> = {
       ...(data.logo !== undefined ? { logo: data.logo } : {}),
       ...(data.companyName !== undefined ? { companyName: data.companyName } : {}),
+      ...(data.tckn !== undefined ? { tckn: data.tckn } : {}),
       ...(data.taxNumber !== undefined ? { taxNumber: data.taxNumber } : {}),
       ...(taxOfficeRelationUpdate ? { taxOffice: taxOfficeRelationUpdate } : {}),
       ...(data.phone !== undefined ? { phone: data.phone } : {}),
       ...(data.email !== undefined ? { email: data.email } : {}),
       ...(data.address !== undefined ? { address: data.address } : {}),
       ...(data.city !== undefined ? { city: data.city } : {}),
+      ...(data.district !== undefined ? { district: data.district } : {}),
+      ...(data.addressCode !== undefined ? { addressCode: data.addressCode } : {}),
       ...(data.mainActivityCode !== undefined ? { mainActivityCode: data.mainActivityCode } : {}),
       ...(data.facebookUrl !== undefined ? { facebookUrl: data.facebookUrl } : {}),
       ...(data.xUrl !== undefined ? { xUrl: data.xUrl } : {}),
       ...(data.linkedinUrl !== undefined ? { linkedinUrl: data.linkedinUrl } : {}),
       ...(data.instagramUrl !== undefined ? { instagramUrl: data.instagramUrl } : {}),
+      ...(data.telegramUrl !== undefined ? { telegramUrl: data.telegramUrl } : {}),
       ...(data.threadsUrl !== undefined ? { threadsUrl: data.threadsUrl } : {}),
       ...(data.ledgerType !== undefined ? { ledgerType: data.ledgerType } : {}),
-      ...(data.subscriptionFee !== undefined ? { subscriptionFee: data.subscriptionFee } : {}),
+      ...(data.companyType !== undefined ? { companyType: data.companyType } : {}),
+      ...(data.companyClass !== undefined ? { companyClass: data.companyClass } : {}),
+      ...(data.subscriptionFee !== undefined ? { subscriptionFee: toOptionalStringFromNumber(data.subscriptionFee) } : {}),
+      ...(data.feeAccrualDay !== undefined && data.feeAccrualDay !== null ? { feeAccrualDay: toOptionalInt(data.feeAccrualDay) } : {}),
+      ...(data.openingBalance !== undefined ? { openingBalance: toOptionalStringFromNumber(data.openingBalance) } : {}),
       ...(data.establishmentDate !== undefined ? { establishmentDate: toOptionalDate(data.establishmentDate) } : {}),
       ...(data.taxPeriodType !== undefined ? { taxPeriodType: data.taxPeriodType } : {}),
       ...(data.authorizedName !== undefined ? { authorizedName: data.authorizedName } : {}),
@@ -436,13 +625,48 @@ export async function PATCH(request: NextRequest) {
       ...(data.authorizationDate !== undefined ? { authorizationDate: toOptionalDate(data.authorizationDate) } : {}),
       ...(data.authorizationPeriod !== undefined ? { authorizationPeriod: data.authorizationPeriod } : {}),
       ...(data.declarations !== undefined ? { declarations: toStringOrJson(data.declarations) } : {}),
+      ...(data.declarationSettings !== undefined && Array.isArray(data.declarationSettings) ? {
+        customerdeclarationsetting: {
+          deleteMany: {},
+          create: (() => {
+            // Deduplicate by type to avoid unique constraint violations
+            const uniqueMap = new Map();
+            data.declarationSettings.forEach((item: any) => {
+              if (item && item.type) uniqueMap.set(item.type, item);
+            });
+            return Array.from(uniqueMap.values()).map((item: any) => {
+              // Safe UUID generation
+              let newId;
+              try {
+                newId = crypto.randomUUID();
+              } catch (e) {
+                 // Fallback if randomUUID fails
+                 newId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+              }
+              
+              return {
+                id: newId,
+                type: item.type,
+                frequency: item.frequency,
+                quarters: JSON.stringify(item.selectedPeriods || []),
+                enabled: true,
+                updatedAt: new Date(),
+                dueDay: item.dueDay ? Number(item.dueDay) : undefined,
+                quarterOffset: item.quarterOffset ? Number(item.quarterOffset) : undefined
+              };
+            });
+          })()
+        }
+      } : {}),
       ...(data.documents !== undefined ? { documents: toStringOrJson(data.documents) } : {}),
       ...(data.passwords !== undefined ? { passwords: toStringOrJson(data.passwords) } : {}),
       ...(data.authorizedPersons !== undefined ? { authorizedPersons: toStringOrJson(data.authorizedPersons) } : {}),
       ...(data.branches !== undefined ? { branches: toStringOrJson(data.branches) } : {}),
+      ...(data.capitals !== undefined ? { capitals: toStringOrJson(data.capitals) } : {}),
       ...(data.partners !== undefined ? { partners: toStringOrJson(data.partners) } : {}),
       ...(data.chambers !== undefined ? { chambers: toStringOrJson(data.chambers) } : {}),
       ...(data.activities !== undefined ? { activities: toStringOrJson(data.activities) } : {}),
+      ...(data.transactions !== undefined ? { transactions: toStringOrJson(data.transactions) } : {}),
       ...(data.messages !== undefined ? { messages: toStringOrJson(data.messages) } : {}),
       ...(data.notes !== undefined ? { notes: data.notes } : {}),
       ...(data.status !== undefined ? { status: data.status } : {}),
@@ -453,6 +677,33 @@ export async function PATCH(request: NextRequest) {
     // hasEmployees alanı varsa ekle
     if (data.hasEmployees !== undefined) {
       updateData.hasEmployees = Boolean(data.hasEmployees)
+    }
+
+    // Handle document uploads in PATCH
+    if (Array.isArray(data.documents)) {
+      console.log(`Processing ${data.documents.length} documents for update...`);
+      const docs = data.documents as Array<{ id: string; name: string; file: string; uploadDate: string; category: string; relatedTaxReturnType?: string }>
+      const mapped = docs.map((d) => {
+        if (typeof d.file === 'string' && d.file.startsWith('data:')) {
+          console.log(`Saving new file: ${d.name} (${d.file.length} chars)`);
+          const decoded = decodeDataUrl(d.file)
+          if (decoded) {
+            const ext = getExtFromMime(decoded.mime)
+            const date = (d.uploadDate || new Date().toISOString().split('T')[0]).replace(/\s.*/, '')
+            const safeName = sanitizeFilename(d.name || 'dosya')
+            const cat = sanitizeFilename(d.category || 'unknown')
+            const type = sanitizeFilename(d.relatedTaxReturnType || 'genel')
+            const filename = `${type}__${safeName}__${date}__${d.id}.${ext}`
+            const url = saveCustomerFile(id, ['documents', cat], filename, decoded.buffer)
+            console.log(`File saved: ${url}`);
+            return { ...d, file: `/${url}` }
+          } else {
+             console.error("Failed to decode data URL for file:", d.name);
+          }
+        }
+        return d
+      })
+      updateData.documents = JSON.stringify(mapped)
     }
     
     console.log('Updating customer with data:', JSON.stringify(updateData, null, 2))
@@ -598,28 +849,65 @@ export async function PATCH(request: NextRequest) {
       } catch {}
     }
 
-    const customer = await prisma.customer.update({
-      where: { id },
-      data: updateData as Prisma.customerUpdateInput,
-    })
+    // Handle declaration settings update logic is already handled in updateData via nested writes
+    
+    if (Object.keys(updateData).length > 0) {
+      console.log("Prisma update data prepared. Executing update...");
+      const customer = await prisma.customer.update({
+        where: { id },
+        data: updateData as Prisma.customerUpdateInput,
+      })
+      console.log('Customer updated successfully:', customer.id)
 
-    return NextResponse.json(customer)
-  } catch (error: unknown) {
-    console.error('Error updating customer:', error)
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    const stack = error instanceof Error ? error.stack : undefined
-    
-    // More detailed error response
-    let errorMessage = 'Müşteri güncellenemedi'
-    if (message) {
-      errorMessage += ': ' + message
+      // If important fields changed, trigger accrual regeneration
+      if (data.subscriptionFee !== undefined || data.establishmentDate !== undefined || data.serviceStartDate !== undefined || data.feeAccrualDay !== undefined) {
+        // Get fresh customer data to ensure we have all needed fields
+        const freshCustomer = await prisma.customer.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            companyName: true,
+            subscriptionFee: true,
+            establishmentDate: true,
+            serviceStartDate: true,
+            feeAccrualDay: true
+          }
+        })
+
+        if (freshCustomer && freshCustomer.subscriptionFee && freshCustomer.establishmentDate) {
+          console.log('Regenerating accruals due to customer update:', id)
+          await generateAccrualsForCustomer({
+            id: freshCustomer.id,
+            companyName: freshCustomer.companyName,
+            subscriptionFee: freshCustomer.subscriptionFee,
+            establishmentDate: freshCustomer.establishmentDate,
+            serviceStartDate: freshCustomer.serviceStartDate,
+            feeAccrualDay: freshCustomer.feeAccrualDay
+          }, false) // false = don't overwrite existing paid/partial accruals, just update amounts or add missing
+        }
+      }
+
+      return NextResponse.json(customer)
     }
+
+    // If no customer fields to update, but accounting periods were updated, return success
+    if (data.accountingPeriods && Array.isArray(data.accountingPeriods)) {
+      return NextResponse.json({ id, message: "Accounting periods updated" })
+    }
+
+    return NextResponse.json({ message: "No changes detected" })
+  } catch (error: unknown) {
+    console.error('Error updating customer (CATCH BLOCK):', error)
+    console.error('Error stack:', error?.stack);
     
+    // Ensure we always return a valid JSON object with error details
+    const errorMessage = error?.message || 'Bilinmeyen bir hata oluştu';
+    const errorDetails = typeof error === 'object' ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : String(error);
+
     return NextResponse.json(
       { 
         error: errorMessage,
-        details: message,
-        stack: process.env.NODE_ENV === 'development' ? stack : undefined
+        details: errorDetails
       }, 
       { status: 500 }
     )

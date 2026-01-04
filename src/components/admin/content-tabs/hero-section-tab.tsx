@@ -13,14 +13,14 @@ import { Camera, Loader2, RotateCcw, Save } from "lucide-react"
 import Image from "next/image"
 import { toast } from "sonner"
 
-// Ana sayfa section linkleri
+// Main page section links
 const PAGE_SECTIONS = [
-  { value: "#hero", label: "Ana Sayfa (En Üst)" },
-  { value: "#services", label: "Hizmetlerimiz" },
+  { value: "#hero", label: "Anasayfa (Üst)" },
+  { value: "#services", label: "Hizmetler" },
   { value: "#about", label: "Hakkımızda" },
   { value: "#clients", label: "Kurumlar" },
-  { value: "#testimonials", label: "Müşteri Yorumları" },
-  { value: "#faq", label: "Sıkça Sorulan Sorular" },
+  { value: "#testimonials", label: "Yorumlar" },
+  { value: "#faq", label: "S.S.S." },
   { value: "#contact", label: "İletişim" },
   { value: "/teklif-al", label: "Teklif Al Sayfası" },
   { value: "/iletisim", label: "İletişim Sayfası" },
@@ -292,7 +292,7 @@ export function HeroSectionTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Başlık *</Label>
+            <Label htmlFor="title">Başlık</Label>
             <Input
               id="title"
               value={formData.title}
@@ -302,7 +302,7 @@ export function HeroSectionTab() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subtitle">Alt Başlık *</Label>
+            <Label htmlFor="subtitle">Alt Başlık</Label>
             <Textarea
               id="subtitle"
               value={formData.subtitle}
@@ -335,10 +335,10 @@ export function HeroSectionTab() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="buttonSection">Buton Linki</Label>
+              <Label htmlFor="buttonSection">Buton Bağlantısı</Label>
               <Select value={selectedSection} onValueChange={setSelectedSection}>
                 <SelectTrigger id="buttonSection">
-                  <SelectValue placeholder="Sayfa bölümü seçin" />
+                  <SelectValue placeholder="Bölüm Seçin" />
                 </SelectTrigger>
                 <SelectContent>
                   {PAGE_SECTIONS.map((section) => (

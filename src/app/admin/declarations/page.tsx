@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, Fragment } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,41 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { Pencil, Trash2, Plus } from "lucide-react"
+import { Pencil, Trash2, Plus, Search } from "lucide-react"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+
+const formSchema = z.object({
+  type: z.string().min(1, "Beyanname türü zorunludur"),
+  frequency: z.enum(["MONTHLY", "QUARTERLY", "YEARLY"]),
+  enabled: z.boolean().default(true),
+  optional: z.boolean().default(false),
+  quarters: z.array(z.number()).default([]),
+  
+  // Advanced / Scheduling
+  dueDay: z.coerce.number().min(1).max(31).optional().or(z.literal("")),
+  dueMonth: z.coerce.number().min(1).max(12).optional().or(z.literal("")),
+  quarterOffset: z.coerce.number().min(0).max(12).optional().or(z.literal("")),
+  taxPeriodType: z.string().optional(),
+})
+
+type FormValues = z.infer<typeof formSchema>
 
 export default function DeclarationsPage() {
   interface DeclarationConfig {
@@ -21,12 +55,8 @@ export default function DeclarationsPage() {
     frequency: 'MONTHLY' | 'QUARTERLY' | 'YEARLY'
     enabled: boolean
     dueDay?: number
-    dueHour?: number
-    dueMinute?: number
     dueMonth?: number
     quarterOffset?: number
-    yearlyCount?: number
-    skipQuarter?: boolean
     optional?: boolean
     quarters?: string
     taxPeriodType?: string
@@ -39,33 +69,6 @@ export default function DeclarationsPage() {
   const [declarationTypes, setDeclarationTypes] = useState<string[]>([])
   const [typeFilter, setTypeFilter] = useState<string>('all')
 
-  // Frequency mapping
-  const getFrequencyLabel = (frequency: string) => {
-    const map: Record<string, string> = {
-      'MONTHLY': 'Aylık',
-      'QUARTERLY': '3 Aylık',
-      'YEARLY': 'Yıllık'
-    }
-    return map[frequency] || frequency
-  }
-
-  
-
-  // form state
-  const [type, setType] = useState("")
-  const [frequency, setFrequency] = useState("MONTHLY")
-  const [enabled, setEnabled] = useState(true)
-  const [dueDay, setDueDay] = useState<string>("")
-  const [dueHour, setDueHour] = useState<string>("")
-  const [dueMinute, setDueMinute] = useState<string>("")
-  const [dueMonth, setDueMonth] = useState<string>("")
-  const [quarterOffset, setQuarterOffset] = useState<string>("")
-  const [yearlyCount, setYearlyCount] = useState<string>("")
-  const [skipQuarter, setSkipQuarter] = useState(false)
-  const [optional, setOptional] = useState(false)
-  const [quarters, setQuarters] = useState<number[]>([])
-  const [taxPeriodType, setTaxPeriodType] = useState<string>("")
-
   // modal + edit state
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -76,6 +79,35 @@ export default function DeclarationsPage() {
   const [search, setSearch] = useState("")
   const [pageSize, setPageSize] = useState<number>(5)
   const [currentPage, setCurrentPage] = useState<number>(1)
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      type: "",
+      frequency: "MONTHLY",
+      enabled: true,
+      optional: false,
+      quarters: [],
+      dueDay: "",
+      dueMonth: "",
+      quarterOffset: "",
+      taxPeriodType: "",
+    }
+  })
+
+  // Watch frequency to update UI or reset quarters if needed
+  const frequency = form.watch("frequency")
+  const quarters = form.watch("quarters")
+
+  // Frequency mapping
+  const getFrequencyLabel = (frequency: string) => {
+    const map: Record<string, string> = {
+      'MONTHLY': 'Aylık',
+      'QUARTERLY': '3 Aylık',
+      'YEARLY': 'Yıllık'
+    }
+    return map[frequency] || frequency
+  }
 
   useEffect(() => {
     setCurrentPage(1)
@@ -103,78 +135,31 @@ export default function DeclarationsPage() {
   useEffect(() => { fetchItems() }, [fetchItems])
 
   const resetForm = () => {
-    setType("")
-    setFrequency("MONTHLY")
-    setEnabled(true)
-    setDueDay("")
-    setDueHour("")
-    setDueMinute("")
-    setDueMonth("")
-    setQuarterOffset("")
-    setYearlyCount("")
-    setSkipQuarter(false)
-    setOptional(false)
-    setQuarters([])
-    setTaxPeriodType("")
+    form.reset({
+      type: "",
+      frequency: "MONTHLY",
+      enabled: true,
+      optional: false,
+      quarters: [],
+      dueDay: "",
+      dueMonth: "",
+      quarterOffset: "",
+      taxPeriodType: "",
+    })
   }
 
-  const validateForm = () => {
-    if (!type.trim()) {
-      toast.error("Beyanname türü zorunludur")
-      return false
-    }
-    
-    if (dueDay && (isNaN(Number(dueDay)) || Number(dueDay) < 1 || Number(dueDay) > 31)) {
-      toast.error("Gün değeri 1-31 arasında olmalıdır")
-      return false
-    }
-    
-    if (dueHour && (isNaN(Number(dueHour)) || Number(dueHour) < 0 || Number(dueHour) > 23)) {
-      toast.error("Saat değeri 0-23 arasında olmalıdır")
-      return false
-    }
-    
-    if (dueMinute && (isNaN(Number(dueMinute)) || Number(dueMinute) < 0 || Number(dueMinute) > 59)) {
-      toast.error("Dakika değeri 0-59 arasında olmalıdır")
-      return false
-    }
-    
-    if (dueMonth && (isNaN(Number(dueMonth)) || Number(dueMonth) < 1 || Number(dueMonth) > 12)) {
-      toast.error("Ay değeri 1-12 arasında olmalıdır")
-      return false
-    }
-    
-  if (quarterOffset && (isNaN(Number(quarterOffset)) || Number(quarterOffset) < 1 || Number(quarterOffset) > 12)) {
-      toast.error("Çeyrek offset değeri 1-12 arasında olmalıdır")
-      return false
-    }
-    
-    if (yearlyCount && (isNaN(Number(yearlyCount)) || Number(yearlyCount) < 1)) {
-      toast.error("Yıllık adet değeri en az 1 olmalıdır")
-      return false
-    }
-    
-    return true
-  }
-
-  const handleSaveConfig = async () => {
-    if (!validateForm()) return
-    
+  const onSubmit = async (data: FormValues) => {
     try {
       const formData = {
-        type,
-        frequency,
-        enabled,
-        dueDay: dueDay ? Number(dueDay) : undefined,
-        dueHour: dueHour ? Number(dueHour) : undefined,
-        dueMinute: dueMinute ? Number(dueMinute) : undefined,
-        dueMonth: dueMonth ? Number(dueMonth) : undefined,
-        quarterOffset: quarterOffset ? Number(quarterOffset) : undefined,
-        yearlyCount: yearlyCount ? Number(yearlyCount) : undefined,
-        skipQuarter,
-        optional,
-        quarters: quarters.length > 0 ? JSON.stringify(quarters) : undefined,
-        taxPeriodType: taxPeriodType || undefined,
+        type: data.type,
+        frequency: data.frequency,
+        enabled: data.enabled,
+        dueDay: data.dueDay === "" ? undefined : Number(data.dueDay),
+        dueMonth: data.dueMonth === "" ? undefined : Number(data.dueMonth),
+        quarterOffset: data.quarterOffset === "" ? undefined : Number(data.quarterOffset),
+        optional: data.optional,
+        quarters: data.quarters && data.quarters.length > 0 ? JSON.stringify(data.quarters) : undefined,
+        taxPeriodType: data.taxPeriodType || undefined,
       }
 
       if (editingId) {
@@ -215,6 +200,33 @@ export default function DeclarationsPage() {
     }
   }
 
+  const handleEdit = (item: DeclarationConfig) => {
+    setEditingId(item.id)
+    
+    let parsedQuarters: number[] = []
+    try {
+      if (item.quarters) {
+        parsedQuarters = JSON.parse(item.quarters)
+      }
+    } catch (e) {
+      console.error("Error parsing quarters", e)
+    }
+
+    form.reset({
+      type: item.type,
+      frequency: item.frequency,
+      enabled: item.enabled,
+      optional: item.optional || false,
+      quarters: parsedQuarters,
+      dueDay: item.dueDay ?? "",
+      dueMonth: item.dueMonth ?? "",
+      quarterOffset: item.quarterOffset ?? "",
+      taxPeriodType: item.taxPeriodType || "",
+    })
+    
+    setIsModalOpen(true)
+  }
+
   const toggleEnabled = async (id: string, next: boolean) => {
     try {
       const res = await fetch("/api/declarations-config", {
@@ -240,7 +252,6 @@ export default function DeclarationsPage() {
       toast.error("Silinemedi")
     }
   }
-
   
   const frequencyOptions = [
     { value: "MONTHLY", label: "Aylık" },
@@ -253,10 +264,27 @@ export default function DeclarationsPage() {
     label: `Dönemi izleyen ${i + 1}. ay`
   }))
   
-  const taxPeriodTypeOptions = [
-    { value: "NORMAL", label: "Normal Dönem (Ocak-Aralık)" },
-    { value: "SPECIAL", label: "Özel Dönem" }
+  const monthNames = [
+    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", 
+    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
   ]
+
+  // Filter items
+  const filteredItems = items.filter(item => {
+    const matchesSearch = item.type.toLowerCase().includes(search.toLowerCase())
+    const matchesType = typeFilter === 'all' || item.type === typeFilter
+    return matchesSearch && matchesType
+  })
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredItems.length / pageSize)
+  const startIndex = (currentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedItems = filteredItems.slice(startIndex, endIndex)
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)))
+  }
 
   return (
     <div>
@@ -277,203 +305,261 @@ export default function DeclarationsPage() {
             <DialogTitle>{editingId ? "Beyannameyi Düzenle" : "Yeni Beyanname Tanımı"}</DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-5">
-                <div className="space-y-2">
-                  <Label htmlFor="declaration-type">Beyanname Türü *</Label>
-                  <Input 
-                    id="declaration-type"
-                    value={type} 
-                    onChange={e => setType(e.target.value)} 
-                    placeholder="Örn: KDV Beyannamesi" 
-                    className="w-full"
-                  />
-                </div>
-              </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-6 py-4">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 gap-5">
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Beyanname Türü *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Örn: KDV Beyannamesi" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="period-type">Dönem Tipi</Label>
-                  <Select value={frequency} onValueChange={setFrequency}>
-                    <SelectTrigger id="period-type">
-                      <SelectValue placeholder="Seçiniz" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {frequencyOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <Switch 
-                      id="enabled" 
-                      checked={enabled} 
-                      onCheckedChange={setEnabled} 
+                  <div className="space-y-5">
+                    <FormField
+                      control={form.control}
+                      name="frequency"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dönem Tipi</FormLabel>
+                          <Select 
+                            onValueChange={(val) => {
+                              field.onChange(val)
+                              form.setValue("quarters", []) // Reset quarters when frequency changes
+                            }} 
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seçiniz" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {frequencyOptions.map(option => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    <Label htmlFor="enabled" className="text-sm cursor-pointer">
-                      Aktif
-                    </Label>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Switch 
-                      id="optional" 
-                      checked={optional} 
-                      onCheckedChange={setOptional} 
-                    />
-                    <Label htmlFor="optional" className="text-sm cursor-pointer">
-                      İsteğe Bağlı
-                    </Label>
-                  </div>
-                </div>
-              </div>
 
-              <div className="border rounded-lg p-4 bg-muted/10">
-                <h3 className="font-medium mb-3">Zamanlama Ayarları</h3>
-                <div className="space-y-2">
-                  <Label>Dönemi İzleyen Ay</Label>
-                  {frequency === "QUARTERLY" ? (
-                    <Select value={quarterOffset} onValueChange={setQuarterOffset}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seçiniz" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {followingMonthOptions.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Select value={dueMonth} onValueChange={setDueMonth}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seçiniz" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {followingMonthOptions.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  <p className="text-xs text-muted-foreground">Dönem bitiminden sonra kaçıncı ayda verilmesi gerektiğini seçin.</p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="due-day">Son Gün</Label>
-                    <Input 
-                      id="due-day"
-                      value={dueDay} 
-                      onChange={e => setDueDay(e.target.value)} 
-                      placeholder="1-31" 
-                      type="number"
-                      min="1"
-                      max="31"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="due-hour">Saat</Label>
-                    <Input 
-                      id="due-hour"
-                      value={dueHour} 
-                      onChange={e => setDueHour(e.target.value)} 
-                      placeholder="0-23" 
-                      type="number"
-                      min="0"
-                      max="23"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="due-minute">Dakika</Label>
-                    <Input 
-                      id="due-minute"
-                      value={dueMinute} 
-                      onChange={e => setDueMinute(e.target.value)} 
-                      placeholder="0-59" 
-                      type="number"
-                      min="0"
-                      max="59"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {frequency === "QUARTERLY" && (
-                <div className="border rounded-lg p-4 bg-muted/10">
-                  <h3 className="font-medium mb-3">3 Aylık Beyanname Ayarları</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Checkbox 
-                          id="skip-quarter"
-                          checked={skipQuarter}
-                          onCheckedChange={(checked) => setSkipQuarter(checked as boolean)}
-                        />
-                        <Label htmlFor="skip-quarter" className="text-sm cursor-pointer">
-                          Yıl Sonu Çeyreğini Atla
-                        </Label>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Yıl sonu çeyreği (Ekim-Kasım-Aralık) için beyanname oluşturulmaz
-                      </p>
+                    <div className="flex items-center gap-6">
+                      <FormField
+                        control={form.control}
+                        name="enabled"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm cursor-pointer font-normal">
+                              Aktif
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="optional"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm cursor-pointer font-normal">
+                              İsteğe Bağlı
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   </div>
-                  
-                  <div className="mt-4">
-                    <Label>Çeyrek Seçimi</Label>
-                    <div className="grid grid-cols-4 gap-2 mt-2">
-                      {[1, 2, 3, 4].map(q => (
-                        <div key={q} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`quarter-${q}`}
-                            checked={quarters.includes(q)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setQuarters([...quarters, q])
-                              } else {
-                                setQuarters(quarters.filter(item => item !== q))
-                              }
-                            }}
-                          />
-                          <Label htmlFor={`quarter-${q}`} className="text-sm cursor-pointer">
-                            Q{q}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Hangi çeyrekler için beyanname oluşturulacağını seçin (boş bırakılırsa tüm çeyrekler)
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
 
-          <DialogFooter className="px-6 pb-6 flex-shrink-0">
-            <Button 
-              variant="outline" 
-              onClick={() => { 
-                setIsModalOpen(false)
-                setEditingId(null)
-                resetForm()
-              }}
-            >
-              İptal
-            </Button>
-            <Button 
-              className="bg-green-600 hover:bg-green-700" 
-              onClick={handleSaveConfig}
-            >
-              {editingId ? "Güncelle" : "Kaydet"}
-            </Button>
-          </DialogFooter>
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="advanced-settings">
+                      <AccordionTrigger>Gelişmiş Ayarlar (İsteğe Bağlı)</AccordionTrigger>
+                      <AccordionContent className="pt-4 pb-2 px-1">
+                        <div className="space-y-4">
+                            <FormField
+                              control={form.control}
+                              name="quarterOffset"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Dönemi İzleyen Ay</FormLabel>
+                                  <Select 
+                                    onValueChange={(val) => field.onChange(val)} 
+                                    value={field.value?.toString()}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Seçiniz" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="0">Aynı Ay İçinde</SelectItem>
+                                      {followingMonthOptions.map(opt => (
+                                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormDescription>Dönem bitiminden sonra kaçıncı ayda verilmesi gerektiğini seçin.</FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name="dueDay"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Son Gün</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="1-31" 
+                                      type="number" 
+                                      min="1" 
+                                      max="31" 
+                                      {...field}
+                                      value={field.value ?? ""}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            {(frequency === "QUARTERLY" || frequency === "MONTHLY") && (
+                              <div className="border rounded-lg p-4 bg-muted/10 mt-4">
+                                <h3 className="font-medium mb-3">Dönem Seçimi</h3>
+                                
+                                <div className="mt-4">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <Label>Vergilendirme Dönemleri</Label>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 text-xs"
+                                      onClick={() => {
+                                        if (frequency === "MONTHLY") {
+                                          if (quarters.length === 12) {
+                                            form.setValue("quarters", [])
+                                          } else {
+                                            form.setValue("quarters", Array.from({ length: 12 }, (_, i) => i + 1))
+                                          }
+                                        } else if (frequency === "QUARTERLY") {
+                                          if (quarters.length === 4) {
+                                            form.setValue("quarters", [])
+                                          } else {
+                                            form.setValue("quarters", [1, 2, 3, 4])
+                                          }
+                                        }
+                                      }}
+                                    >
+                                      {frequency === "MONTHLY" 
+                                        ? (quarters.length === 12 ? "Tümünü Kaldır" : "Tümünü Seç")
+                                        : (quarters.length === 4 ? "Tümünü Kaldır" : "Tümünü Seç")
+                                      }
+                                    </Button>
+                                  </div>
+                                  
+                                  <div className={`grid ${frequency === "MONTHLY" ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-6" : "grid-cols-4"} gap-2 mt-2`}>
+                                    {frequency === "QUARTERLY" 
+                                      ? [1, 2, 3, 4].map(q => (
+                                          <div key={q} className="flex items-center gap-2">
+                                            <Checkbox
+                                              id={`quarter-${q}`}
+                                              checked={quarters.includes(q)}
+                                              onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                  form.setValue("quarters", [...quarters, q].sort((a, b) => a - b))
+                                                } else {
+                                                  form.setValue("quarters", quarters.filter(item => item !== q))
+                                                }
+                                              }}
+                                            />
+                                            <Label htmlFor={`quarter-${q}`} className="text-sm cursor-pointer">
+                                              {q}. Dönem
+                                            </Label>
+                                          </div>
+                                        ))
+                                      : Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                          <div key={m} className="flex items-center gap-2">
+                                            <Checkbox
+                                              id={`month-${m}`}
+                                              checked={quarters.includes(m)}
+                                              onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                  form.setValue("quarters", [...quarters, m].sort((a, b) => a - b))
+                                                } else {
+                                                  form.setValue("quarters", quarters.filter(item => item !== m))
+                                                }
+                                              }}
+                                            />
+                                            <Label htmlFor={`month-${m}`} className="text-sm cursor-pointer">
+                                              {monthNames[m-1]}
+                                            </Label>
+                                          </div>
+                                        ))
+                                    }
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-2">
+                                    Hangi dönemler için beyanname oluşturulacağını seçin (boş bırakılırsa tüm dönemler)
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
+              </div>
+
+              <DialogFooter className="px-6 pb-6 flex-shrink-0">
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  onClick={() => { 
+                    setIsModalOpen(false)
+                    setEditingId(null)
+                    resetForm()
+                  }}
+                >
+                  İptal
+                </Button>
+                <Button 
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700" 
+                >
+                  {editingId ? "Güncelle" : "Kaydet"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
@@ -512,140 +598,75 @@ export default function DeclarationsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Improved filter controls layout */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <Input 
-                placeholder="Tür ara..." 
-                value={search} 
-                onChange={e => setSearch(e.target.value)} 
-                className="w-full md:w-[220px]" 
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Beyanname ara..."
+                className="pl-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              {/* Type Filter with Combobox */}
-              {declarationTypes.length > 0 && (
-                <div className="w-full md:w-[220px]">
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Beyanname Türü" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tüm Beyannameler</SelectItem>
-                      {declarationTypes.map(type => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              <div className="w-full md:w-[140px]">
-                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1) }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Kayıt Sayısı" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="25">25</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="w-full md:w-[200px]">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Türü Filtrele" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tümü</SelectItem>
+                  {declarationTypes.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          
+
           <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Beyanname Türü</TableHead>
                   <TableHead>Dönem Tipi</TableHead>
-                  <TableHead>Zamanlama</TableHead>
-                  <TableHead>Aktif</TableHead>
+                  <TableHead>Durum</TableHead>
                   <TableHead className="text-right">İşlemler</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(() => {
-                  if (loading) {
-                    return (<TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">Yükleniyor...</TableCell></TableRow>)
-                  }
-                  const q = search.toLowerCase()
-                  let filtered = items.filter((i) => (i.type || "").toLowerCase().includes(q))
-                  
-                  // Apply type filter
-                  if (typeFilter !== 'all') {
-                    filtered = filtered.filter(item => item.type === typeFilter)
-                  }
-                  
-                  if (filtered.length === 0) {
-                    return (<TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">Tanım bulunamadı</TableCell></TableRow>)
-                  }
-                  const start = (currentPage - 1) * pageSize
-                  const pageItems = filtered.slice(start, start + pageSize)
-                  return pageItems.map(item => (
+                {paginatedItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                      {loading ? "Yükleniyor..." : "Kayıt bulunamadı"}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedItems.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.type}</TableCell>
+                      <TableCell className="font-medium">
+                        {item.type}
+                        {item.optional && <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">İsteğe Bağlı</span>}
+                      </TableCell>
                       <TableCell>{getFrequencyLabel(item.frequency)}</TableCell>
                       <TableCell>
-                        {(() => {
-                          const follow = item.frequency === 'QUARTERLY' ? item.quarterOffset : item.dueMonth
-                          const primary = follow ? `Dönemi izleyen ${follow}. ay` : '-'
-                          const hasTime = item.dueDay || item.dueHour || item.dueMinute
-                          const timeText = `Son: ${item.dueDay || '-'} / ${(item.dueHour ?? 0)}:${(item.dueMinute ?? 0)}`
-                          return (
-                            <div className="space-y-1">
-                              <div>{primary}</div>
-                              {hasTime && (
-                                <div className="text-xs text-muted-foreground">{timeText}</div>
-                              )}
-                            </div>
-                          )
-                        })()}
-                      </TableCell>
-                      <TableCell>
-                        <Switch checked={item.enabled} onCheckedChange={(v) => toggleEnabled(item.id, v)} />
+                        <Switch 
+                          checked={item.enabled} 
+                          onCheckedChange={(checked) => toggleEnabled(item.id, checked)}
+                        />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button 
-                            variant="outline" 
+                            variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8" 
-                            onClick={() => {
-                              setEditingId(item.id)
-                              setType(item.type || "")
-                              setFrequency(item.frequency || "MONTHLY")
-                              setEnabled(!!item.enabled)
-                              setDueDay(String(item.dueDay ?? ""))
-                              setDueHour(String(item.dueHour ?? ""))
-                              setDueMinute(String(item.dueMinute ?? ""))
-                              setDueMonth(String(item.dueMonth ?? ""))
-                              setQuarterOffset(String(item.quarterOffset ?? ""))
-                              setYearlyCount(String(item.yearlyCount ?? ""))
-                              setSkipQuarter(!!item.skipQuarter)
-                              setOptional(!!item.optional)
-                              // Parse quarters from JSON string
-                              try {
-                                const q = item.quarters ? JSON.parse(item.quarters) : []
-                                setQuarters(Array.isArray(q) ? q : [])
-                              } catch {
-                                setQuarters([])
-                              }
-                              setTaxPeriodType(item.taxPeriodType || "")
-                              setIsModalOpen(true)
-                            }}
+                            onClick={() => handleEdit(item)}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button 
-                            variant="outline" 
+                            variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-red-600 hover:bg-red-50" 
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
                             onClick={() => {
                               setDeletingItem(item)
                               setIsDeleteDialogOpen(true)
@@ -657,63 +678,73 @@ export default function DeclarationsPage() {
                       </TableCell>
                     </TableRow>
                   ))
-                })()}
+                )}
               </TableBody>
             </Table>
           </div>
-          {(() => {
-            // Apply search filter
-            const q = search.toLowerCase()
-            let filtered = items.filter((i) => (i.type || "").toLowerCase().includes(q))
-            
-            // Apply type filter
-            if (typeFilter !== 'all') {
-              filtered = filtered.filter(item => item.type === typeFilter)
-            }
-            
-            const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
-            const start = (currentPage - 1) * pageSize
-            const end = Math.min(start + pageSize, filtered.length)
-            if (filtered.length === 0) return null
-            return (
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 gap-4">
-                <div className="text-sm text-muted-foreground">
-                  Toplam {filtered.length} kayıt, {start + 1}-{end}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
-                    disabled={currentPage === 1}
-                  >
-                    Önceki
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }).map((_, i) => (
-                      <Button 
-                        key={i} 
-                        variant={currentPage === i + 1 ? "default" : "outline"} 
-                        size="sm" 
-                        className="w-8" 
-                        onClick={() => setCurrentPage(i + 1)}
-                      >
-                        {i + 1}
-                      </Button>
-                    ))}
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
-                    disabled={currentPage === totalPages}
-                  >
-                    Sonraki
-                  </Button>
-                </div>
+
+          {/* Pagination */}
+          {filteredItems.length > 0 && (
+            <div className="flex items-center justify-between px-2 py-4">
+              <div className="text-sm text-muted-foreground">
+                Toplam {filteredItems.length} kayıttan {startIndex + 1}-{Math.min(endIndex, filteredItems.length)} arası gösteriliyor
               </div>
-            )
-          })()}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  İlk
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Önceki
+                </Button>
+                
+                {/* Page numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      // Show first, last, current, and adjacent pages
+                      if (page === 1 || page === totalPages) return true
+                      if (Math.abs(page - currentPage) <= 1) return true
+                      return false
+                    })
+                    .map((page, idx, arr) => (
+                      <Fragment key={page}>
+                        {idx > 0 && arr[idx - 1] !== page - 1 && (
+                          <span key={`ellipsis-${page}`} className="px-2 text-muted-foreground">...</span>
+                        )}
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => goToPage(page)}
+                          className="w-9"
+                        >
+                          {page}
+                        </Button>
+                      </Fragment>
+                    ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Sonraki
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Settings, 
@@ -15,22 +16,43 @@ import {
   HelpCircle,
   FileText
 } from "lucide-react"
-import { SiteSettingsTab } from "@/components/admin/content-tabs/site-settings-tab"
-import { HeroSectionTab } from "@/components/admin/content-tabs/hero-section-tab"
-import { InstitutionsTab } from "@/components/admin/content-tabs/institutions-tab"
-import { AboutTab } from "@/components/admin/content-tabs/about-tab"
-import { ServicesTab } from "@/components/admin/content-tabs/services-tab"
-import { WorkflowTab } from "@/components/admin/content-tabs/workflow-tab"
-import { PricingTab } from "@/components/admin/content-tabs/pricing-tab"
-import { TestimonialsTab } from "@/components/admin/content-tabs/testimonials-tab"
-import { TeamTab } from "@/components/admin/content-tabs/team-tab"
-import { FAQTab } from "@/components/admin/content-tabs/faq-tab"
-import { LegalDocumentsTab } from "@/components/admin/content-tabs/legal-documents-tab"
+import dynamic from "next/dynamic"
+import { Skeleton } from "@/components/ui/skeleton"
+
+const TabSkeleton = () => (
+  <div className="space-y-4">
+    <Skeleton className="h-8 w-[200px]" />
+    <Skeleton className="h-[300px] w-full rounded-xl" />
+  </div>
+)
+
+const SiteSettingsTab = dynamic(() => import("@/components/admin/content-tabs/site-settings-tab").then(mod => mod.SiteSettingsTab), { loading: () => <TabSkeleton /> })
+const HeroSectionTab = dynamic(() => import("@/components/admin/content-tabs/hero-section-tab").then(mod => mod.HeroSectionTab), { loading: () => <TabSkeleton /> })
+const InstitutionsTab = dynamic(() => import("@/components/admin/content-tabs/institutions-tab").then(mod => mod.InstitutionsTab), { loading: () => <TabSkeleton /> })
+const AboutTab = dynamic(() => import("@/components/admin/content-tabs/about-tab").then(mod => mod.AboutTab), { loading: () => <TabSkeleton /> })
+const ServicesTab = dynamic(() => import("@/components/admin/content-tabs/services-tab").then(mod => mod.ServicesTab), { loading: () => <TabSkeleton /> })
+const WorkflowTab = dynamic(() => import("@/components/admin/content-tabs/workflow-tab").then(mod => mod.WorkflowTab), { loading: () => <TabSkeleton /> })
+const PricingTab = dynamic(() => import("@/components/admin/content-tabs/pricing-tab").then(mod => mod.PricingTab), { loading: () => <TabSkeleton /> })
+const TestimonialsTab = dynamic(() => import("@/components/admin/content-tabs/testimonials-tab").then(mod => mod.TestimonialsTab), { loading: () => <TabSkeleton /> })
+const TeamTab = dynamic(() => import("@/components/admin/content-tabs/team-tab").then(mod => mod.TeamTab), { loading: () => <TabSkeleton /> })
+const FAQTab = dynamic(() => import("@/components/admin/content-tabs/faq-tab").then(mod => mod.FAQTab), { loading: () => <TabSkeleton /> })
+const LegalDocumentsTab = dynamic(() => import("@/components/admin/content-tabs/legal-documents-tab").then(mod => mod.LegalDocumentsTab), { loading: () => <TabSkeleton /> })
 
 export default function ContentManagementPage() {
-  const [activeTab, setActiveTab] = useState("site-settings")
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const tabFromUrl = searchParams.get("tab")
+  
+  const [activeTab, setActiveTab] = useState(tabFromUrl || "site-settings")
   const [isChangingTab, setIsChangingTab] = useState(false)
   
+  // Sync URL with state on mount/update if needed
+  useEffect(() => {
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl)
+    }
+  }, [tabFromUrl])
 
   // Handle tab changes safely
   const handleTabChange = (newTab: string) => {
@@ -47,11 +69,16 @@ export default function ContentManagementPage() {
     // Use setTimeout to ensure DOM cleanup before changing tabs
     setTimeout(() => {
       setActiveTab(newTab)
+      // Update URL without refreshing
+      const params = new URLSearchParams(searchParams.toString())
+      params.set("tab", newTab)
+      window.history.replaceState(null, '', `${pathname}?${params.toString()}`)
+      
       // Additional delay to ensure all cleanup is complete
       setTimeout(() => {
         setIsChangingTab(false)
-      }, 50)
-    }, 50)
+      }, 10)
+    }, 10)
   }
 
   // Wait for client-side hydration to complete

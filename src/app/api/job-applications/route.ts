@@ -2,20 +2,48 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 // import { JobApplicationStatus } from '@prisma/client' - using string literals instead
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    console.log('job-applications GET: prisma =', prisma)
-    console.log('job-applications GET: prisma.jobapplication =', prisma?.jobapplication)
-    
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
     // Check if the model exists
     if (!prisma.jobapplication) {
       console.log('jobapplication model not found in prisma schema')
       return NextResponse.json([])
     }
+
+    if (id) {
+      const application = await prisma.jobapplication.findUnique({
+        where: { id }
+      })
+      
+      if (!application) {
+        return NextResponse.json({ error: 'Application not found' }, { status: 404 })
+      }
+
+      return NextResponse.json(application)
+    }
     
     const applications = await prisma.jobapplication.findMany({
       orderBy: {
         createdAt: 'desc'
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        position: true,
+        experience: true,
+        education: true,
+        coverLetter: true,
+        cvFileName: true,
+        // cvFileData excluded for performance
+        cvMimeType: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true
       }
     })
     return NextResponse.json(applications)
