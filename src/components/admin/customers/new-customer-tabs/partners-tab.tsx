@@ -4,8 +4,9 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Edit, Trash2, Save, Plus, Search, Check, X, ArrowRight, ArrowLeft } from "lucide-react"
+import { Edit, Trash2, Save, Plus, Search, Check, X, ArrowRight, ArrowLeft, Shield, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,6 +43,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Progress } from "@/components/ui/progress"
 
 const partnerSchema = z.object({
   tckn: z.string()
@@ -51,9 +54,15 @@ const partnerSchema = z.object({
   birthDate: z.string().min(1, "Doğum tarihi seçiniz"),
   startDate: z.string().min(1, "Başlangıç tarihi seçiniz"),
   endDate: z.string().optional(),
+  shareAmount: z.string().optional(),
+  shareRatio: z.string().optional(),
   status: z.enum(["active", "passive"], {
     required_error: "Durum seçiniz",
   }),
+  isAuthorized: z.boolean().default(false),
+  authorizationDuration: z.string().optional(),
+  authorizationStartDate: z.string().optional(),
+  authorizationEndDate: z.string().optional(),
 })
 
 type PartnerFormValues = z.infer<typeof partnerSchema>
@@ -118,11 +127,38 @@ export function PartnersTab({ customerId, onNext, onBack }: PartnersTabProps) {
       birthDate: "",
       startDate: "",
       endDate: "",
+      shareAmount: "",
+      shareRatio: "",
       status: "active",
+      isAuthorized: false,
+      authorizationDuration: "",
+      authorizationStartDate: new Date().toISOString().split('T')[0],
+      authorizationEndDate: "",
     },
   })
 
   const endDate = form.watch("endDate")
+  const authStartDate = form.watch("authorizationStartDate")
+  const authDuration = form.watch("authorizationDuration")
+  const isAuthorized = form.watch("isAuthorized")
+  const authEndDate = form.watch("authorizationEndDate")
+
+  useEffect(() => {
+    if (authStartDate && authDuration && isAuthorized) {
+      const start = new Date(authStartDate)
+      const years = parseInt(authDuration)
+      if (!isNaN(years) && start.toString() !== 'Invalid Date') {
+        const end = new Date(start)
+        end.setFullYear(end.getFullYear() + years)
+        const endStr = end.toISOString().split('T')[0]
+        form.setValue("authorizationEndDate", endStr)
+      } else {
+        form.setValue("authorizationEndDate", "")
+      }
+    } else {
+      form.setValue("authorizationEndDate", "")
+    }
+  }, [authStartDate, authDuration, isAuthorized, form])
 
   useEffect(() => {
     if (endDate) {
@@ -156,7 +192,13 @@ export function PartnersTab({ customerId, onNext, onBack }: PartnersTabProps) {
       birthDate: "",
       startDate: "",
       endDate: "",
+      shareAmount: "",
+      shareRatio: "",
       status: "active",
+      isAuthorized: false,
+      authorizationDuration: "",
+      authorizationStartDate: new Date().toISOString().split('T')[0],
+      authorizationEndDate: "",
     })
   }
 
@@ -168,7 +210,13 @@ export function PartnersTab({ customerId, onNext, onBack }: PartnersTabProps) {
       birthDate: partner.birthDate,
       startDate: partner.startDate,
       endDate: partner.endDate || "",
+      shareAmount: partner.shareAmount || "",
+      shareRatio: partner.shareRatio || "",
       status: partner.status,
+      isAuthorized: partner.isAuthorized || false,
+      authorizationDuration: partner.authorizationDuration || "",
+      authorizationStartDate: partner.authorizationStartDate || new Date().toISOString().split('T')[0],
+      authorizationEndDate: partner.authorizationEndDate || "",
     })
   }
 
@@ -195,8 +243,23 @@ export function PartnersTab({ customerId, onNext, onBack }: PartnersTabProps) {
       birthDate: "",
       startDate: "",
       endDate: "",
+      shareAmount: "",
+      shareRatio: "",
       status: "active",
+      isAuthorized: false,
+      authorizationDuration: "",
+      authorizationStartDate: new Date().toISOString().split('T')[0],
+      authorizationEndDate: "",
     })
+  }
+
+  const handleToggleAuthority = (partner: Partner, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const updatedPartners = partners.map(p => 
+      p.id === partner.id ? { ...p, isAuthorized: !p.isAuthorized } : p
+    )
+    setPartners(updatedPartners)
+    toast.info(`Yetki durumu değiştirildi: ${!partner.isAuthorized ? 'Yetkili' : 'Yetki Yok'}. Kaydetmeyi unutmayın.`)
   }
 
   const handleSaveAll = async (shouldNavigate: boolean = false) => {
@@ -323,6 +386,34 @@ export function PartnersTab({ customerId, onNext, onBack }: PartnersTabProps) {
 
               <FormField
                 control={form.control}
+                name="shareAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hisse Tutarı (TL)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Örn: 10000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="shareRatio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hisse Oranı (%)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Örn: 50" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="status"
                 render={({ field }) => (
                   <FormItem>
@@ -342,9 +433,130 @@ export function PartnersTab({ customerId, onNext, onBack }: PartnersTabProps) {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="isAuthorized"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm md:col-span-2 lg:col-span-1">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Yetkili
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Bu ortak aynı zamanda yetkili kişidir.
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {isAuthorized && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 col-span-full">
+                  <FormField
+                    control={form.control}
+                    name="authorizationStartDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Yetki Başlangıç</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="authorizationDuration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Yetki Süresi (Yıl)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            placeholder="Örn: 3" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="authorizationEndDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Yetki Bitiş (Hesaplanan)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            readOnly 
+                            className="bg-muted" 
+                            {...field} 
+                            value={field.value ? new Date(field.value).toLocaleDateString('tr-TR') : ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1 mr-4">
+                {isAuthorized && authEndDate && authStartDate && (
+                  (() => {
+                    const end = new Date(authEndDate)
+                    const start = new Date(authStartDate)
+                    const now = new Date()
+                    const total = end.getTime() - start.getTime()
+                    const elapsed = now.getTime() - start.getTime()
+                    let percent = (elapsed / total) * 100
+                    if (percent < 0) percent = 0
+                    if (percent > 100) percent = 100
+                    
+                    const diff = end.getTime() - now.getTime()
+                    const daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24))
+                    let text = ""
+                    
+                    if (diff < 0) {
+                       text = "Süresi Doldu"
+                    } else {
+                       const years = Math.floor(daysLeft / 365)
+                       const months = Math.floor((daysLeft % 365) / 30)
+                       const days = (daysLeft % 365) % 30
+                       
+                       if (years > 0) text += `${years} Yıl `
+                       if (months > 0) text += `${months} Ay `
+                       if (years === 0 && months === 0) text += `${days} Gün `
+                       text += "kaldı"
+                    }
+
+                    return (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Kalan Süre</span>
+                          <span>{text}</span>
+                        </div>
+                        <Progress value={percent} className="h-2" />
+                      </div>
+                    )
+                  })()
+                )}
+              </div>
+              <div className="flex justify-end gap-2 shrink-0">
               {editingId && (
                 <Button type="button" variant="outline" onClick={handleCancelEdit}>
                   <X className="w-4 h-4 mr-2" />
@@ -364,6 +576,7 @@ export function PartnersTab({ customerId, onNext, onBack }: PartnersTabProps) {
                   </>
                 )}
               </Button>
+              </div>
             </div>
           </form>
         </Form>
@@ -410,6 +623,9 @@ export function PartnersTab({ customerId, onNext, onBack }: PartnersTabProps) {
                 <TableRow>
                   <TableHead>TCKN</TableHead>
                   <TableHead>Ad Soyad</TableHead>
+                  <TableHead>Hisse Tutarı</TableHead>
+                  <TableHead>Hisse Oranı</TableHead>
+                  <TableHead>Yetki</TableHead>
                   <TableHead>Durum</TableHead>
                   <TableHead className="text-right">İşlemler</TableHead>
                 </TableRow>
@@ -417,7 +633,7 @@ export function PartnersTab({ customerId, onNext, onBack }: PartnersTabProps) {
               <TableBody>
                 {paginatedPartners.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       Kayıt bulunamadı.
                     </TableCell>
                   </TableRow>
@@ -430,6 +646,60 @@ export function PartnersTab({ customerId, onNext, onBack }: PartnersTabProps) {
                     >
                       <TableCell className="font-medium">{partner.tckn}</TableCell>
                       <TableCell>{partner.fullName}</TableCell>
+                      <TableCell>{partner.shareAmount ? `${partner.shareAmount} TL` : "-"}</TableCell>
+                      <TableCell>{partner.shareRatio ? `%${partner.shareRatio}` : "-"}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            variant={partner.isAuthorized ? "default" : "outline"}
+                            size="sm"
+                            className={partner.isAuthorized ? "bg-green-600 hover:bg-green-700 h-7 text-xs w-fit" : "h-7 text-xs text-muted-foreground w-fit"}
+                            onClick={(e) => handleToggleAuthority(partner, e)}
+                          >
+                            {partner.isAuthorized ? (
+                              <>
+                                <ShieldCheck className="w-3 h-3 mr-1" />
+                                Yetkili
+                              </>
+                            ) : (
+                              <>
+                                <Shield className="w-3 h-3 mr-1" />
+                                Yetki Ver
+                              </>
+                            )}
+                          </Button>
+                          {partner.isAuthorized && partner.authorizationEndDate && (
+                             <div className="flex flex-col gap-1 w-32">
+                               <span className="text-xs text-muted-foreground">
+                                 Bitiş: {new Date(partner.authorizationEndDate).toLocaleDateString('tr-TR')}
+                               </span>
+                               {(() => {
+                                  const start = new Date(partner.authorizationStartDate || partner.startDate).getTime()
+                                  const end = new Date(partner.authorizationEndDate).getTime()
+                                  const now = new Date().getTime()
+                                  let progress = 0
+                                  if (end > start) {
+                                    progress = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100))
+                                  }
+                                  // Remaining days
+                                  const remainingDays = Math.ceil((end - now) / (1000 * 60 * 60 * 24))
+                                  
+                                  return (
+                                    <div className="space-y-1">
+                                      <Progress value={progress} className="h-1.5" />
+                                      <span className={cn(
+                                        "text-[10px]",
+                                        remainingDays < 30 ? "text-destructive font-bold" : "text-muted-foreground"
+                                      )}>
+                                        {remainingDays > 0 ? `${remainingDays} gün kaldı` : "Süre doldu"}
+                                      </span>
+                                    </div>
+                                  )
+                               })()}
+                             </div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={partner.status === "active" ? "default" : "secondary"}>
                           {partner.status === "active" ? "Aktif" : "Pasif"}

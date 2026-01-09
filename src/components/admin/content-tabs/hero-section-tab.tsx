@@ -16,15 +16,16 @@ import { toast } from "sonner"
 // Main page section links
 const PAGE_SECTIONS = [
   { value: "#hero", label: "Anasayfa (Üst)" },
-  { value: "#services", label: "Hizmetler" },
-  { value: "#about", label: "Hakkımızda" },
   { value: "#clients", label: "Kurumlar" },
-  { value: "#testimonials", label: "Yorumlar" },
+  { value: "#about", label: "Hakkımızda" },
+  { value: "#services", label: "Hizmetler" },
+  { value: "#workflow", label: "Çalışma Süreci" },
+  { value: "#pricing", label: "Ücretler" },
+  { value: "#testimonials", label: "Müşteri Yorumları" },
+  { value: "#team", label: "Ekibimiz" },
   { value: "#faq", label: "S.S.S." },
+  { value: "#mevzuat", label: "Mevzuat" },
   { value: "#contact", label: "İletişim" },
-  { value: "/teklif-al", label: "Teklif Al Sayfası" },
-  { value: "/iletisim", label: "İletişim Sayfası" },
-  { value: "custom", label: "Özel Link" },
 ]
 
 const DEFAULT_HERO_DATA = {
@@ -42,7 +43,6 @@ export function HeroSectionTab() {
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [heroId, setHeroId] = useState<string | null>(null)
   const [selectedSection, setSelectedSection] = useState<string>("#services")
-  const [customUrl, setCustomUrl] = useState("")
   const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false)
   const [isSavingDefaults, setIsSavingDefaults] = useState(false)
   const [formData, setFormData] = useState(DEFAULT_HERO_DATA)
@@ -76,13 +76,8 @@ export function HeroSectionTab() {
 
   useEffect(() => {
     // Seçilen section değiştiğinde buttonUrl'i güncelle
-    if (selectedSection !== "custom") {
-      setFormData(prev => ({ ...prev, buttonUrl: selectedSection }))
-      setCustomUrl("")
-    } else {
-      setFormData(prev => ({ ...prev, buttonUrl: customUrl }))
-    }
-  }, [selectedSection, customUrl])
+    setFormData(prev => ({ ...prev, buttonUrl: selectedSection }))
+  }, [selectedSection])
 
   const fetchHeroData = async () => {
     setIsLoading(true)
@@ -106,9 +101,9 @@ export function HeroSectionTab() {
           const matchingSection = PAGE_SECTIONS.find(s => s.value === hero.buttonUrl)
           if (matchingSection) {
             setSelectedSection(matchingSection.value)
-          } else if (hero.buttonUrl) {
-            setSelectedSection("custom")
-            setCustomUrl(hero.buttonUrl)
+          } else {
+            // Eğer veritabanındaki değer listede yoksa varsayılan olarak services seç
+            setSelectedSection("#services")
           }
           setIsDatabaseEmpty(false)
         } else {
@@ -209,7 +204,6 @@ export function HeroSectionTab() {
     setHeroId(null)
     setIsDatabaseEmpty(true)
     setSelectedSection("#services")
-    setCustomUrl("")
     
     toast.success('Varsayılan değerlere sıfırlandı (Kaydetmek için "Tüm Değişiklikleri Kaydet" butonuna basın)')
     setIsResetDialogOpen(false)
@@ -350,24 +344,6 @@ export function HeroSectionTab() {
               </Select>
             </div>
           </div>
-
-          {selectedSection === "custom" && (
-            <div className="space-y-2">
-              <Label htmlFor="customUrl">Özel Link URL</Label>
-              <Input
-                id="customUrl"
-                value={customUrl}
-                onChange={(e) => {
-                  setCustomUrl(e.target.value)
-                  setFormData(prev => ({ ...prev, buttonUrl: e.target.value }))
-                }}
-                placeholder="https://ornek.com veya /sayfa-yolu"
-              />
-              <p className="text-xs text-muted-foreground">
-                Dahili sayfa için &quot;/&quot; ile başlayın (örn: /hakkimizda), harici link için tam URL girin
-              </p>
-            </div>
-          )}
 
           <div className="space-y-2">
             <Label>Hero Görseli</Label>

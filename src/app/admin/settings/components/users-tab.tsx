@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,7 +20,7 @@ type User = {
   createdAt: string
 }
 
-export default function UsersPage() {
+export function UsersTab() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -121,82 +121,74 @@ export default function UsersPage() {
   }
 
   return (
-    <div>
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Kullanıcı Yönetimi</h1>
-          <p className="text-muted-foreground mt-2">
-            Sistem kullanıcılarını yönetin
-          </p>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="space-y-1">
+          <CardTitle>Kullanıcı Yönetimi</CardTitle>
+          <CardDescription>Sistem kullanıcılarını yönetin</CardDescription>
         </div>
         <Button className="bg-green-600 hover:bg-green-700" onClick={handleAdd}>
           <UserPlus className="h-4 w-4 mr-2" />
           Yeni Kullanıcı
         </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Kullanıcılar ({users.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Ad Soyad</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Rol</TableHead>
+              <TableHead>Kayıt Tarihi</TableHead>
+              <TableHead className="text-right">İşlemler</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
               <TableRow>
-                <TableHead>Ad Soyad</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead>Kayıt Tarihi</TableHead>
-                <TableHead className="text-right">İşlemler</TableHead>
+                <TableCell colSpan={5} className="text-center py-8">
+                  Yükleniyor...
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    Yükleniyor...
+            ) : users.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8">
+                  Kullanıcı bulunamadı
+                </TableCell>
+              </TableRow>
+            ) : (
+              users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.name || "—"}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>
+                      {user.role === "ADMIN" ? (
+                        <><Shield className="h-3 w-3 mr-1" /> Admin</>
+                      ) : (
+                        <><UserIcon className="h-3 w-3 mr-1" /> Müşteri</>
+                      )}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{new Date(user.createdAt).toLocaleDateString('tr-TR')}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
+                        <Edit className="h-4 w-4 mr-1" />
+                        Düzenle
+                      </Button>
+                      <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(user.id)}>
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Sil
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ) : users.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    Kullanıcı bulunamadı
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name || "—"}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>
-                        {user.role === "ADMIN" ? (
-                          <><Shield className="h-3 w-3 mr-1" /> Admin</>
-                        ) : (
-                          <><UserIcon className="h-3 w-3 mr-1" /> Müşteri</>
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(user.createdAt).toLocaleDateString('tr-TR')}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
-                          <Edit className="h-4 w-4 mr-1" />
-                          Düzenle
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50" onClick={() => handleDelete(user.id)}>
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Sil
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
 
       {/* User Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -253,6 +245,6 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Card>
   )
 }

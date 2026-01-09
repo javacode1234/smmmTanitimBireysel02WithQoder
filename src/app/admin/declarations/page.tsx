@@ -77,7 +77,7 @@ export default function DeclarationsPage() {
 
   // filter + pagination
   const [search, setSearch] = useState("")
-  const [pageSize, setPageSize] = useState<number>(5)
+  const [pageSize, setPageSize] = useState<number>(10)
   const [currentPage, setCurrentPage] = useState<number>(1)
 
   const form = useForm<FormValues>({
@@ -686,8 +686,27 @@ export default function DeclarationsPage() {
           {/* Pagination */}
           {filteredItems.length > 0 && (
             <div className="flex items-center justify-between px-2 py-4">
-              <div className="text-sm text-muted-foreground">
-                Toplam {filteredItems.length} kayıttan {startIndex + 1}-{Math.min(endIndex, filteredItems.length)} arası gösteriliyor
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Sayfada</span>
+                <Select
+                  value={pageSize.toString()}
+                  onValueChange={(value) => {
+                    setPageSize(Number(value))
+                    setCurrentPage(1)
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-[70px]">
+                    <SelectValue placeholder={pageSize.toString()} />
+                  </SelectTrigger>
+                  <SelectContent side="top">
+                    {[5, 10, 20, 50, 100].map((size) => (
+                      <SelectItem key={size} value={size.toString()}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span>Kayıt var. Toplam kayıt sayısı {filteredItems.length}.</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button

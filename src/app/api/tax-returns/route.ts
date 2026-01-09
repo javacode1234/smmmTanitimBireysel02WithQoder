@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { generateTaxReturnsForDuePeriod, generateHistoricalTaxReturns } from '@/lib/tax-return-service'
+import { generateTaxReturnsForDuePeriod, generateHistoricalTaxReturns, getPeriodEndDate } from '@/lib/tax-return-service'
 
 export async function GET(request: NextRequest) {
   try {
@@ -205,8 +205,8 @@ export async function GET(request: NextRequest) {
     const filteredTaxReturns = taxReturns.filter(tr => {
       if (tr.customer.establishmentDate) {
         const estDate = new Date(tr.customer.establishmentDate)
-        const dueDate = new Date(tr.dueDate)
-        return dueDate >= estDate
+        const periodEndDate = getPeriodEndDate(tr.year, tr.month, tr.period)
+        return periodEndDate >= estDate
       }
       return true
     })

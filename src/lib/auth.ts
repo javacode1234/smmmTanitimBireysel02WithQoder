@@ -33,31 +33,56 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Invalid credentials")
         }
 
+        // 1. Check Admin/User table
         const user = await prisma.user.findUnique({
           where: {
             email: credentials.email as string
           }
         })
 
-        if (!user || !user?.password) {
-          throw new Error("Invalid credentials")
+        if (user && user.password) {
+          const isCorrectPassword = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          )
+
+          if (isCorrectPassword) {
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              role: user.role,
+            }
+          }
         }
 
-        const isCorrectPassword = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        )
+        // 2. Check Customer table
+        const customer = await prisma.customer.findFirst({
+          where: {
+            OR: [
+              { authorizedEmail: credentials.email as string },
+              { username: credentials.email as string }
+            ]
+          }
+        })
 
-        if (!isCorrectPassword) {
-          throw new Error("Invalid credentials")
+        if (customer && customer.loginPassword) {
+          const isCorrectPassword = await bcrypt.compare(
+            credentials.password as string,
+            customer.loginPassword
+          )
+
+          if (isCorrectPassword) {
+            return {
+              id: customer.id,
+              email: customer.authorizedEmail,
+              name: customer.companyName,
+              role: "CUSTOMER",
+            }
+          }
         }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        }
+        throw new Error("Invalid credentials")
       }
     })
   ],

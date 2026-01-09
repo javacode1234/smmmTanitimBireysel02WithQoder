@@ -148,6 +148,29 @@ function processSettingForDateInMemory(
   }
 }
 
+export function getPeriodEndDate(year: number, month: number | null, period: string): Date {
+  if (month !== null) {
+    // End of the month
+    // Month is 1-based. new Date(year, month, 0) gives the last day of the previous month (if month was 0-based index of next month).
+    // Actually: new Date(year, monthIndex + 1, 0).
+    // Here month is 1-12. So new Date(year, month, 0) works?
+    // Example: month=1 (Jan). new Date(2025, 1, 0) -> Jan 31? No.
+    // Date(year, monthIndex, day). Jan is 0.
+    // new Date(2025, 1, 0) -> Feb 0 -> Jan 31. Correct.
+    return new Date(year, month, 0, 23, 59, 59)
+  }
+  if (period.includes('Q')) {
+    const q = parseInt(period.split('Q')[1])
+    // Q1: Ends Month 3 (Mar 31). new Date(year, 3, 0)
+    // Q2: Ends Month 6 (Jun 30). new Date(year, 6, 0)
+    // Q3: Ends Month 9 (Sep 30). new Date(year, 9, 0)
+    // Q4: Ends Month 12 (Dec 31). new Date(year, 12, 0) -> Dec 31 of year.
+    return new Date(year, q * 3, 0, 23, 59, 59)
+  }
+  // Yearly: End of year
+  return new Date(year, 12, 0, 23, 59, 59)
+}
+
 function addReturnIfMissing(
   customer: Customer,
   type: string,
@@ -163,13 +186,10 @@ function addReturnIfMissing(
   // Check establishment date
   if (customer.establishmentDate) {
     const estDate = new Date(customer.establishmentDate)
+    const periodEndDate = getPeriodEndDate(year, month, period)
     
-    // Check if period is valid for establishment
-    // Logic: If period year < est year, invalid.
-    if (year < estDate.getFullYear()) return
-    if (year === estDate.getFullYear() && month !== null) {
-      if (month < estDate.getMonth() + 1) return
-    }
+    // If period ends before establishment date, skip
+    if (periodEndDate < estDate) return
   }
 
   const key = `${customer.id}|${type}|${period}`
@@ -326,24 +346,12 @@ async function createTaxReturnIfNotExists(
   // Check establishment date
   if (customer.establishmentDate) {
     const estDate = new Date(customer.establishmentDate)
-    const periodStartDate = getPeriodStartDate(year, month, period)
+    const periodEndDate = getPeriodEndDate(year, month, period)
     
-    // If period starts before establishment, skip?
-    // Or if period ends before establishment?
-    // Let's say if period END date is before establishment, definitely skip.
-    // If establishment is in the middle of period, usually we still file.
-    
-    // Simplified: If period year < establishment year, skip.
-    if (year < estDate.getFullYear()) {
+    // If period ends before establishment date, skip
+    if (periodEndDate < estDate) {
       results.skipped++
       return
-    }
-    // If same year, check month
-    if (year === estDate.getFullYear() && month !== null) {
-      if (month < estDate.getMonth() + 1) {
-        results.skipped++
-        return
-      }
     }
   }
 

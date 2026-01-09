@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client'
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
+import bcrypt from 'bcryptjs'
 import { generateAccrualsForCustomer } from '@/lib/subscription-logic'
 
 type DeleteCreateManyDelegate = {
@@ -127,13 +128,20 @@ export async function GET(request: NextRequest) {
 
   if (mode === 'stats') {
     try {
-      const totalActive = await prisma.customer.count({
-        where: { status: 'ACTIVE' }
-      })
-
       const now = new Date()
       const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
       const startOfCurrentYear = new Date(now.getFullYear(), 0, 1)
+
+      const totalActive = await prisma.customer.count({
+        where: { 
+          status: 'ACTIVE',
+          OR: [
+            { serviceStartDate: { not: null, lte: now } },
+            { serviceStartDate: null, establishmentDate: { not: null, lte: now } },
+            { serviceStartDate: null, establishmentDate: null, createdAt: { lte: now } }
+          ]
+        }
+      })
 
       // Total active customers created before this month
       const totalLastMonth = await prisma.customer.count({
@@ -384,6 +392,7 @@ export async function POST(request: NextRequest) {
       ...(data.ledgerType !== undefined ? { ledgerType: data.ledgerType } : {}),
       ...(data.companyType !== undefined ? { companyType: data.companyType } : {}),
       ...(data.companyClass !== undefined ? { companyClass: data.companyClass } : {}),
+      ...(data.username !== undefined ? { username: data.username } : {}),
       ...(data.subscriptionFee !== undefined ? { subscriptionFee: toOptionalStringFromNumber(data.subscriptionFee) } : {}),
       ...(data.employeeCount !== undefined ? { employeeCount: toOptionalInt(data.employeeCount) } : {}),
       ...(data.partners !== undefined ? { partners: toStringOrJson(data.partners) } : {}),
@@ -393,8 +402,16 @@ export async function POST(request: NextRequest) {
       ...(data.authorizedPersons !== undefined ? { authorizedPersons: toStringOrJson(data.authorizedPersons) } : {}),
       ...(data.messages !== undefined ? { messages: toStringOrJson(data.messages) } : {}),
       ...(data.transactions !== undefined ? { transactions: toStringOrJson(data.transactions) } : {}),
+      ...(data.constitution !== undefined ? { constitution: toStringOrJson(data.constitution) } : {}),
     }
     
+    if (data.companyDuration !== undefined) {
+      createData.companyDuration = String(data.companyDuration)
+    }
+    if (data.companyEndDate !== undefined) {
+      createData.companyEndDate = toOptionalDate(data.companyEndDate)
+    }
+     
     // hasEmployees alanı varsa ekle
     if (data.hasEmployees !== undefined) {
       createData.hasEmployees = Boolean(data.hasEmployees)
@@ -611,6 +628,8 @@ export async function PATCH(request: NextRequest) {
       ...(data.feeAccrualDay !== undefined && data.feeAccrualDay !== null ? { feeAccrualDay: toOptionalInt(data.feeAccrualDay) } : {}),
       ...(data.openingBalance !== undefined ? { openingBalance: toOptionalStringFromNumber(data.openingBalance) } : {}),
       ...(data.establishmentDate !== undefined ? { establishmentDate: toOptionalDate(data.establishmentDate) } : {}),
+      ...(data.companyDuration !== undefined ? { companyDuration: String(data.companyDuration) } : {}),
+      ...(data.companyEndDate !== undefined ? { companyEndDate: toOptionalDate(data.companyEndDate) } : {}),
       ...(data.taxPeriodType !== undefined ? { taxPeriodType: data.taxPeriodType } : {}),
       ...(data.authorizedName !== undefined ? { authorizedName: data.authorizedName } : {}),
       ...(data.authorizedTCKN !== undefined ? { authorizedTCKN: data.authorizedTCKN } : {}),
@@ -660,6 +679,7 @@ export async function PATCH(request: NextRequest) {
       } : {}),
       ...(data.documents !== undefined ? { documents: toStringOrJson(data.documents) } : {}),
       ...(data.passwords !== undefined ? { passwords: toStringOrJson(data.passwords) } : {}),
+      ...(data.constitution !== undefined ? { constitution: toStringOrJson(data.constitution) } : {}),
       ...(data.authorizedPersons !== undefined ? { authorizedPersons: toStringOrJson(data.authorizedPersons) } : {}),
       ...(data.branches !== undefined ? { branches: toStringOrJson(data.branches) } : {}),
       ...(data.capitals !== undefined ? { capitals: toStringOrJson(data.capitals) } : {}),
@@ -672,6 +692,12 @@ export async function PATCH(request: NextRequest) {
       ...(data.status !== undefined ? { status: data.status } : {}),
       ...(data.onboardingStage !== undefined ? { onboardingStage: data.onboardingStage } : {}),
       ...(data.employeeCount !== undefined ? { employeeCount: toOptionalInt(data.employeeCount) } : {}),
+      ...(data.kepAddress !== undefined ? { kepAddress: data.kepAddress } : {}),
+      ...(data.username !== undefined ? { username: data.username } : {}),
+    }
+
+    if (data.loginPassword) {
+      updateData.loginPassword = await bcrypt.hash(data.loginPassword, 12)
     }
     
     // hasEmployees alanı varsa ekle
@@ -752,6 +778,10 @@ export async function PATCH(request: NextRequest) {
             tckn: String(p.tckn || ''),
             startDate: p.startDate ? new Date(p.startDate) : null,
             isManager: !!p.isManager,
+            isAuthorized: !!p.isAuthorized,
+            authorizationDuration: p.authorizationDuration || null,
+            authorizationStartDate: p.authorizationStartDate ? new Date(p.authorizationStartDate) : null,
+            authorizationEndDate: p.authorizationEndDate ? new Date(p.authorizationEndDate) : null,
           }))
         })
       }
@@ -860,7 +890,7 @@ export async function PATCH(request: NextRequest) {
       console.log('Customer updated successfully:', customer.id)
 
       // If important fields changed, trigger accrual regeneration
-      if (data.subscriptionFee !== undefined || data.establishmentDate !== undefined || data.serviceStartDate !== undefined || data.feeAccrualDay !== undefined) {
+      if (data.subscriptionFee !== undefined || data.establishmentDate !== undefined || data.serviceStartDate !== undefined || data.feeAccrualDay !== undefined || (data.accountingPeriods && Array.isArray(data.accountingPeriods))) {
         // Get fresh customer data to ensure we have all needed fields
         const freshCustomer = await prisma.customer.findUnique({
           where: { id },
@@ -892,6 +922,31 @@ export async function PATCH(request: NextRequest) {
 
     // If no customer fields to update, but accounting periods were updated, return success
     if (data.accountingPeriods && Array.isArray(data.accountingPeriods)) {
+      // Trigger accrual regeneration since fees might have changed
+      const freshCustomer = await prisma.customer.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          companyName: true,
+          subscriptionFee: true,
+          establishmentDate: true,
+          serviceStartDate: true,
+          feeAccrualDay: true
+        }
+      })
+
+      if (freshCustomer && (freshCustomer.serviceStartDate || freshCustomer.establishmentDate)) {
+        console.log('Regenerating accruals due to accounting periods update:', id)
+        await generateAccrualsForCustomer({
+          id: freshCustomer.id,
+          companyName: freshCustomer.companyName,
+          subscriptionFee: freshCustomer.subscriptionFee,
+          establishmentDate: freshCustomer.establishmentDate,
+          serviceStartDate: freshCustomer.serviceStartDate,
+          feeAccrualDay: freshCustomer.feeAccrualDay
+        }, false)
+      }
+
       return NextResponse.json({ id, message: "Accounting periods updated" })
     }
 

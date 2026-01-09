@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Lock, Eye, EyeOff } from "lucide-react"
+import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 // Random landscape images from around the world
 const backgroundImages = [
@@ -26,6 +28,7 @@ const backgroundImages = [
 type UserType = "admin" | "client"
 
 export default function SignInPage() {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [backgroundImage, setBackgroundImage] = useState(backgroundImages[0])
@@ -61,26 +64,33 @@ export default function SignInPage() {
     setIsLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    formData.get("email")
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
 
     try {
-      // TODO: Implement actual sign in logic with NextAuth
-      // For now, simulate login
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      })
 
-      toast.success("Giriş başarılı!")
-      
-      // Add small delay before navigation to allow toast to show
-      await new Promise(resolve => setTimeout(resolve, 300))
-      
-      // Use window.location.href instead of router.push to avoid removeChild errors
-      if (userType === "admin") {
-        window.location.assign("/admin")
+      if (res?.error) {
+        toast.error("Giriş başarısız. Lütfen bilgilerinizi kontrol edin.")
+        setIsLoading(false)
       } else {
-        window.location.assign("/client")
+        toast.success("Giriş başarılı!")
+        
+        // Add small delay before navigation to allow toast to show
+        await new Promise(resolve => setTimeout(resolve, 300))
+        
+        if (userType === "admin") {
+          window.location.assign("/admin")
+        } else {
+          window.location.assign("/client")
+        }
       }
     } catch {
-      toast.error("Giriş başarısız. Lütfen bilgilerinizi kontrol edin.")
+      toast.error("Bir hata oluştu.")
       setIsLoading(false)
     }
   }
@@ -94,13 +104,13 @@ export default function SignInPage() {
       <form onSubmit={(e) => handleSubmit(e, userType)} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor={`email-${userType}`} className="text-white font-semibold">
-            E-posta
+            {userType === "admin" ? "E-posta" : "E-posta veya Kullanıcı Adı"}
           </Label>
           <Input
             id={`email-${userType}`}
             name="email"
-            type="email"
-            placeholder="ornek@mail.com"
+            type={userType === "admin" ? "email" : "text"}
+            placeholder={userType === "admin" ? "ornek@mail.com" : "E-posta veya Kullanıcı Adı"}
             required
             disabled={isLoading}
             className="bg-white/5 border-white/30 text-white placeholder:text-white/60 backdrop-blur-sm focus:bg-white/15"

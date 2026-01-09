@@ -38,7 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog"
 import { Badge } from "@/components/ui/badge"
@@ -210,37 +210,37 @@ export function TeamTab() {
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [isSavingDefaults, setIsSavingDefaults] = useState(false)
   const [isDatabaseEmpty, setIsDatabaseEmpty] = useState(false)
-
-  useEffect(() => {
-    fetchMembers()
-    fetchSectionData()
-    
-    return () => {
-      setIsDialogOpen(false)
-      setIsDeleteDialogOpen(false)
-      setIsResetDialogOpen(false)
-    }
-  }, [])
+  
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const isMounted = useRef(true)
 
   const fetchSectionData = async () => {
     try {
       const response = await fetch('/api/content/team/section')
+      if (!isMounted.current) return
+
       if (response.ok) {
         const data: TeamSectionData = await response.json()
-        if (data && (data.title || data.paragraph)) {
-          setSectionData({
-            title: data.title || DEFAULT_SECTION_DATA.title,
-            paragraph: data.paragraph || DEFAULT_SECTION_DATA.paragraph
-          })
-        } else {
-          setSectionData(DEFAULT_SECTION_DATA)
+        if (isMounted.current) {
+          if (data && (data.title || data.paragraph)) {
+            setSectionData({
+              title: data.title || DEFAULT_SECTION_DATA.title,
+              paragraph: data.paragraph || DEFAULT_SECTION_DATA.paragraph
+            })
+          } else {
+            setSectionData(DEFAULT_SECTION_DATA)
+          }
         }
       } else {
-        setSectionData(DEFAULT_SECTION_DATA)
+        if (isMounted.current) {
+          setSectionData(DEFAULT_SECTION_DATA)
+        }
       }
     } catch (error) {
       console.error('Error fetching section data:', error)
-      setSectionData(DEFAULT_SECTION_DATA)
+      if (isMounted.current) {
+        setSectionData(DEFAULT_SECTION_DATA)
+      }
     }
   }
 
@@ -248,28 +248,46 @@ export function TeamTab() {
     setLoading(true)
     try {
       const response = await fetch('/api/content/team')
+      if (!isMounted.current) return
+
       if (response.ok) {
         const data = await response.json()
         
         toast.success('Ekip üyeleri başarıyla getirildi');
-      if (data && data.length > 0) {
-        const allDefaults = data.every((m: TeamMember) => m.id?.startsWith('default-'))
-        setMembers(data)
-        setIsDatabaseEmpty(allDefaults)
-      } else {
-        setMembers(DEFAULT_TEAM_MEMBERS)
-        setIsDatabaseEmpty(true)
-      }
+        if (isMounted.current) {
+          if (data && data.length > 0) {
+            const allDefaults = data.every((m: TeamMember) => m.id?.startsWith('default-'))
+            setMembers(data)
+            setIsDatabaseEmpty(allDefaults)
+          } else {
+            setMembers(DEFAULT_TEAM_MEMBERS)
+            setIsDatabaseEmpty(true)
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching team members:', error)
       toast.error('Ekip üyeleri yüklenirken bir hata oluştu')
-      setMembers(DEFAULT_TEAM_MEMBERS)
-      setIsDatabaseEmpty(true)
+      if (isMounted.current) {
+        setMembers(DEFAULT_TEAM_MEMBERS)
+        setIsDatabaseEmpty(true)
+      }
     } finally {
-      setLoading(false)
+      if (isMounted.current) {
+        setLoading(false)
+      }
     }
   };
+
+  useEffect(() => {
+    isMounted.current = true
+    fetchMembers()
+    fetchSectionData()
+    
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
 
   const saveAllChanges = async () => {
     setSaving(true)
@@ -402,7 +420,6 @@ export function TeamTab() {
     setIsDialogOpen(true)
   }
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const processAvatarFile = (file: File) => {
     if (!editingMember) return

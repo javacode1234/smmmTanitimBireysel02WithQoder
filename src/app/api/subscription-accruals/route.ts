@@ -6,13 +6,10 @@ import { generateAccrualsForCustomer, getTurkishMonthName } from '@/lib/subscrip
 // Generate monthly subscription accruals for all active customers
 export async function POST() {
   try {
-    // Get all active customers with subscription fees
+    // Get all active customers (fees might be in AccountingPeriod even if subscriptionFee is null)
     const customers = await prisma.customer.findMany({
       where: {
-        status: 'ACTIVE',
-        subscriptionFee: {
-          not: null
-        }
+        status: 'ACTIVE'
       },
       select: {
         id: true,

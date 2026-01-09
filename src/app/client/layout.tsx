@@ -1,9 +1,8 @@
 "use client"
-"use client"
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { DashboardNavbar } from "@/components/dashboard/navbar"
 import { Breadcrumb } from "@/components/dashboard/breadcrumb"
@@ -15,11 +14,13 @@ import {
   User,
   CreditCard,
   MessageSquare,
-  LogOut
+  LogOut,
+  Building2
 } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/client", icon: LayoutDashboard },
+  { name: "Şirket Profili", href: "/client/company-profile", icon: Building2 },
   { name: "Profilim", href: "/client/profile", icon: User },
   { name: "Beyannamelerim", href: "/client/declarations", icon: FileText },
   { name: "Hesap Özeti", href: "/client/account", icon: CreditCard },
@@ -36,6 +37,23 @@ export default function ClientLayout({
   const router = useRouter()
   const [sidebarState, setSidebarState] = useState<"open" | "collapsed" | "hidden">("open")
   const [isNavigating, setIsNavigating] = useState(false)
+
+  // Handle responsive sidebar
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarState("hidden")
+      } else {
+        setSidebarState("open")
+      }
+    }
+
+    // Initial check
+    handleResize()
+
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
 
   const handleToggleSidebar = () => {
     if (sidebarState === "open") {

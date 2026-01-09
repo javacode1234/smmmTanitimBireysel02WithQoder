@@ -61,8 +61,11 @@ const formSchema = z.object({
   address: z.string().min(1, "Adres giriniz"),
   addressCode: z.string().length(10, "Adres kodu 10 haneli olmalıdır").regex(/^\d+$/, "Sadece rakam giriniz"),
   establishmentDate: z.string().min(1, "Kuruluş tarihi seçiniz"),
+  companyDuration: z.string().default("Süresiz"),
+  companyEndDate: z.string().optional(),
   serviceStartDate: z.string().optional(),
   employeeCount: z.coerce.number().min(0, "Geçerli bir sayı giriniz"),
+  kepAddress: z.string().optional(),
   phone: z.string().min(10, "Geçerli bir telefon numarası giriniz"),
   email: z.string().email("Geçerli bir e-posta adresi giriniz"),
   website: z.string().optional(),
@@ -74,6 +77,11 @@ const formSchema = z.object({
       telegram: z.string().optional(),
       nsosyal: z.string().optional(),
     }).optional(),
+  authorizedName: z.string().optional(),
+  authorizedTCKN: z.string().length(11, "TCKN 11 haneli olmalıdır").regex(/^\d+$/, "Sadece rakam giriniz").optional().or(z.literal("")),
+  authorizedPhone: z.string().optional(),
+  authorizedEmail: z.string().email("Geçerli bir e-posta adresi giriniz").optional().or(z.literal("")),
+  authorizedAddress: z.string().optional(),
   })
 
 type FormValues = z.infer<typeof formSchema>
@@ -95,7 +103,7 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
   const [activityCodes, setActivityCodes] = useState<ActivityCode[]>([])
   const [isLoadingCodes, setIsLoadingCodes] = useState(false)
-
+  
   useEffect(() => {
     const fetchCodes = async () => {
       try {
@@ -120,6 +128,7 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       logo: "",
+      companyName: "",
       companyType: "",
       companyClass: "",
       vkn: "",
@@ -131,8 +140,11 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
       address: "",
       addressCode: "",
       establishmentDate: "",
+      companyDuration: "Süresiz",
+      companyEndDate: "",
       serviceStartDate: "",
       employeeCount: 0,
+      kepAddress: "",
       phone: "",
       email: "",
       website: "",
@@ -144,8 +156,15 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
         telegram: "",
         nsosyal: "",
       },
+      authorizedName: "",
+      authorizedTCKN: "",
+      authorizedPhone: "",
+      authorizedEmail: "",
+      authorizedAddress: "",
     },
   })
+
+  const companyDuration = form.watch("companyDuration")
 
   useEffect(() => {
     if (customerId) {
@@ -170,19 +189,20 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
           let district = data.district || data.city || "" // Use separate field, fallback to city
           let addressCode = data.addressCode || ""
           
-          // Legacy support: try parsing if fields are empty
-          if (!addressCode && address.includes("UAVT:")) {
-            const addressMatch = data.address?.match(/^(.*?) \/ (.*?) \(UAVT: (\d+)\)$/)
+          // Legacy support: try parsing if fields are empty or if address contains the pattern
+          if (address.includes("UAVT:")) {
+            const addressMatch = address.match(/^(.*?) \/ (.*?) \(UAVT: (\d+)\)$/)
             if (addressMatch) {
               address = addressMatch[1]
-              district = addressMatch[2]
-              addressCode = addressMatch[3]
+              if (!district) district = addressMatch[2]
+              if (!addressCode) addressCode = addressMatch[3]
             }
           }
 
           // Date formatting
           const establishmentDate = data.establishmentDate ? new Date(data.establishmentDate).toISOString().split('T')[0] : ""
           const serviceStartDate = data.serviceStartDate ? new Date(data.serviceStartDate).toISOString().split('T')[0] : ""
+          const companyEndDate = data.companyEndDate ? new Date(data.companyEndDate).toISOString().split('T')[0] : ""
 
           // Company Type mapping
           let companyType = data.companyType || ""
@@ -212,8 +232,11 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
             address,
             addressCode,
             establishmentDate,
+            companyDuration: data.companyDuration || "Süresiz",
+            companyEndDate,
             serviceStartDate,
             employeeCount: data.employeeCount || 0,
+            kepAddress: data.kepAddress || "",
             phone: data.phone || "",
             email: data.email || "",
             website: data.website || "",
@@ -225,6 +248,11 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
               telegram: data.telegramUrl || "",
               nsosyal: data.threadsUrl || "",
             },
+            authorizedName: data.authorizedName || "",
+            authorizedTCKN: data.authorizedTCKN || "",
+            authorizedPhone: data.authorizedPhone || "",
+            authorizedEmail: data.authorizedEmail || "",
+            authorizedAddress: data.authorizedAddress || "",
           })
           
           if (data.logo) {
@@ -267,7 +295,7 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
     try {
       setIsSaving(true)
       
-      const fullAddress = data.address + (data.district ? ` / ${data.district}` : "") + (data.addressCode ? ` (UAVT: ${data.addressCode})` : "")
+      const fullAddress = data.address
 
       const payload: Record<string, any> = {
         companyName: data.companyName,
@@ -284,6 +312,7 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
         email: data.email,
         website: data.website,
         employeeCount: data.employeeCount,
+        kepAddress: data.kepAddress,
         logo: data.logo,
         // Socials
         facebookUrl: data.social?.facebook,
@@ -293,9 +322,16 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
         telegramUrl: data.social?.telegram,
         // Using threadsUrl for nsosyal as a placeholder since schema might not have it
         threadsUrl: data.social?.nsosyal, 
+        authorizedName: data.authorizedName,
+        authorizedTCKN: data.authorizedTCKN,
+        authorizedPhone: data.authorizedPhone,
+        authorizedEmail: data.authorizedEmail,
+        authorizedAddress: data.authorizedAddress, 
         
         companyType: data.companyType,
         companyClass: data.companyClass,
+        companyDuration: data.companyDuration,
+        companyEndDate: data.companyEndDate,
         ledgerType: data.companyType === 'ISLETME' ? 'İşletme Defteri' : 'Bilanço Usulü',
         status: 'ACTIVE',
         onboardingStage: 'CUSTOMER'
@@ -305,7 +341,7 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
       if (!customerId) {
         const centralBranch = {
           id: crypto.randomUUID(),
-          name: "Central Branch",
+          name: "Merkez Şube",
           addressNo: data.addressCode,
           address: fullAddress,
           startDate: data.establishmentDate,
@@ -360,13 +396,7 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Genel Bilgiler</CardTitle>
-        <CardDescription>
-          Müşterinin temel bilgilerini girin.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit((data) => onSubmit(data, false))} className="space-y-6">
             
@@ -614,6 +644,46 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
                 )}
               />
 
+              {/* Company Duration */}
+              <FormField
+                control={form.control}
+                name="companyDuration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Şirket Süresi</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seçiniz" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Süresiz">Süresiz</SelectItem>
+                        <SelectItem value="Süreli">Süreli</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Company End Date - Only if duration is "Süreli" */}
+              {companyDuration === "Süreli" && (
+                <FormField
+                  control={form.control}
+                  name="companyEndDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bitiş Tarihi</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               {/* Employee Count */}
               <FormField
                 control={form.control}
@@ -623,6 +693,21 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
                     <FormLabel>Çalışan Sayısı</FormLabel>
                     <FormControl>
                       <Input type="number" min={0} {...field} className="text-right" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Kep Address */}
+              <FormField
+                control={form.control}
+                name="kepAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Kep Adresi</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ornek@hs01.kep.tr" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -737,6 +822,78 @@ export function GeneralInfoTab({ onSuccess, customerId }: GeneralInfoTabProps) {
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* Authorized Person Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Yetkili Kişi Bilgileri</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="authorizedName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ad Soyad</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ad Soyad" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="authorizedTCKN"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>TCKN</FormLabel>
+                      <FormControl>
+                        <Input placeholder="11 haneli TCKN" maxLength={11} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="authorizedPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefon</FormLabel>
+                      <FormControl>
+                        <PhoneInput {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="authorizedEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-posta</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="ornek@email.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="authorizedAddress"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Adres</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Adres..." className="resize-none" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
             {/* Social Media */}

@@ -15,7 +15,11 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         name: true,
-        city: true,
+        city: {
+          select: {
+            name: true
+          }
+        },
         district: true
       },
       orderBy: {
@@ -23,9 +27,16 @@ export async function GET(req: NextRequest) {
       }
     })
 
+    const formattedRows = rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      city: row.city?.name,
+      district: row.district
+    }))
+
     const filtered = q
-      ? rows.filter(it => it.name.toLocaleLowerCase('tr-TR').includes(q))
-      : rows
+      ? formattedRows.filter(it => it.name.toLocaleLowerCase('tr-TR').includes(q))
+      : formattedRows
 
     return NextResponse.json({ taxOffices: filtered })
   } catch (error: unknown) {

@@ -14,6 +14,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -22,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useDebounce } from "@/hooks/use-debounce"
 import { toast } from "sonner"
@@ -53,7 +61,7 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [page, setPage] = useState(1)
-  const [pageSize] = useState(5) // Default page size 5
+  const [pageSize, setPageSize] = useState(10) // Default page size 10
   const [total, setTotal] = useState(0)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [customerToDelete, setCustomerToDelete] = useState<string | null>(null)
@@ -62,7 +70,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers()
-  }, [page, debouncedSearch])
+  }, [page, pageSize, debouncedSearch])
 
   const fetchCustomers = async () => {
     try {
@@ -159,19 +167,22 @@ export default function CustomersPage() {
         </Button>
       </div>
 
-      <div className="flex items-center py-4">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Müşteri ara..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="pl-8"
-          />
-        </div>
-      </div>
-
-      <div className="border rounded-md">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <CardTitle>Müşteri Listesi</CardTitle>
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Müşteri ara..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="pl-8"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
@@ -263,13 +274,32 @@ export default function CustomersPage() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </CardContent>
 
       {/* Pagination */}
       {!loading && total > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Toplam {total} kayıttan {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, total)} arası gösteriliyor
+        <CardFooter className="flex items-center justify-between py-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Sayfada</span>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => {
+                setPageSize(Number(value))
+                setPage(1)
+              }}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={pageSize.toString()} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[5, 10, 20, 50, 100].map((size) => (
+                  <SelectItem key={size} value={size.toString()}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span>Kayıt var. Toplam kayıt sayısı {total}.</span>
           </div>
           <div className="flex items-center space-x-2">
             <Button
@@ -310,8 +340,9 @@ export default function CustomersPage() {
               Sonraki
             </Button>
           </div>
-        </div>
+        </CardFooter>
       )}
+      </Card>
 
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent>

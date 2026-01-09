@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { User, Mail, Phone, Building, FileText, Camera, Save, Lock } from "lucide-react"
+import { User, Mail, Phone, Building, FileText, Camera, Save, Lock, Eye, EyeOff } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function ClientProfilePage() {
@@ -34,6 +34,19 @@ export default function ClientProfilePage() {
 
   const [formData, setFormData] = useState(profileData)
   const [previewAvatar, setPreviewAvatar] = useState(profileData.avatar)
+  
+  // Password change state
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  })
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  })
 
   // Fetch profile data on mount
   useEffect(() => {
@@ -45,10 +58,10 @@ export default function ClientProfilePage() {
           const userData = {
             name: data.name || "Mükellef Kullanıcı",
             email: data.email || "mukellef@example.com",
-            phone: data.client?.phone || "0533 987 6543",
-            companyName: data.client?.companyName || "ABC Ticaret Ltd. Şti.",
-            taxNumber: data.client?.taxNumber || "1234567890",
-            address: data.client?.address || "Atatürk Cad. No: 123 Merkez/İstanbul",
+            phone: data.phone || "0533 987 6543",
+            companyName: data.companyName || "ABC Ticaret Ltd. Şti.",
+            taxNumber: data.taxNumber || "1234567890",
+            address: data.address || "Atatürk Cad. No: 123 Merkez/İstanbul",
             role: data.role || "CLIENT",
             avatar: data.image || "",
             initials: data.name ? data.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : "MK",
@@ -153,6 +166,46 @@ export default function ClientProfilePage() {
     } catch (error) {
       console.error('Profile update error:', error)
       toast.error('Profil güncellenirken bir hata oluştu. Lütfen tekrar deneyin.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handlePasswordChange = async () => {
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast.error("Lütfen tüm alanları doldurun")
+      return
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("Yeni şifreler eşleşmiyor")
+      return
+    }
+    
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          passwordChange: {
+            currentPassword: passwordData.currentPassword,
+            newPassword: passwordData.newPassword
+          }
+        }),
+      })
+
+      const data = await response.json()
+      
+      if (response.ok) {
+        toast.success("Şifreniz başarıyla güncellendi")
+        setIsChangingPassword(false)
+        setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })
+      } else {
+        toast.error(data.error || "Şifre güncellenirken bir hata oluştu")
+      }
+    } catch (error) {
+      toast.error("Bir hata oluştu")
     } finally {
       setIsSaving(false)
     }
@@ -280,7 +333,7 @@ export default function ClientProfilePage() {
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <FileText className="h-4 w-4" />
-                <span>VKN: {profileData.taxNumber}</span>
+                <span>TCKN: {profileData.taxNumber}</span>
               </div>
             </div>
 
@@ -358,13 +411,13 @@ export default function ClientProfilePage() {
                   name="companyName"
                   value={formData.companyName}
                   onChange={handleInputChange}
-                  disabled={!isEditing}
+                  disabled={true}
                   placeholder="Şirket Adı"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="taxNumber">Vergi Kimlik Numarası</Label>
+                <Label htmlFor="taxNumber">TCKN</Label>
                 <Input
                   id="taxNumber"
                   name="taxNumber"
@@ -419,7 +472,7 @@ export default function ClientProfilePage() {
             <CardDescription>Şifre ve güvenlik ayarlarınız</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg gap-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Lock className="h-5 w-5 text-primary" />
@@ -431,10 +484,100 @@ export default function ClientProfilePage() {
                   </p>
                 </div>
               </div>
-              <Button variant="outline" disabled>
-                Değiştir
+              <Button 
+                variant={isChangingPassword ? "secondary" : "outline"}
+                onClick={() => setIsChangingPassword(!isChangingPassword)}
+              >
+                {isChangingPassword ? "İptal" : "Değiştir"}
               </Button>
             </div>
+
+            {isChangingPassword && (
+               <div className="grid gap-4 p-4 border rounded-lg bg-muted/50 animate-in fade-in slide-in-from-top-2">
+                 <div className="grid gap-4 md:grid-cols-3">
+                   <div className="space-y-2">
+                     <Label htmlFor="currentPassword">Mevcut Şifre</Label>
+                     <div className="relative">
+                       <Input
+                         id="currentPassword"
+                         type={showPasswords.current ? "text" : "password"}
+                         value={passwordData.currentPassword}
+                         onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                         placeholder="******"
+                       />
+                       <Button
+                         type="button"
+                         variant="ghost"
+                         size="icon"
+                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                         onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                       >
+                         {showPasswords.current ? (
+                           <EyeOff className="h-4 w-4 text-muted-foreground" />
+                         ) : (
+                           <Eye className="h-4 w-4 text-muted-foreground" />
+                         )}
+                       </Button>
+                     </div>
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="newPassword">Yeni Şifre</Label>
+                     <div className="relative">
+                       <Input
+                         id="newPassword"
+                         type={showPasswords.new ? "text" : "password"}
+                         value={passwordData.newPassword}
+                         onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                         placeholder="******"
+                       />
+                       <Button
+                         type="button"
+                         variant="ghost"
+                         size="icon"
+                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                         onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                       >
+                         {showPasswords.new ? (
+                           <EyeOff className="h-4 w-4 text-muted-foreground" />
+                         ) : (
+                           <Eye className="h-4 w-4 text-muted-foreground" />
+                         )}
+                       </Button>
+                     </div>
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="confirmPassword">Yeni Şifre (Tekrar)</Label>
+                     <div className="relative">
+                       <Input
+                         id="confirmPassword"
+                         type={showPasswords.confirm ? "text" : "password"}
+                         value={passwordData.confirmPassword}
+                         onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                         placeholder="******"
+                       />
+                       <Button
+                         type="button"
+                         variant="ghost"
+                         size="icon"
+                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                         onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                       >
+                         {showPasswords.confirm ? (
+                           <EyeOff className="h-4 w-4 text-muted-foreground" />
+                         ) : (
+                           <Eye className="h-4 w-4 text-muted-foreground" />
+                         )}
+                       </Button>
+                     </div>
+                   </div>
+                 </div>
+                 <div className="flex justify-end">
+                   <Button onClick={handlePasswordChange} disabled={isSaving}>
+                     {isSaving ? "Güncelleniyor..." : "Şifreyi Güncelle"}
+                   </Button>
+                 </div>
+               </div>
+             )}
           </CardContent>
         </Card>
         </div>

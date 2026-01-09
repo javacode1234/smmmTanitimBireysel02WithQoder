@@ -89,6 +89,10 @@ const defaultInstitutions: Institution[] = [
 
 export function InstitutionsSection() {
   const [institutions, setInstitutions] = useState<Institution[]>(defaultInstitutions)
+  const [sectionData, setSectionData] = useState({
+    title: "Entegre Çalıştığımız Kurumlar",
+    paragraph: "Resmi kurum ve kuruluşlarla entegre çalışarak işlemlerinizi hızlı, güvenli ve kesintisiz bir şekilde yürütüyoruz"
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isMountedRef = useRef(true)
@@ -155,6 +159,24 @@ export function InstitutionsSection() {
       try {
         setLoading(true)
         setError(null)
+
+        // Fetch section data
+        try {
+          const sectionResponse = await fetch('/api/content/institutions/section')
+          if (sectionResponse.ok) {
+            const sectionJson = await sectionResponse.json()
+            if (sectionJson) {
+              setSectionData({
+                title: sectionJson.title || "Entegre Çalıştığımız Kurumlar",
+                paragraph: sectionJson.paragraph || "Resmi kurum ve kuruluşlarla entegre çalışarak işlemlerinizi hızlı, güvenli ve kesintisiz bir şekilde yürütüyoruz"
+              })
+            }
+          }
+        } catch (sectionErr) {
+          console.error('Error fetching section data:', sectionErr)
+          // Fallback to default values
+        }
+
         const response = await fetch('/api/content/institutions')
         if (response.ok) {
           const data: InstitutionItem[] = await response.json()
@@ -204,10 +226,10 @@ export function InstitutionsSection() {
         <div className="container mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              Resmi Kurumlar
+              {sectionData.title}
             </h2>
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-              Resmi kurum ve kuruluşlarla entegre çalışarak işlemlerinizi hızlı ve güvenli bir şekilde yürütüyoruz
+              {sectionData.paragraph}
             </p>
           </div>
           <div className="hidden md:block h-48 flex items-center justify-center">
@@ -230,10 +252,10 @@ export function InstitutionsSection() {
         <div className="container mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              Entegre Kurumlar
+              {sectionData.title}
             </h2>
             <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-              Resmi kurum ve kuruluşlarla entegre çalışarak işlemlerinizi hızlı ve güvenli bir şekilde yürütüyoruz
+              {sectionData.paragraph}
             </p>
           </div>
           <div className="text-center text-red-500 py-8">
@@ -268,10 +290,10 @@ export function InstitutionsSection() {
               Resmi Kurumlarımız
             </div>
             <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent">
-              Entegre Çalıştığımız Kurumlar
+              {sectionData.title}
             </h2>
             <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Resmi kurum ve kuruluşlarla entegre çalışarak işlemlerinizi hızlı, güvenli ve kesintisiz bir şekilde yürütüyoruz
+              {sectionData.paragraph}
             </p>
           </motion.div>
         )}

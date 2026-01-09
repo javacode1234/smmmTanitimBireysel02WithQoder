@@ -173,7 +173,7 @@ export function ContactSection() {
               <div className="relative w-full h-[400px] bg-gray-100">
                 <iframe
                   src={siteSettings.mapEmbedUrl ||
-                    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3011.1573703944705!2d29.02587631571651!3d40.98935297930192!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14cab7650656bd63%3A0x8e0d57c0c3c7a3a3!2zS2FkxLFrw7Z5LCDEsHN0YW5idWw!5e0!3m2!1str!2str!4v1234567890123!5m2!1str!2str"
+                    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3010.158140417208!2d29.020868876541093!3d40.99611297135198!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14cab867c4050e1d%3A0x62ce3d3283257088!2zS2FkxLFrw7Z5LCDEsHN0YW5idWw!5e0!3m2!1str!2str!4v1709653783995!5m2!1str!2str"
                   }
                   width="100%"
                   height="100%"

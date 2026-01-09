@@ -126,6 +126,7 @@ export function DeclarationsTab({ customerId, onNext, onBack }: DeclarationsTabP
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [establishmentDate, setEstablishmentDate] = useState<string | null>(null)
 
   const form = useForm<DeclarationFormValues>({
     resolver: zodResolver(declarationSchema),
@@ -163,6 +164,10 @@ export function DeclarationsTab({ customerId, onNext, onBack }: DeclarationsTabP
           
           const data = await resCustomer.json()
           
+          if (data.establishmentDate) {
+            setEstablishmentDate(data.establishmentDate)
+          }
+
           if (data.declarationSettings && Array.isArray(data.declarationSettings)) {
             // Map API data to component state
             const mappedItems: DeclarationItem[] = data.declarationSettings.map((setting: any) => {
@@ -211,6 +216,36 @@ export function DeclarationsTab({ customerId, onNext, onBack }: DeclarationsTabP
             else if (config.frequency === 'QUARTERLY') defaults = [1, 2, 3, 4]
             else if (config.frequency === 'YEARLY') defaults = [1]
           }
+
+          // Filter based on establishment date for provisional tax and quarterly withholding tax
+          const isGecici = config.type.includes('Geçici') || config.type.includes('GECICI') || config.type === 'Gelir Geçici Vergi' || config.type === 'Kurum Geçici Vergi';
+          const isMuhtasarQuarterly = (config.type.includes('Muhtasar') || config.type.includes('MUHTASAR')) && config.frequency === 'QUARTERLY';
+
+          if (establishmentDate && (isGecici || isMuhtasarQuarterly)) {
+             
+             const estDate = new Date(establishmentDate)
+             const estYear = estDate.getFullYear()
+             const currentYear = new Date().getFullYear()
+             
+             // Only apply filter if establishment is in the current year
+             // (assuming we are setting up for the current operational year)
+             if (estYear === currentYear) {
+                // Q1: Jan-Mar (Ends Mar 31)
+                // Q2: Apr-Jun (Ends Jun 30)
+                // Q3: Jul-Sep (Ends Sep 30)
+                // Q4: Oct-Dec (Ends Dec 31)
+                
+                const q1End = new Date(estYear, 2, 31, 23, 59, 59) // Mar 31 End of Day
+                const q2End = new Date(estYear, 5, 30, 23, 59, 59) // Jun 30 End of Day
+                const q3End = new Date(estYear, 8, 30, 23, 59, 59) // Sep 30 End of Day
+                const q4End = new Date(estYear, 11, 31, 23, 59, 59) // Dec 31 End of Day
+                
+                if (estDate > q1End) defaults = defaults.filter(d => d !== 1)
+                if (estDate > q2End) defaults = defaults.filter(d => d !== 2)
+                if (estDate > q3End) defaults = defaults.filter(d => d !== 3)
+                if (estDate > q4End) defaults = defaults.filter(d => d !== 4)
+              }
+          }
         } catch {
           // fallback
           if (config.frequency === 'MONTHLY') defaults = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -224,7 +259,7 @@ export function DeclarationsTab({ customerId, onNext, onBack }: DeclarationsTabP
         form.setValue("quarterOffset", config.quarterOffset)
       }
     }
-  }, [selectedConfigId, configs, form, editingId])
+  }, [selectedConfigId, configs, form, editingId, establishmentDate])
 
   const onSubmit = (data: DeclarationFormValues) => {
     const config = configs.find(c => c.id === data.configId)

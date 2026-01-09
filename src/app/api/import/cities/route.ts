@@ -32,15 +32,27 @@ export async function POST(request: NextRequest) {
     let count = 0
     for (const r of rows) {
       const keys = Object.keys(r)
-      const nameKey = keys.find(k => /^(name|il\s*adı|il\s*adi|city|şehir|sehir)$/i.test(k)) || 'name'
-      const codeKey = keys.find(k => /^(code|il\s*kodu|city\s*code)$/i.test(k)) || 'code'
+      const codeKey = keys.find(k => /^(id|code|il\s*kodu|kod)$/i.test(k)) || 'id'
+      const nameKey = keys.find(k => /^(name|il\s*adı|il\s*adi|city|şehir|sehir|il)$/i.test(k)) || 'il'
+      
       const name = String((r as Record<string, unknown>)[nameKey] ?? '').trim()
-      const code = String((r as Record<string, unknown>)[codeKey] ?? '').trim()
-      if (!name && !code) continue
-      const where = code ? { code } : { name }
-      await prisma.city.upsert({ where, update: { name: name || undefined, code: code || null }, create: { name: name || code, code: code || null } })
+      const codeStr = String((r as Record<string, unknown>)[codeKey] ?? '').trim()
+      const code = parseInt(codeStr, 10)
+
+      if (!name || isNaN(code)) continue
+
+      await prisma.city.upsert({ 
+        where: { id: code }, 
+        update: { name }, 
+        create: { id: code, name } 
+      })
       count++
     }
+    
+    if (count === 0) {
+       return NextResponse.json({ error: 'Hiçbir il aktarılamadı. Dosya formatını veya sütun isimlerini kontrol ediniz.' }, { status: 400 })
+    }
+
     return NextResponse.json({ message: `İller içe aktarıldı: ${count}` })
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
@@ -60,8 +72,8 @@ function parseCSVFlexible(input: string): Array<Record<string, unknown>> {
     return t
   }
   const headers = rawHeaders.map(norm)
-  const codeIdx = headers.findIndex(h => /^(code|il\s*kodu|il\s*kod|city\s*code)$/.test(h))
-  const nameIdx = headers.findIndex(h => /^(name|il\s*adi|il\s*ad|city|sehir)$/.test(h) || /^(il|sehir|city)$/.test(h))
+  const codeIdx = headers.findIndex(h => /^(id|code|il\s*kodu|il\s*kod|city\s*code|kod)$/.test(h))
+  const nameIdx = headers.findIndex(h => /^(name|il\s*adi|il\s*ad|city|sehir|il)$/.test(h))
   if (codeIdx < 0 && nameIdx < 0) {
     throw new Error("CSV başlıkları geçersiz. En azından 'code' veya 'name' gereklidir")
   }

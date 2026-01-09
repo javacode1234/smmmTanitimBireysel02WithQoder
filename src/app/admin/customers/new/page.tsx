@@ -8,11 +8,14 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 import { GeneralInfoTab } from "@/components/admin/customers/new-customer-tabs/general-info-tab"
+import { CompanyConstitutionTab } from "@/components/admin/customers/new-customer-tabs/company-constitution-tab"
 import { PartnersTab } from "@/components/admin/customers/new-customer-tabs/partners-tab"
 import { CapitalInfoTab } from "@/components/admin/customers/new-customer-tabs/capital-info-tab"
 import { BranchesTab } from "@/components/admin/customers/new-customer-tabs/branches-tab"
 import { ActivityInfoTab } from "@/components/admin/customers/new-customer-tabs/activity-info-tab"
+import { ChamberInfoTab } from "@/components/admin/customers/new-customer-tabs/chamber-info-tab"
 import { DeclarationsTab } from "@/components/admin/customers/new-customer-tabs/declarations-tab"
+import { CorporateCredentialsTab } from "@/components/admin/customers/new-customer-tabs/corporate-credentials-tab"
 import { DocumentsTab } from "@/components/admin/customers/new-customer-tabs/documents-tab"
 import { FeeInfoTab } from "@/components/admin/customers/new-customer-tabs/fee-info-tab"
 import { AccountsTab } from "@/components/admin/customers/new-customer-tabs/accounts-tab"
@@ -23,10 +26,13 @@ const STEPS = [
   { id: "capital", title: "Sermaye", description: "Sermaye detayları" },
   { id: "branches", title: "Şubeler", description: "Şube bilgileri" },
   { id: "activity", title: "Faaliyet", description: "Faaliyet alanları" },
+  { id: "chamber-info", title: "Oda Bilgileri", description: "Oda kayıt bilgileri" },
   { id: "declarations", title: "Beyannameler", description: "Vergi beyannameleri" },
+  { id: "corporate-credentials", title: "Kurum Şifreleri", description: "Vergi ve SGK şifreleri" },
   { id: "documents", title: "Evraklar", description: "Gerekli evraklar" },
   { id: "fees", title: "Ücretler", description: "Hizmet ücretleri" },
   { id: "accounts", title: "Hesaplar", description: "Banka ve kasa" },
+  { id: "company-constitution", title: "Ana Sözleşme", description: "Şirket ana sözleşmesi" },
 ]
 
 export default function NewCustomerPage() {
@@ -167,6 +173,7 @@ export default function NewCustomerPage() {
         {activeTab === "general" && (
           <GeneralInfoTab onSuccess={handleGeneralInfoSuccess} customerId={customerId} />
         )}
+
         {activeTab === "partners" && (
           <PartnersTab 
             customerId={customerId} 
@@ -191,22 +198,36 @@ export default function NewCustomerPage() {
         {activeTab === "activity" && (
           <ActivityInfoTab 
             customerId={customerId}
-            onNext={() => handleNext("activity", "declarations")}
+            onNext={() => handleNext("activity", "chamber-info")}
             onBack={() => handleBack("branches")}
+          />
+        )}
+        {activeTab === "chamber-info" && (
+          <ChamberInfoTab 
+            customerId={customerId}
+            onNext={() => handleNext("chamber-info", "declarations")}
+            onBack={() => handleBack("activity")}
           />
         )}
         {activeTab === "declarations" && (
           <DeclarationsTab 
             customerId={customerId}
-            onNext={() => handleNext("declarations", "documents")}
-            onBack={() => handleBack("activity")}
+            onNext={() => handleNext("declarations", "corporate-credentials")}
+            onBack={() => handleBack("chamber-info")}
+          />
+        )}
+        {activeTab === "corporate-credentials" && (
+          <CorporateCredentialsTab 
+            customerId={customerId}
+            onNext={() => handleNext("corporate-credentials", "documents")}
+            onBack={() => handleBack("declarations")}
           />
         )}
         {activeTab === "documents" && (
           <DocumentsTab 
             customerId={customerId}
             onNext={() => handleNext("documents", "fees")}
-            onBack={() => handleBack("declarations")}
+            onBack={() => handleBack("corporate-credentials")}
           />
         )}
         {activeTab === "fees" && (
@@ -220,11 +241,18 @@ export default function NewCustomerPage() {
           <AccountsTab 
             customerId={customerId}
             onBack={() => handleBack("fees")}
-            onFinish={() => {
-              markStepComplete("accounts")
-              toast.success("Müşteri başarıyla kaydedildi")
+            onFinish={() => handleNext("accounts", "company-constitution")}
+          />
+        )}
+        {activeTab === "company-constitution" && (
+          <CompanyConstitutionTab 
+            customerId={customerId} 
+            onSuccess={() => {
+              markStepComplete("company-constitution")
+              toast.success("Müşteri kurulumu tamamlandı")
               router.push("/admin/customers")
-            }}
+            }} 
+            onBack={() => handleBack("accounts")}
           />
         )}
       </div>

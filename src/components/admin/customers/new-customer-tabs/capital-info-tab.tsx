@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Edit, Trash2, Save, Plus, Search, X, Check, ArrowRight, ArrowLeft, ChevronsUpDown } from "lucide-react"
+import { Edit, Trash2, Save, Plus, Search, X, Check, ArrowRight, ArrowLeft, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts"
 
@@ -654,10 +654,11 @@ export function CapitalInfoTab({ customerId, onNext, onBack }: CapitalInfoTabPro
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
               >
-                Previous
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Önceki
               </Button>
               <div className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
+                Sayfa {currentPage} / {totalPages}
               </div>
               <Button
                 variant="outline"
@@ -665,7 +666,8 @@ export function CapitalInfoTab({ customerId, onNext, onBack }: CapitalInfoTabPro
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
               >
-                Next
+                Sonraki
+                <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           )}
@@ -673,7 +675,7 @@ export function CapitalInfoTab({ customerId, onNext, onBack }: CapitalInfoTabPro
 
         {chartData.length > 0 && (
           <div className="border rounded-lg p-4 bg-white dark:bg-muted/10">
-             <h3 className="text-lg font-medium mb-4">Capital Distribution</h3>
+             <h3 className="text-lg font-medium mb-4">Sermaye Dağılımı</h3>
              <div className="h-[300px] w-full">
                <ResponsiveContainer width="100%" height="100%">
                  <PieChart>
@@ -707,7 +709,7 @@ export function CapitalInfoTab({ customerId, onNext, onBack }: CapitalInfoTabPro
             disabled={isSaving || isLoading}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            Geri
           </Button>
           <div className="flex gap-2">
             <Button 
@@ -716,14 +718,14 @@ export function CapitalInfoTab({ customerId, onNext, onBack }: CapitalInfoTabPro
               onClick={() => handleSave(false)}
               disabled={isSaving}
             >
-              Save
+              Kaydet
             </Button>
             <Button 
               type="button" 
               onClick={() => handleSave(true)}
               disabled={isSaving}
             >
-              Next Step
+              İleri
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
@@ -733,17 +735,17 @@ export function CapitalInfoTab({ customerId, onNext, onBack }: CapitalInfoTabPro
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Are you sure?</DialogTitle>
+            <DialogTitle>Emin misiniz?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this capital info? This action cannot be undone.
+              Bu sermaye bilgisini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              İptal
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              Sil
             </Button>
           </DialogFooter>
         </DialogContent>

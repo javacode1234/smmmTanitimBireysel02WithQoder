@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, Fragment } from "react"
-import { Save, Check, ArrowLeft, Plus, Trash2, Edit, FileDown, Search, X, Loader2 } from "lucide-react"
+import { Save, Check, ArrowLeft, ArrowRight, Plus, Trash2, Edit, FileDown, Search, X, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { format, addMonths, startOfMonth, compareAsc } from "date-fns"
 import { tr } from "date-fns/locale"
@@ -74,29 +74,6 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
   const [pdfEndDate, setPdfEndDate] = useState("")
   const [companyName, setCompanyName] = useState("")
 
-  useEffect(() => {
-    if (customerId) {
-      fetch(`/api/customers?id=${customerId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.companyName) setCompanyName(data.companyName)
-          if (data.feeAccrualDay) setFeeAccrualDay(data.feeAccrualDay.toString())
-          if (data.openingBalance) setOpeningBalance(data.openingBalance)
-          if (data.establishmentDate) setStartDate(new Date(data.establishmentDate).toISOString().split('T')[0])
-          
-          if (data.accountingperiod && Array.isArray(data.accountingperiod)) {
-            const periods = data.accountingperiod.map((ap: any) => ({
-              year: ap.year,
-              monthlyFee: ap.monthlyFee,
-              monthlyFees: ap.monthlyFees ? JSON.parse(typeof ap.monthlyFees === 'string' ? ap.monthlyFees : JSON.stringify(ap.monthlyFees)) : {}
-            }))
-            setAccountingPeriodFees(periods)
-          }
-        })
-        .catch(err => console.error("Customer fetch error", err))
-    }
-  }, [customerId])
-  
   // Configuration State
   const [openingBalance, setOpeningBalance] = useState<string>("0")
   const [feeAccrualDay, setFeeAccrualDay] = useState<string>("1")
@@ -210,7 +187,7 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
               "", 
               "", 
               "", 
-              "GENEL TOPLAM", 
+              "Son Bakiye", 
               "",
               "",
               `${formatTL(dataToPrint.finalBalance.amount)} (${dataToPrint.finalBalance.type === 'Debt' ? 'B' : 'A'})`
@@ -283,6 +260,8 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
         
         const data = await res.json()
         
+        if (data.companyName) setCompanyName(data.companyName)
+
         // Handle feeAccrualDay (allow 0) and reset if missing
         setFeeAccrualDay(data.feeAccrualDay !== undefined && data.feeAccrualDay !== null ? data.feeAccrualDay.toString() : "1")
         
@@ -713,8 +692,6 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
                 placeholder="1-31"
              />
           </div>
-          
-
           <div className="space-y-2">
             <Label htmlFor="startDate">Hizmet Başlangıç Tarihi</Label>
             <Input 
@@ -728,11 +705,6 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
 
         <div className="flex justify-between items-center mb-4">
           <CardTitle>Hesap Hareketleri</CardTitle>
-          <div className="flex gap-2">
-             <Button variant="outline" size="sm" onClick={() => setIsFeesDialogOpen(true)}>
-               Muhasebe Ücretleri
-             </Button>
-          </div>
         </div>
 
         <div className="space-y-4">
@@ -782,18 +754,6 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
             className="pl-8 w-[200px]"
           />
               </div>
-              <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(Number(v))}>
-                <SelectTrigger className="w-[80px]">
-                  <SelectValue placeholder="10" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-              
               {(searchTerm || filterStartDate || filterEndDate || (filterYear && filterYear !== "all")) && (
                 <Button 
                   variant="ghost" 
@@ -806,7 +766,8 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
                 </Button>
               )}
 
-              <div className="flex items-center gap-2 ml-2 pl-2 border-l">
+              </div>
+              <div className="flex items-center gap-2 justify-end">
                  <Button variant="outline" size="sm" onClick={() => setIsPdfDialogOpen(true)}>
                     <FileDown className="w-4 h-4 mr-2" />
                     PDF
@@ -877,7 +838,6 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
                     </DialogContent>
                   </Dialog>
               </div>
-            </div>
           </div>
 
           <div className="rounded-md border">
@@ -972,7 +932,7 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
           <div className="flex justify-end mt-4 px-2">
             <div className="bg-muted/40 border rounded-lg p-4 min-w-[250px] shadow-sm">
               <div className="flex justify-between items-center gap-8">
-                <span className="font-semibold text-muted-foreground">Genel Toplam:</span>
+                <span className="font-semibold text-muted-foreground">Son Bakiye:</span>
                 <div className="text-right">
                    <div className={`font-bold text-lg ${processedData.finalBalance.type === 'Debt' ? 'text-red-600' : 'text-green-600'}`}>
                     {processedData.finalBalance.type === 'Debt' ? formatTL(processedData.finalBalance.amount) : formatTL(processedData.finalBalance.amount)} {processedData.finalBalance.type === 'Debt' ? '(B)' : '(A)'}
@@ -984,8 +944,20 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
 
           {processedData.transactions.length > 0 && (
             <div className="flex items-center justify-between px-2 py-4">
-              <div className="text-sm text-muted-foreground">
-                Toplam {processedData.transactions.length} kayıttan {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, processedData.transactions.length)} arası gösteriliyor
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                Sayfada
+                <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(Number(v))}>
+                  <SelectTrigger className="w-[70px] h-8">
+                    <SelectValue placeholder={pageSize.toString()} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+                Kayıt var. Toplam kayıt sayısı {processedData.transactions.length}.
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -1123,8 +1095,8 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
               onClick={() => handleFinish(true)}
               disabled={isSaving}
             >
-              Tamamla
-              <Check className="w-4 h-4 ml-2" />
+              İleri
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
         </div>

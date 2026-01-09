@@ -74,7 +74,7 @@ export default function TaxReturnsPage() {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize] = useState(5)
+  const [pageSize, setPageSize] = useState(10)
 
   
 
@@ -461,8 +461,27 @@ export default function TaxReturnsPage() {
           {/* Pagination */}
           {filteredTaxReturns.length > 0 && (
             <div className="flex items-center justify-between px-2 py-4">
-              <div className="text-sm text-muted-foreground">
-                Toplam {filteredTaxReturns.length} kayıttan {startIndex + 1}-{Math.min(endIndex, filteredTaxReturns.length)} arası gösteriliyor
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Sayfada</span>
+                <Select
+                  value={pageSize.toString()}
+                  onValueChange={(value) => {
+                    setPageSize(Number(value))
+                    setCurrentPage(1)
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-[70px]">
+                    <SelectValue placeholder={pageSize.toString()} />
+                  </SelectTrigger>
+                  <SelectContent side="top">
+                    {[5, 10, 20, 50, 100].map((size) => (
+                      <SelectItem key={size} value={size.toString()}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span>Kayıt var. Toplam kayıt sayısı {filteredTaxReturns.length}.</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button

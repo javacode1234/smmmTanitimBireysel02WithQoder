@@ -655,7 +655,7 @@ export function BranchesTab({ customerId, onNext, onBack }: BranchesTabProps) {
               onClick={() => handleSave(true)}
               disabled={isSaving}
             >
-              Sonrakine Geç
+              İleri
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>

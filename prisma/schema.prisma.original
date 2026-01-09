@@ -144,8 +144,12 @@ model customer {
   companyType                String?
   companyClass               String?
   subscriptionFee            String?
+  feeAccrualDay              Int?                         @default(1)
   openingBalance             String?
   establishmentDate          DateTime?
+  companyDuration            String?                      // "Süresiz" or "Süreli"
+  companyEndDate             DateTime?                    // If duration is "Süreli"
+  serviceStartDate           DateTime?
   authorizedName             String?
   authorizedTCKN             String?
   authorizedEmail            String?
@@ -172,6 +176,9 @@ model customer {
   updatedAt                  DateTime                     @updatedAt
   documents                  String?                      @db.LongText
   passwords                  String?                      @db.LongText
+  loginPassword              String?                      @db.LongText // Hashed password for customer login
+  username                   String?                      @unique // Username for customer login
+  constitution               String?                      @db.LongText // Company constitution text/data
   taxPeriodType              customer_taxPeriodType?
   declarations               String?                      @db.LongText
   transactions               String?                      @db.LongText
@@ -199,12 +206,8 @@ model customerdeclarationsetting {
   frequency     customerdeclarationsetting_frequency
   taxPeriodType customerdeclarationsetting_taxPeriodType?
   dueDay        Int?
-  dueHour       Int?
-  dueMinute     Int?
   dueMonth      Int?
   quarterOffset Int?
-  yearlyCount   Int?
-  skipQuarter   Boolean?                                  @default(false)
   quarters      String?                                   @db.Text
   createdAt     DateTime                                  @default(now())
   updatedAt     DateTime                                  @updatedAt
@@ -220,12 +223,8 @@ model declarationconfig {
   enabled       Boolean                          @default(true)
   frequency     declarationconfig_frequency
   dueDay        Int?
-  dueHour       Int?
-  dueMinute     Int?
   dueMonth      Int?
   quarterOffset Int?
-  yearlyCount   Int?
-  skipQuarter   Boolean?                         @default(false)
   createdAt     DateTime                         @default(now())
   updatedAt     DateTime
   optional      Boolean                          @default(false)
@@ -653,15 +652,18 @@ enum customer_taxPeriodType {
 
 model TaxOffice {
   id        String   @id @default(cuid())
-  name      String   @unique
-  city      String?
+  code      String?   @unique
+  name      String
+  cityId    Int?
+  city      City?    @relation(fields: [cityId], references: [id])
   district  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   customers customer[]
 
   @@index([name], map: "TaxOffice_name_idx")
-  @@index([city], map: "TaxOffice_city_idx")
+  @@index([cityId], map: "TaxOffice_cityId_idx")
+  @@index([code], map: "TaxOffice_code_idx")
 }
 
 model activitycode {
@@ -675,10 +677,22 @@ model activitycode {
   @@index([name(length: 191)], map: "ActivityCode_name_idx")
 }
 
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  content     String?  @db.LongText
+  attachments String?  @db.LongText // JSON for attachments
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model City {
   id        Int        @id
   name      String
   districts District[]
+  taxOffices TaxOffice[]
 
   @@index([name])
 }

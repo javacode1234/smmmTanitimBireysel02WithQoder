@@ -46,6 +46,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
   // User data state
   const [userData, setUserData] = useState({
     name: userType === "admin" ? "Yönetici" : "Mükellef",
+    companyName: "",
     email: userType === "admin" ? "admin@smmm.com" : "mukellef@example.com",
     role: userType === "admin" ? "SMMM Yöneticisi" : "Mükellef",
     avatar: "",
@@ -67,6 +68,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
           const data = await response.json()
           setUserData({
             name: data.name || (userType === "admin" ? "Admin Kullanıcı" : "Mükellef Kullanıcı"),
+            companyName: data.companyName || "",
             email: data.email || (userType === "admin" ? "admin@smmm.com" : "mukellef@example.com"),
             role: userType === "admin" ? "SMMM Yöneticisi" : "Mükellef",
             avatar: data.image || "",
@@ -154,42 +156,42 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
 
   return (
     <div 
-      className={`min-h-16 h-auto border-b border-slate-200 bg-gray-50 flex flex-wrap md:flex-nowrap items-center justify-between px-4 md:px-8 py-2 md:py-0 fixed top-0 right-0 z-20 transition-all duration-300`}
+      className={`min-h-16 h-auto border-b border-slate-200 bg-gray-50 flex flex-col md:flex-row items-stretch md:items-center justify-between px-4 md:px-8 py-2 md:py-0 fixed top-0 right-0 z-20 transition-all duration-300 gap-2 md:gap-0`}
       style={{ left: sidebarWidth }}
     >
-      <div className="flex items-center gap-4 order-1">
-        {/* Toggle Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggleSidebar}
-          className="hover:bg-primary/10"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
+      {/* Left side: Toggle button, Icon, Title */}
+      <div className="flex items-center gap-4 order-1 w-full md:w-auto justify-between md:justify-start">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onToggleSidebar} className="text-gray-500">
+            <Menu className="h-5 w-5" />
+          </Button>
 
-        {/* SMMM Icon - Show when sidebar is hidden */}
-        {sidebarState === "hidden" && (
-          <Image
-            src="/smmm-icon.png"
-            alt="SMMM"
-            width={32}
-            height={32}
-            className="object-contain"
-          />
-        )}
+          {/* Mobile Icon */}
+          <div className="md:hidden">
+            <Image
+              src="/smmm-icon.png"
+              alt="SMMM"
+              width={24}
+              height={24}
+              className="object-contain"
+            />
+          </div>
 
-        {userType !== "admin" && (
-          <h2 className="text-lg font-semibold text-gray-800">Müşteri Paneli</h2>
-        )}
+          {userType !== "admin" && (
+            <h2 className="text-lg font-semibold text-gray-800">
+              {userData.companyName || "Müşteri Paneli"}
+            </h2>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-6 order-2 md:order-3 ml-auto md:ml-0">
+      {/* Right side: Notifications, User Profile */}
+      <div className="flex items-center gap-6 order-2 md:order-3 md:ml-0 w-full md:w-auto justify-end">
         {/* Quick Links for Admin */}
         {userType === "admin" && (
           <div className="flex items-center gap-4">
             <DropdownMenu open={isQuoteOpen} onOpenChange={setIsQuoteOpen}>
-              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="Quote Requests">
+              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="Teklif İstekleri">
                 <FileText className="h-5 w-5" />
                 {newQuoteRequestsCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
@@ -222,7 +224,7 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
             </DropdownMenu>
 
             <DropdownMenu open={isContactOpen} onOpenChange={setIsContactOpen}>
-              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="Contact Messages">
+              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="İletişim Mesajları">
                 <MessageSquare className="h-5 w-5" />
                 {newContactMessagesCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
@@ -232,8 +234,8 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80 p-0">
                 <div className="p-3 border-b flex items-center justify-between">
-                  <span className="text-sm font-semibold">Contact Messages (New)</span>
-                  <Link href="/admin/contact-messages" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsContactOpen(false); handleNavigation(e, '/admin/contact-messages') }} className="text-xs text-blue-600 hover:underline">View All</Link>
+                  <span className="text-sm font-semibold">İletişim Mesajları (Yeni)</span>
+                  <Link href="/admin/contact-messages" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsContactOpen(false); handleNavigation(e, '/admin/contact-messages') }} className="text-xs text-blue-600 hover:underline">Tümünü Gör</Link>
                 </div>
                 <div className="max-h-64 overflow-y-auto">
                   {newContactMessages.length > 0 ? (
@@ -245,17 +247,17 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
                       </div>
                     ))
                   ) : (
-                    <div className="px-3 py-6 text-sm text-muted-foreground">No new records</div>
+                    <div className="px-3 py-6 text-sm text-muted-foreground">Yeni kayıt yok</div>
                   )}
                 </div>
                 <div className="p-3 border-t text-right">
-                  <Link href="/admin/contact-messages" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsContactOpen(false); handleNavigation(e, '/admin/contact-messages') }} className="text-xs text-blue-600 hover:underline">Go to Page</Link>
+                  <Link href="/admin/contact-messages" prefetch={false} scroll={false} onClick={(e) => { e.preventDefault(); setIsContactOpen(false); handleNavigation(e, '/admin/contact-messages') }} className="text-xs text-blue-600 hover:underline">Sayfaya Git</Link>
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
 
             <DropdownMenu open={isJobOpen} onOpenChange={setIsJobOpen}>
-              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="Job Applications">
+              <DropdownMenuTrigger suppressHydrationWarning className="relative flex items-center gap-2 text-gray-700 hover:text-primary transition-colors cursor-pointer" title="İş Başvuruları">
                 <Briefcase className="h-5 w-5" />
                 {newJobApplicationsCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
