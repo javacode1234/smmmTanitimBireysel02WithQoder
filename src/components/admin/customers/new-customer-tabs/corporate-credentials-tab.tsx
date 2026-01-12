@@ -120,6 +120,10 @@ export function CorporateCredentialsTab({ customerId, onNext, onBack }: Corporat
                 sgkForm.reset(parsed.sgk)
               }
             }
+
+            if (parsed.customerLogin && parsed.customerLogin.password) {
+              loginForm.setValue("password", parsed.customerLogin.password)
+            }
           } catch (e) {
             console.error("Passwords parse error:", e)
           }
@@ -169,7 +173,11 @@ export function CorporateCredentialsTab({ customerId, onNext, onBack }: Corporat
       
       const passwordsData = {
         digitalTaxOffice: taxValues,
-        sgk: sgkValues // Save as object, not array
+        sgk: sgkValues, // Save as object, not array
+        customerLogin: {
+          username: loginValues.username,
+          password: loginValues.password
+        }
       }
 
       const payload: any = { 
@@ -235,16 +243,6 @@ export function CorporateCredentialsTab({ customerId, onNext, onBack }: Corporat
                   </p>
                 </div>
               </div>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
-                onClick={generateCredentials}
-                className="gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Otomatik Oluştur
-              </Button>
             </div>
 
             <Form {...loginForm}>
@@ -297,6 +295,26 @@ export function CorporateCredentialsTab({ customerId, onNext, onBack }: Corporat
                     </FormItem>
                   )}
                 />
+                <div className="flex items-end pb-1 gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={generateCredentials}
+                    className="flex-1"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Oluştur
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={() => handleSave()} 
+                    disabled={isSaving}
+                    className="flex-1"
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    Kaydet
+                  </Button>
+                </div>
               </form>
             </Form>
           </div>

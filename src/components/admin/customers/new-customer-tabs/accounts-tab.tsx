@@ -53,7 +53,7 @@ interface ManualTransaction {
   date: string
   description: string
   amount: number
-  type: 'DEBT' | 'CREDIT' // DEBT = Borç (Bize borçlu), CREDIT = Alacak (Ödeme yaptı/Tahsilat)
+  type: 'DEBT' | 'CREDIT' | 'OPENING_DEBT' | 'OPENING_CREDIT' // DEBT = Borç, CREDIT = Alacak, OPENING = Açılış
 }
 
 interface AccountingPeriodFee {
@@ -90,7 +90,7 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
   const [newTransDate, setNewTransDate] = useState(new Date().toISOString().split('T')[0])
   const [newTransDesc, setNewTransDesc] = useState("")
   const [newTransAmount, setNewTransAmount] = useState("")
-  const [newTransType, setNewTransType] = useState<'DEBT' | 'CREDIT'>('CREDIT')
+  const [newTransType, setNewTransType] = useState<'DEBT' | 'CREDIT' | 'OPENING_DEBT' | 'OPENING_CREDIT'>('CREDIT')
 
   // Table State
   const [searchTerm, setSearchTerm] = useState("")
@@ -406,8 +406,8 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
         id: t.id,
         date: new Date(t.date),
         description: t.description,
-        debt: t.type === 'DEBT' ? t.amount : 0,
-        credit: t.type === 'CREDIT' ? t.amount : 0,
+        debt: (t.type === 'DEBT' || t.type === 'OPENING_DEBT') ? t.amount : 0,
+        credit: (t.type === 'CREDIT' || t.type === 'OPENING_CREDIT') ? t.amount : 0,
         debtBalance: 0,
         creditBalance: 0,
         isManual: true
@@ -819,13 +819,20 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="t-type" className="text-right">İşlem Türü</Label>
-                          <Select value={newTransType} onValueChange={(v: 'DEBT' | 'CREDIT') => setNewTransType(v)}>
+                          <Select value={newTransType} onValueChange={(v: any) => {
+                            setNewTransType(v)
+                            if (v === 'OPENING_DEBT' || v === 'OPENING_CREDIT') {
+                              if (!newTransDesc) setNewTransDesc("Açılış İşlemi")
+                            }
+                          }}>
                             <SelectTrigger className="col-span-3">
                               <SelectValue placeholder="Tür seçiniz" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="CREDIT">Tahsilat (Alacak)</SelectItem>
                               <SelectItem value="DEBT">Borçlandırma (Borç)</SelectItem>
+                              <SelectItem value="OPENING_DEBT">Açılış İşlemi (Borç)</SelectItem>
+                              <SelectItem value="OPENING_CREDIT">Açılış İşlemi (Alacak)</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -943,8 +950,8 @@ export function AccountsTab({ customerId, onFinish, onBack }: AccountsTabProps) 
           </div>
 
           {processedData.transactions.length > 0 && (
-            <div className="flex items-center justify-between px-2 py-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-4 gap-4">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground w-full sm:w-auto justify-center sm:justify-start">
                 Sayfada
                 <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(Number(v))}>
                   <SelectTrigger className="w-[70px] h-8">

@@ -1,0 +1,110 @@
+# SMMM Ofis Yönetim Sistemi - Proje Özeti ve Gereksinimleri
+
+Bu belge, mevcut SMMM (Serbest Muhasebeci Mali Müşavir) Ofis Yönetim Sistemi'nin kapsamını, teknoloji yığınını ve temel özelliklerini tanımlar. Başka bir yapay zeka asistanının bu projeyi yeniden oluşturabilmesi veya kapsamını tam olarak anlayabilmesi için hazırlanmıştır.
+
+## 1. Proje Tanımı
+Bu proje, bir Mali Müşavirlik ofisinin hem kendi iç yönetimini (Admin) hem de mükellefleriyle olan etkileşimini (Müşteri) dijitalleştiren kapsamlı bir web uygulamasıdır. Ayrıca ofisin tanıtımını yapan modern bir kurumsal web sitesini de içerir.
+
+## 2. Teknoloji Yığını (Tech Stack)
+*   **Framework:** Next.js 16 (App Router)
+*   **Dil:** TypeScript
+*   **Veritabanı:** MySQL
+*   **ORM:** Prisma
+*   **Styling:** Tailwind CSS
+*   **UI Kütüphanesi:** Shadcn UI (Radix UI tabanlı)
+*   **Kimlik Doğrulama:** NextAuth.js (v5 beta)
+*   **Form Yönetimi:** React Hook Form + Zod
+*   **İkonlar:** Lucide React
+*   **Grafikler:** Recharts
+*   **PDF Oluşturma:** jsPDF + jspdf-autotable
+*   **Diğer:** Sonner (Toast bildirimleri), Framer Motion (Animasyonlar)
+
+## 3. Veritabanı Yapısı (Schema Overview)
+
+Veritabanı ilişkisel bir yapıya sahiptir ve Prisma ORM ile yönetilmektedir.
+
+### Temel Modeller
+*   **User:** Sisteme giriş yapan kullanıcılar. Rol tabanlı yetkilendirme (ADMIN, CLIENT) kullanılır.
+*   **Account / Session:** NextAuth entegrasyonu için gerekli tablolar.
+
+### Müşteri Yönetimi Modelleri
+*   **Customer:** Sistemin merkezindeki modeldir. Şirket bilgileri, iletişim bilgileri, vergi numarası, sosyal medya linkleri, çalışan sayısı vb. tüm detayları tutar. JSON formatında (String) tutulan genişletilebilir alanlara sahiptir (`partners`, `capitals`, `branches`, `activities` vb.).
+*   **AccountingPeriod:** Bir müşterinin belirli bir yıla ait muhasebe dönemini temsil eder. Aylık ücret bilgileri burada tutulur.
+*   **SubscriptionAccrual:** Aylık muhasebe ücreti tahakkukları. Ödeme durumu, vade tarihi ve tutar bilgisini içerir.
+*   **TaxReturn:** Vergi beyannamelerinin takibi için kullanılır. Türü, dönemi, son ödeme tarihi ve gönderim durumunu tutar.
+*   **CustomerDeclarationSetting:** Müşteriye özel beyanname ayarları (Hangi beyannameleri veriyor, hangi sıklıkla vb.).
+
+### İçerik Yönetimi (CMS) Modelleri
+Her bölüm genellikle bir "Section" modeli (başlık, açıklama vb. genel ayarlar için) ve bir "Item" modeli (liste elemanları için) içerir.
+*   **SiteSettings:** Site adı, logo, iletişim bilgileri, sosyal medya linkleri gibi genel ayarlar.
+*   **HeroSection:** Anasayfa manşet alanı.
+*   **InstitutionsSection & InstitutionItem:** İş birliği yapılan kurumlar (Logo slider).
+*   **AboutSection & AboutFeature:** Hakkımızda yazısı ve öne çıkan özellikler (ikonlu liste).
+*   **ServicesSection & ServiceValue:** Hizmetler ve değerler. Ayrıca `Service` modeli detaylı hizmet kartlarını tutar.
+*   **WorkflowSection & WorkflowStep:** Çalışma süreci adımları.
+*   **PricingSection & PricingPlan:** Fiyatlandırma paketleri ve özellikleri.
+*   **TestimonialsSection & Testimonial:** Müşteri yorumları.
+*   **TeamSection & TeamMember:** Ekip üyeleri.
+*   **FAQSection & FAQCategory & FAQ:** Sıkça sorulan sorular.
+*   **LegalDocument:** Gizlilik politikası, KVKK vb. metinler.
+
+### Diğer Modeller
+*   **JobApplication:** İş başvuruları (CV dosyası base64 veya path olarak tutulur).
+*   **ContactMessage:** İletişim formundan gelen mesajlar.
+*   **QuoteRequest:** Teklif istekleri.
+*   **Announcement:** Müşterilere yapılan duyurular.
+*   **City, District, TaxOffice, ActivityCode:** Sistem genelinde kullanılan referans veriler (Select box'lar için).
+
+## 4. Uygulama Yapısı ve İşleyişi
+
+### A. Kurumsal Web Sitesi (Landing Page)
+Tek sayfa (SPA) mantığında çalışan, modern ve animasyonlu bir tanıtım sayfasıdır.
+*   **Yapı:** Header (Navbar), Hero, Referanslar, Hakkımızda, Hizmetler, Süreç, Fiyatlar, Yorumlar, Ekip, SSS, Mevzuat, İletişim, Footer.
+*   **Dinamiklik:** Sayfadaki tüm metinler, resimler, ikonlar ve sıralamalar Admin panelinden anlık olarak değiştirilebilir. Hiçbir içerik "hard-coded" değildir.
+*   **Özellikler:**
+    *   Responsive Navbar (Mobil menü destekli).
+    *   Scroll animasyonları (Framer Motion).
+    *   İletişim formları (Zod validasyonlu).
+    *   Dinamik Favicon (Admin panelinden yüklenen logo favicon olur).
+
+### B. Admin Paneli (/admin)
+Ofis yönetimi için merkezi kontrol paneli.
+*   **İçerik Yönetimi (CMS):** Her bölüm (Hero, Hakkımızda vb.) için ayrı sekmeler bulunur.
+    *   Sürükle-bırak (Drag & Drop) ile sıralama değiştirme.
+    *   Resim yükleme ve önizleme.
+    *   Aktif/Pasif yapma switch'leri.
+    *   Zengin metin düzenleme alanları.
+*   **Müşteri Yönetimi:**
+    *   Adım adım (Wizard) veya sekmeli (Tab) yapı ile detaylı müşteri profili oluşturma.
+    *   Otomatik şifre oluşturucu ve kopyalama araçları.
+    *   Toplu borç/alacak takibi.
+*   **Ayarlar:**
+    *   Veri tabanı yönetimi: Excel'den toplu veri (NACE kodları vb.) yükleme.
+    *   Otomatik çıkış süresi ayarlama.
+
+### C. Müşteri Paneli (/client)
+Mükelleflerin kendi verilerine eriştiği güvenli alan.
+*   **Güvenlik:** Sadece kendi verilerini görürler (Row Level Security mantığı).
+*   **Şirket Profili:**
+    *   Vergi levhası bilgileri, ticaret sicil bilgileri.
+    *   **Kurum Şifreleri:** GİB, SGK, E-Devlet şifrelerini güvenli şekilde görüntüleyip tek tıkla kopyalayabilirler.
+    *   **PDF Çıktısı:** Tüm şirket profilini antetli kağıt formatında PDF olarak indirebilirler.
+*   **Kişiselleştirme:** Otomatik çıkış süresini kendi alışkanlıklarına göre ayarlayabilirler (Admin sınırları dahilinde).
+
+## 5. Temel İş Akışları (Workflows)
+
+1.  **Müşteri Onboarding:**
+    *   Potansiyel müşteri web sitesinden teklif ister -> Admin panele düşer -> Admin teklifi inceler ve onaylarsa müşteri kaydını oluşturur -> Müşteriye giriş bilgileri iletilir.
+2.  **Otomatik Çıkış (Auto Logout) Sistemi:**
+    *   Güvenlik gereği, belirli bir süre (örn. 30 dk) işlem yapmayan kullanıcının oturumu kapatılır.
+    *   Süre dolmadan önce bir "Geri Sayım Modalı" çıkar. Kullanıcı "Devam Et" derse süre sıfırlanır.
+    *   Bu süre Admin tarafından global olarak belirlenir, ancak Müşteri kendi panelinden bunu (Admin'in izin verdiği aralıkta) değiştirebilir.
+3.  **Finansal Takip:**
+    *   Sistem her ay başında, aktif müşteriler için otomatik olarak aylık muhasebe ücreti tahakkuku oluşturur (Cron job veya tetikleyici ile).
+
+## 6. Tasarım ve UX Kuralları
+*   **Renk Paleti:** Kurumsal mavi tonları ağırlıklıdır ancak Admin panelinden özelleştirilebilir.
+*   **Geri Bildirim:** Her işlem (Kaydetme, Silme, Hata) sonrasında kullanıcıya sağ üstte "Toast" bildirimi gösterilir.
+*   **Hız:** Sayfa geçişleri optimize edilmiştir, veri yüklemelerinde "Skeleton" loading ekranları kullanılır.
+
+Bu proje, bir SMMM ofisinin dijital dönüşümünü sağlamak amacıyla, modern web teknolojileri kullanılarak geliştirilmiş, ölçeklenebilir ve güvenli bir platformdur.

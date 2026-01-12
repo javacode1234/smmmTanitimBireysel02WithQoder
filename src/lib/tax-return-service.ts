@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db"
 import { Customer, customerdeclarationsetting } from "@prisma/client"
 import crypto from "crypto"
 
-export async function generateHistoricalTaxReturns(customerId?: string) {
+export async function generateHistoricalTaxReturns(customerId?: string, referenceDate: Date = new Date()) {
   // 1. Get customers (all or single)
   const whereClause: any = { status: 'ACTIVE' }
   if (customerId) {
@@ -35,7 +35,7 @@ export async function generateHistoricalTaxReturns(customerId?: string) {
   )
 
   const newReturns: any[] = []
-  const now = new Date()
+  const now = referenceDate
   const currentYear = now.getFullYear()
   const currentMonth = now.getMonth() + 1 // 1-12
 
@@ -194,6 +194,9 @@ function addReturnIfMissing(
 
   const key = `${customer.id}|${type}|${period}`
   if (existingSet.has(key)) return
+
+  // SPECIAL RULE: Skip 2025-Q2 for Kurum Geçici Vergi
+  if (type === 'Kurum Geçici Vergi' && period === '2025-Q2') return
 
   // Add to newReturns
   const dueDate = new Date(dueYear, dueMonth - 1, dueDay)
@@ -356,6 +359,12 @@ async function createTaxReturnIfNotExists(
   }
 
   // Check if exists
+  // SPECIAL RULE: Skip 2025-Q2 for Kurum Geçici Vergi as per user instruction
+  if (type === 'Kurum Geçici Vergi' && period === '2025-Q2') {
+    results.skipped++
+    return
+  }
+
   const existing = await prisma.taxreturn.findFirst({
     where: {
       customerId: customer.id,

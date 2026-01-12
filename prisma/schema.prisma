@@ -35,6 +35,13 @@ model InstitutionItem {
   @@map("institutions_section_items")
 }
 
+model SystemSetting {
+  key       String   @id
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model aboutfeature {
   id           String       @id
   sectionId    String

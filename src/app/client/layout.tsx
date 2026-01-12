@@ -15,17 +15,19 @@ import {
   CreditCard,
   MessageSquare,
   LogOut,
-  Building2
+  Building2,
+  Settings
 } from "lucide-react"
+import { AutoLogoutHandler } from "@/components/admin/auto-logout-handler"
 
 const navigation = [
   { name: "Dashboard", href: "/client", icon: LayoutDashboard },
   { name: "Şirket Profili", href: "/client/company-profile", icon: Building2 },
-  { name: "Profilim", href: "/client/profile", icon: User },
   { name: "Beyannamelerim", href: "/client/declarations", icon: FileText },
   { name: "Hesap Özeti", href: "/client/account", icon: CreditCard },
   { name: "Duyurular", href: "/client/announcements", icon: Bell },
   { name: "İletişim", href: "/client/messages", icon: MessageSquare },
+  { name: "Ayarlar", href: "/client/settings", icon: Settings },
 ]
 
 export default function ClientLayout({
@@ -36,15 +38,20 @@ export default function ClientLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarState, setSidebarState] = useState<"open" | "collapsed" | "hidden">("open")
+  const [isMobile, setIsMobile] = useState(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isNavigating, setIsNavigating] = useState(false)
 
   // Handle responsive sidebar
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (mobile) {
         setSidebarState("hidden")
       } else {
         setSidebarState("open")
+        setMobileSidebarOpen(false)
       }
     }
 
@@ -56,12 +63,16 @@ export default function ClientLayout({
   }, [])
 
   const handleToggleSidebar = () => {
-    if (sidebarState === "open") {
-      setSidebarState("collapsed")
-    } else if (sidebarState === "collapsed") {
-      setSidebarState("hidden")
+    if (isMobile) {
+      setMobileSidebarOpen(!mobileSidebarOpen)
     } else {
-      setSidebarState("open")
+      if (sidebarState === "open") {
+        setSidebarState("collapsed")
+      } else if (sidebarState === "collapsed") {
+        setSidebarState("hidden")
+      } else {
+        setSidebarState("open")
+      }
     }
   }
 
@@ -71,6 +82,9 @@ export default function ClientLayout({
     if (isNavigating || pathname === targetPath) return
     
     setIsNavigating(true)
+    if (isMobile) {
+      setMobileSidebarOpen(false)
+    }
     
     // Use Next.js router for navigation to avoid removeChild errors
     router.push(targetPath)
@@ -86,11 +100,22 @@ export default function ClientLayout({
   const sidebarWidth = sidebarState === "open" ? "w-64" : sidebarState === "collapsed" ? "w-20" : "w-0"
   const sidebarWidthPx = sidebarState === "open" ? "256px" : sidebarState === "collapsed" ? "80px" : "0px"
   const mainMargin = sidebarState === "open" ? "pl-64" : sidebarState === "collapsed" ? "pl-20" : "pl-0"
+  
+  const effectiveMainMargin = isMobile ? "pl-0" : mainMargin
+  const effectiveSidebarWidthPx = isMobile ? "0px" : sidebarWidthPx
 
   return (
     <div className="min-h-screen bg-gray-50" suppressHydrationWarning>
+      <AutoLogoutHandler />
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 z-40 h-screen ${sidebarWidth} bg-white border-r transition-all duration-300 overflow-hidden`}>
+      <aside 
+        className={
+          isMobile
+            ? `fixed left-0 top-0 z-50 h-screen w-64 bg-white border-r transition-transform duration-300 overflow-hidden ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+            : `fixed left-0 top-0 z-40 h-screen ${sidebarWidth} bg-white border-r transition-all duration-300 overflow-hidden`
+        }
+        style={{ transitionProperty: isMobile ? 'transform' : 'width, transform' }}
+      >
         <div className="flex h-full flex-col">
           <div className="flex h-16 items-center border-b px-6 gap-3">
             <Image
@@ -100,7 +125,7 @@ export default function ClientLayout({
               height={32}
               className="object-contain flex-shrink-0"
             />
-            {sidebarState === "open" && (
+            {(isMobile || sidebarState === "open") && (
               <h1 className="text-xl font-bold text-primary whitespace-nowrap">SMMM Portal</h1>
             )}
           </div>
@@ -119,16 +144,16 @@ export default function ClientLayout({
                       ? "bg-primary text-white"
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
-                  title={sidebarState !== "open" ? item.name : ""}
+                  title={(!isMobile && sidebarState !== "open") ? item.name : ""}
                 >
                   <item.icon className="h-5 w-5 flex-shrink-0" />
-                  {sidebarState === "open" && <span className="whitespace-nowrap">{item.name}</span>}
+                  {(isMobile || sidebarState === "open") && <span className="whitespace-nowrap">{item.name}</span>}
                 </Link>
               )
             })}
           </nav>
           <div className="border-t p-4">
-            {sidebarState === "open" ? (
+            {(isMobile || sidebarState === "open") ? (
               <Button variant="outline" className="w-full" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Çıkış Yap
@@ -142,9 +167,17 @@ export default function ClientLayout({
         </div>
       </aside>
 
+      {/* Mobile Overlay */}
+      {isMobile && mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* Main Content */}
-      <main className={`${mainMargin} transition-all duration-300`} suppressHydrationWarning>
-        <DashboardNavbar userType="client" sidebarState={sidebarState} onToggleSidebar={handleToggleSidebar} sidebarWidth={sidebarWidthPx} />
+      <main className={`${effectiveMainMargin} transition-all duration-300`} suppressHydrationWarning>
+        <DashboardNavbar userType="client" sidebarState={sidebarState} onToggleSidebar={handleToggleSidebar} sidebarWidth={effectiveSidebarWidthPx} />
         <div className="p-8 mt-16" suppressHydrationWarning>
           <Breadcrumb userType="client" />
           {children}

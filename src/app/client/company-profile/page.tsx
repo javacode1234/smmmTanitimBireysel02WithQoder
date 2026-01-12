@@ -15,10 +15,11 @@ import {
   DeclarationsSection, 
   DocumentsSection, 
   FeesSection, 
-  TransactionsSection, 
   ConstitutionSection,
   PasswordsSection
 } from "@/components/client/company-profile/profile-sections"
+
+import { PdfExportButton } from "@/components/client/company-profile/pdf-export-button"
 
 export default async function CompanyProfilePage() {
   const session = await auth()
@@ -27,20 +28,20 @@ export default async function CompanyProfilePage() {
   }
 
   // Find customer by session ID (which is customer.id for logged in customers)
-  const customer = await prisma.customer.findUnique({
+  const customerRaw = await prisma.customer.findUnique({
     where: {
       id: session.user.id
     },
     include: {
       taxOffice: true,
       accountingperiod: {
-        orderBy: { year: 'desc' },
-        take: 1
-      }
+        orderBy: { year: 'desc' }
+      },
+      customerdeclarationsetting: true
     }
   })
 
-  if (!customer) {
+  if (!customerRaw) {
     return (
       <div className="p-4">
         <Card>
@@ -53,6 +54,11 @@ export default async function CompanyProfilePage() {
         </Card>
       </div>
     )
+  }
+
+  // Serialize Decimal fields to plain numbers to avoid "Only plain objects can be passed to Client Components" error
+  const customer = {
+    ...customerRaw
   }
 
   // Parse JSON fields safely
@@ -83,16 +89,8 @@ export default async function CompanyProfilePage() {
   const documents = parseJson(customer.documents)
   const passwords = parseJsonObject(customer.passwords)
   const capitalInfo = parseJsonObject(customer.capitals)
-  const transactions = parseJson(customer.transactions)
   
-  // Calculate running balance for transactions
-  let runningBalance = 0
-  const transactionsWithBalance = transactions.map((t: any) => {
-    const debit = Number(t.debit || 0)
-    const credit = Number(t.credit || 0)
-    runningBalance += debit - credit
-    return { ...t, balance: runningBalance }
-  }).reverse() // Show newest first
+
 
   // Fetch activity code details if exists
   let activityCodeData = null
@@ -145,13 +143,33 @@ export default async function CompanyProfilePage() {
     })
   }
 
+  const profileData = {
+    customer,
+    partners,
+    branches,
+    activities,
+    chambers,
+    authorizedPersons,
+    documents,
+    capitalInfo,
+    activityCodeData
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Şirket Profili</h1>
-        <p className="text-muted-foreground mt-2">
-          Şirketinizin tüm resmi bilgileri ve evrakları
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold">Şirket Profili</h1>
+          <p className="text-muted-foreground mt-2">
+            Şirketinizin tüm resmi bilgileri ve evrakları
+          </p>
+        </div>
+        <PdfExportButton 
+            type="profile" 
+            profileData={profileData} 
+            fileName={`sirket-profili-${customer.name?.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`}
+            title="Şirket Profili"
+        />
       </div>
 
       <Accordion type="single" collapsible className="w-full space-y-4" defaultValue="general">
@@ -177,15 +195,13 @@ export default async function CompanyProfilePage() {
         
         <AuthorizedPersonsSection authorizedPersons={authorizedPersons} customer={customer} partners={partners} />
         
-        <DeclarationsSection />
+        <DeclarationsSection declarationSettings={customer.customerdeclarationsetting} />
         
         <DocumentsSection documents={documents} />
 
-        <PasswordsSection passwords={passwords} />
+        <PasswordsSection passwords={passwords} customerUsername={customer.username} />
         
         <FeesSection customer={customer} />
-        
-        <TransactionsSection transactionsWithBalance={transactionsWithBalance} />
         
         <ConstitutionSection constitution={customer.constitution} />
 

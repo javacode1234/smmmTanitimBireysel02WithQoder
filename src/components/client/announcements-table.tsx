@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, Fragment } from "react"
 import { 
   Table, 
   TableBody, 
@@ -28,8 +28,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { 
   Search, 
-  ChevronLeft, 
-  ChevronRight, 
   ArrowUpDown, 
   Paperclip, 
   FileText, 
@@ -146,26 +144,6 @@ export function AnnouncementsTable({ announcements }: { announcements: Announcem
             className="pl-8"
           />
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">Sayfa başına:</span>
-          <Select 
-            value={pageSize.toString()} 
-            onValueChange={(val) => {
-                setPageSize(Number(val))
-                setCurrentPage(1)
-            }}
-          >
-            <SelectTrigger className="w-[70px]">
-              <SelectValue placeholder="10" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       {/* Table */}
@@ -240,32 +218,93 @@ export function AnnouncementsTable({ announcements }: { announcements: Announcem
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-            Toplam {filteredData.length} kayıttan {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredData.length)} arası gösteriliyor
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="text-sm font-medium">
-            Sayfa {currentPage} / {Math.max(1, totalPages)}
+      {filteredData.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-4 gap-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Sayfada</span>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => {
+                setPageSize(Number(value))
+                setCurrentPage(1)
+              }}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={pageSize.toString()} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[5, 10, 20, 50, 100].map((size) => (
+                  <SelectItem key={size} value={size.toString()}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span>Kayıt var. Toplam kayıt sayısı {filteredData.length}.</span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages || totalPages === 0}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              İlk
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Önceki
+            </Button>
+            
+            <div className="hidden sm:flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  if (page === 1 || page === totalPages) return true
+                  if (Math.abs(page - currentPage) <= 1) return true
+                  return false
+                })
+                .map((page, idx, arr) => (
+                  <Fragment key={page}>
+                    {idx > 0 && arr[idx - 1] !== page - 1 && (
+                      <span key={`ellipsis-${page}`} className="px-2 text-muted-foreground">...</span>
+                    )}
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="w-9"
+                    >
+                      {page}
+                    </Button>
+                  </Fragment>
+                ))}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Sonraki
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              Son
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedAnnouncement} onOpenChange={(open) => !open && setSelectedAnnouncement(null)}>

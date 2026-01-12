@@ -326,17 +326,19 @@ export function DashboardNavbar({ userType, sidebarState, onToggleSidebar, sideb
                 <User className="mr-2 h-4 w-4" />
                 Profil
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={(e) => {
-                  e.preventDefault()
-                  setIsOpen(false)
-                  handleNavigation(e, settingsLink)
-                }}
-                className="cursor-pointer"
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Ayarlar
-              </DropdownMenuItem>
+              {userType === "admin" && (
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setIsOpen(false)
+                    handleNavigation(e, settingsLink)
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Ayarlar
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">
                 <LogOut className="mr-2 h-4 w-4" />

@@ -19,6 +19,7 @@ import {
   UserCog,
   FileSearch
 } from "lucide-react"
+import { AutoLogoutHandler } from "@/components/admin/auto-logout-handler"
 
 const navigation = [
   { name: "Panel", href: "/admin", icon: LayoutDashboard },
@@ -131,6 +132,7 @@ export default function AdminLayoutClient({
 
   return (
       <div className="min-h-screen bg-gray-100" suppressHydrationWarning>
+      <AutoLogoutHandler />
       {/* Sidebar */}
       <aside 
         className={

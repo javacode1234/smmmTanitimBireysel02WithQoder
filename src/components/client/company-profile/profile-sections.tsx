@@ -2,15 +2,15 @@
 
 import { 
   Building2, Phone, Users, Wallet, MapPin, Briefcase, Award, 
-  FileCheck, FileText, Banknote, History, ShieldCheck, Shield,
-  Download, Lock, Facebook, Twitter, Instagram, Linkedin, Send, AtSign,
-  Calendar, User
+  FileCheck, FileText, Banknote, ShieldCheck,
+  Download, Lock, Facebook, Twitter, Instagram, Linkedin, Send, AtSign
 } from "lucide-react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts'
 import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { PdfExportButton } from "@/components/client/company-profile/pdf-export-button"
 import { PasswordList } from "@/components/client/company-profile/password-list"
@@ -182,7 +182,7 @@ export function ContactInfoSection({ customer }: { customer: any }) {
           <div className="space-y-1">
             <span className="text-sm text-muted-foreground">Adres</span>
             <p className="font-medium">
-              {[customer.address, customer.district, customer.city].filter(Boolean).join(' / ')}
+              {customer.address || "-"}
             </p>
           </div>
           <div className="space-y-1">
@@ -846,7 +846,16 @@ export function AuthorizedPersonsSection({ authorizedPersons, customer, partners
   )
 }
 
-export function DeclarationsSection() {
+export function DeclarationsSection({ declarationSettings = [] }: { declarationSettings?: any[] }) {
+  const getFrequencyLabel = (freq: string) => {
+    if (freq === 'MONTHLY') return 'Aylık'
+    if (freq === 'QUARTERLY') return 'Üç Aylık'
+    if (freq === 'YEARLY') return 'Yıllık'
+    return freq
+  }
+
+  const activeSettings = declarationSettings.filter(s => s.enabled !== false);
+
   return (
     <AccordionItem value="declarations" className="border rounded-lg bg-card">
       <AccordionTrigger className="px-4 hover:no-underline">
@@ -860,12 +869,17 @@ export function DeclarationsSection() {
            <p className="text-sm text-muted-foreground mb-4">
              Beyanname yükümlülükleriniz ve dönemleri aşağıda listelenmiştir. Detaylı beyanname takibi için "Beyannamelerim" sayfasını kullanabilirsiniz.
            </p>
-           <div className="flex flex-wrap gap-2">
-             <Badge variant="outline">KDV (Aylık)</Badge>
-             <Badge variant="outline">Muhtasar (3 Aylık)</Badge>
-             <Badge variant="outline">Geçici Vergi (3 Aylık)</Badge>
-             <Badge variant="outline">Kurumlar Vergisi (Yıllık)</Badge>
-           </div>
+           {activeSettings.length > 0 ? (
+             <div className="flex flex-wrap gap-2">
+               {activeSettings.map((setting: any, index: number) => (
+                 <Badge key={index} variant="outline" className="text-sm py-1 px-3">
+                   {setting.type} ({getFrequencyLabel(setting.frequency)})
+                 </Badge>
+               ))}
+             </div>
+           ) : (
+             <p className="text-sm text-muted-foreground">Tanımlı beyanname bilgisi bulunmamaktadır.</p>
+           )}
          </div>
       </AccordionContent>
     </AccordionItem>
@@ -924,7 +938,7 @@ export function DocumentsSection({ documents }: { documents: any[] }) {
   )
 }
 
-export function PasswordsSection({ passwords }: { passwords: any }) {
+export function PasswordsSection({ passwords, customerUsername }: { passwords: any, customerUsername?: string | null }) {
   return (
     <AccordionItem value="passwords" className="border rounded-lg bg-card">
       <AccordionTrigger className="px-4 hover:no-underline">
@@ -934,13 +948,57 @@ export function PasswordsSection({ passwords }: { passwords: any }) {
         </div>
       </AccordionTrigger>
       <AccordionContent className="p-4 pt-0">
-         <PasswordList passwords={passwords} />
+         <PasswordList passwords={passwords} customerUsername={customerUsername} />
       </AccordionContent>
     </AccordionItem>
   )
 }
 
 export function FeesSection({ customer }: { customer: any }) {
+  // Use all accounting periods to show fee history
+  const accountingPeriods = customer.accountingperiod || [];
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  
+  // Parse monthly fees JSON if exists
+  const parseMonthlyFees = (jsonString: string | null) => {
+    if (!jsonString) return null;
+    try {
+      return JSON.parse(jsonString);
+    } catch {
+      return null;
+    }
+  };
+
+  // Determine current active fee
+  const currentPeriod = accountingPeriods.find((p: any) => p.year === currentYear);
+  let currentFee = null;
+  
+  if (currentPeriod) {
+    const monthlyFees = parseMonthlyFees(currentPeriod.monthlyFees);
+    if (monthlyFees && monthlyFees[currentMonth]) {
+      currentFee = monthlyFees[currentMonth];
+    } else {
+      currentFee = currentPeriod.monthlyFee;
+    }
+  }
+  
+  // Fallback to subscription fee if no specific period fee found
+  if (!currentFee) {
+    currentFee = customer.subscriptionFee;
+  }
+
+  // Filter and sort periods
+  const validPeriods = accountingPeriods
+    .filter((period: any) => {
+      // Sadece tanımlı aidat bilgisi olanları göster
+      const mFees = parseMonthlyFees(period.monthlyFees);
+      const hasMFees = mFees && Object.keys(mFees).length > 0;
+      const hasStandardFee = period.monthlyFee && parseFloat(period.monthlyFee) > 0;
+      return hasStandardFee || hasMFees;
+    })
+    .sort((a: any, b: any) => b.year - a.year);
+
   return (
     <AccordionItem value="fees" className="border rounded-lg bg-card">
       <AccordionTrigger className="px-4 hover:no-underline">
@@ -950,72 +1008,61 @@ export function FeesSection({ customer }: { customer: any }) {
         </div>
       </AccordionTrigger>
       <AccordionContent className="p-4 pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-           <div className="space-y-1">
-             <span className="text-sm text-muted-foreground">Aylık Muhasebe Ücreti</span>
-             <p className="font-medium">{customer.subscriptionFee ? `${customer.subscriptionFee} TL` : "-"}</p>
-           </div>
-           <div className="space-y-1">
-             <span className="text-sm text-muted-foreground">Tahakkuk Günü</span>
-             <p className="font-medium">Her ayın {customer.feeAccrualDay || 1}. günü</p>
-           </div>
+        <div className="mt-4 space-y-6">
+           {/* Fee Tabs */}
+           {validPeriods.length > 0 && (
+             <Tabs defaultValue={String(validPeriods[0].year)} className="w-full">
+               <TabsList className="w-full justify-start h-auto flex-wrap gap-2 bg-transparent p-0 mb-4">
+                 {validPeriods.map((period: any) => (
+                   <TabsTrigger 
+                     key={period.id} 
+                     value={String(period.year)}
+                     className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground border bg-background px-6"
+                   >
+                     {period.year}
+                   </TabsTrigger>
+                 ))}
+               </TabsList>
+               
+               {validPeriods.map((period: any) => {
+                 const monthlyFees = parseMonthlyFees(period.monthlyFees) || {};
+                 const standardFee = period.monthlyFee;
+                 
+                 return (
+                   <TabsContent key={period.id} value={String(period.year)} className="mt-0 space-y-4">
+                     {/* Monthly Grid */}
+                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                       {Array.from({ length: 12 }).map((_, i) => {
+                         const monthNum = i + 1;
+                         const monthName = new Date(0, i).toLocaleDateString('tr-TR', { month: 'long' });
+                         const specificFee = monthlyFees[String(monthNum)];
+                         const displayFee = specificFee || standardFee;
+                         
+                         return (
+                           <div key={i} className={`p-4 border rounded-lg flex flex-col gap-2 transition-colors ${specificFee ? 'bg-primary/5 border-primary/30' : 'bg-card hover:bg-muted/20'}`}>
+                             <div className="flex justify-between items-start">
+                               <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{monthName}</span>
+                               {specificFee && <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary hover:bg-primary/20">Özel</Badge>}
+                             </div>
+                             <span className={`text-lg font-bold ${displayFee ? 'text-foreground' : 'text-muted-foreground/40'}`}>
+                               {displayFee ? `${displayFee} TL` : "-"}
+                             </span>
+                           </div>
+                         );
+                       })}
+                     </div>
+                   </TabsContent>
+                 );
+               })}
+             </Tabs>
+           )}
         </div>
       </AccordionContent>
     </AccordionItem>
   )
 }
 
-export function TransactionsSection({ transactionsWithBalance }: { transactionsWithBalance: any[] }) {
-  return (
-    <AccordionItem value="transactions" className="border rounded-lg bg-card">
-      <AccordionTrigger className="px-4 hover:no-underline">
-        <div className="flex items-center gap-2">
-          <History className="h-5 w-5 text-primary" />
-          <span className="text-xl font-semibold">Cari Hesap Hareketleri</span>
-        </div>
-      </AccordionTrigger>
-      <AccordionContent className="p-4 pt-0">
-         <div className="flex justify-end mt-4 mb-2">
-           <PdfExportButton type="account" data={transactionsWithBalance} title="Cari Hesap Hareketleri" fileName="cari-hesap" />
-         </div>
-         {transactionsWithBalance.length > 0 ? (
-           <div className="rounded-md border">
-             <Table>
-               <TableHeader>
-                 <TableRow>
-                   <TableHead>Tarih</TableHead>
-                   <TableHead>Açıklama</TableHead>
-                   <TableHead className="text-right">Borç</TableHead>
-                   <TableHead className="text-right">Alacak</TableHead>
-                   <TableHead className="text-right">Bakiye</TableHead>
-                 </TableRow>
-               </TableHeader>
-               <TableBody>
-                 {transactionsWithBalance.map((t: any, i: number) => (
-                   <TableRow key={i}>
-                     <TableCell>{t.date ? new Date(t.date).toLocaleDateString('tr-TR') : "-"}</TableCell>
-                     <TableCell>{t.description}</TableCell>
-                     <TableCell className="text-right text-red-600">
-                       {t.debit > 0 ? `${t.debit.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL` : "-"}
-                     </TableCell>
-                     <TableCell className="text-right text-green-600">
-                       {t.credit > 0 ? `${t.credit.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL` : "-"}
-                     </TableCell>
-                     <TableCell className="text-right font-medium">
-                       {t.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL
-                     </TableCell>
-                   </TableRow>
-                 ))}
-               </TableBody>
-             </Table>
-           </div>
-         ) : (
-           <div className="text-muted-foreground text-sm mt-4">Henüz hesap hareketi bulunmamaktadır.</div>
-         )}
-      </AccordionContent>
-    </AccordionItem>
-  )
-}
+
 
 export function ConstitutionSection({ constitution }: { constitution: any }) {
   return (

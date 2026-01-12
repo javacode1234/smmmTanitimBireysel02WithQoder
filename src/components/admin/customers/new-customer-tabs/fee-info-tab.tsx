@@ -302,8 +302,8 @@ export function FeeInfoTab({ customerId, onNext, onBack }: FeeInfoTabProps) {
         ) : (
           <div className="flex flex-col md:flex-row gap-6">
             {/* Year List */}
-            <div className="w-full md:w-48 flex flex-col gap-2">
-              <Label className="mb-2">Yıllar</Label>
+            <div className="w-full md:w-48 flex flex-col gap-2 max-h-[400px] overflow-y-auto pr-1">
+              <Label className="mb-2 sticky top-0 bg-card z-10 py-1">Yıllar</Label>
               {periods.map(p => (
                 <div key={p.year} className="flex items-center gap-2">
                   <Button

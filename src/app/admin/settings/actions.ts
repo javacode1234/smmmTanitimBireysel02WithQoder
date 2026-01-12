@@ -307,7 +307,61 @@ export async function getActivityCodes({ page, pageSize, search, sortColumn, sor
     return { success: true, data, total, pageCount: Math.ceil(total / pageSize) }
   } catch (error) {
     console.error('getActivityCodes error:', error)
-    return { success: false, error: 'NACE kodları getirilemedi' }
+    return { success: false, error: 'Faaliyet kodları getirilemedi' }
+  }
+}
+
+// --- SYSTEM SETTINGS ---
+export async function getSystemSettings() {
+  try {
+    // Fallback to raw query if model is not generated yet
+    let settings: any[] = []
+    try {
+      if ((prisma as any).systemSetting) {
+        settings = await (prisma as any).systemSetting.findMany()
+      } else {
+        settings = await prisma.$queryRaw`SELECT * FROM SystemSetting`
+      }
+    } catch (e) {
+       settings = await prisma.$queryRaw`SELECT * FROM SystemSetting`
+    }
+
+    const settingsMap: Record<string, string> = {}
+    settings.forEach(s => {
+      settingsMap[s.key] = s.value
+    })
+    return { success: true, data: settingsMap }
+  } catch (error) {
+    console.error('getSystemSettings error:', error)
+    return { success: false, error: 'Sistem ayarları getirilemedi' }
+  }
+}
+
+export async function updateSystemSetting(key: string, value: string) {
+  try {
+    console.log(`Updating setting: ${key} = ${value}`)
+    
+    // Fallback to raw query if model is not generated yet
+    if ((prisma as any).systemSetting) {
+      await (prisma as any).systemSetting.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value }
+      })
+    } else {
+       // Raw SQL upsert for MySQL
+       await prisma.$executeRaw`
+        INSERT INTO SystemSetting (\`key\`, value, createdAt, updatedAt)
+        VALUES (${key}, ${value}, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE value = ${value}, updatedAt = NOW()
+       `
+    }
+
+    revalidatePath('/admin/settings')
+    return { success: true }
+  } catch (error) {
+    console.error('updateSystemSetting error:', error)
+    return { success: false, error: 'Ayar güncellenemedi: ' + (error instanceof Error ? error.message : String(error)) }
   }
 }
 

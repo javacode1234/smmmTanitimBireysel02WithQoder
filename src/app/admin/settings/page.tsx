@@ -7,10 +7,11 @@ import { DistrictsTab } from "./components/districts-tab"
 import { TaxOfficesTab } from "./components/tax-offices-tab"
 import { ActivityCodesTab } from "./components/activity-codes-tab"
 import { UsersTab } from "./components/users-tab"
+import { SystemTab } from "./components/system-tab"
 
 export default function SettingsPage() {
   return (
-    <div className="container mx-auto w-full max-w-[1600px] py-6 space-y-6">
+    <div className="container mx-auto w-full max-w-[1600px] py-6 space-y-6" suppressHydrationWarning>
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Ayarlar</h2>
       </div>
@@ -19,7 +20,7 @@ export default function SettingsPage() {
         <TabsList>
           <TabsTrigger value="import">Veri İçe Aktarma</TabsTrigger>
           <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
-          <TabsTrigger value="general">Genel Ayarlar</TabsTrigger>
+          <TabsTrigger value="system">Sistem Ayarları</TabsTrigger>
         </TabsList>
 
         <TabsContent value="import" className="space-y-4">
@@ -63,20 +64,8 @@ export default function SettingsPage() {
           <UsersTab />
         </TabsContent>
         
-        <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle>Genel Ayarlar</CardTitle>
-              <CardDescription>
-                Uygulama genel ayarlarını buradan yapılandırabilirsiniz.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="p-4 border border-dashed rounded-lg text-center text-muted-foreground">
-                Henüz yapılandırılabilir genel ayar bulunmamaktadır.
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="system" className="space-y-4">
+          <SystemTab />
         </TabsContent>
       </Tabs>
     </div>
